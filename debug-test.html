@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+</head>
+<body>
+    <h1>Electoral System Test</h1>
+    
+    <select id="electoralSystem">
+        <option value="">-- Select --</option>
+        <option value="fptp">FPTP</option>
+        <option value="borda">Borda Count</option>
+    </select>
+    
+    <div id="partiesSection" style="display: none; border: 2px solid red; padding: 20px; margin-top: 20px;">
+        <h2>PARTIES SECTION - Should appear when system selected</h2>
+    </div>
+    
+    <div id="candidatesSection" style="display: none;">
+        <h2>Candidates Section</h2>
+    </div>
+    
+    <div id="votingSection" style="display: none;">
+        <h2>Voting Section</h2>
+    </div>
+    
+    <div id="systemDescription"></div>
+    <div id="electoralThresholdContainer" style="display: none;">Threshold</div>
+    <div id="allocationMethodContainer" style="display: none;">Allocation</div>
+    
+    <script>
+        console.log('Script loading...');
+        
+        const systemDescriptions = {
+            fptp: "FPTP Description",
+            borda: "Borda Description"
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, attaching event listener');
+            const select = document.getElementById('electoralSystem');
+            console.log('Select element:', select);
+            
+            select.addEventListener('change', function() {
+                console.log('Change event fired! Value:', this.value);
+                onSystemChange();
+            });
+            
+            onSystemChange();
+        });
+        
+        function onSystemChange() {
+            console.log('onSystemChange called');
+            const system = document.getElementById('electoralSystem').value;
+            console.log('Selected system:', system);
+            
+            const partiesSection = document.getElementById('partiesSection');
+            const candidatesSection = document.getElementById('candidatesSection');
+            const votingSection = document.getElementById('votingSection');
+            
+            console.log('Sections found:', {
+                parties: !!partiesSection,
+                candidates: !!candidatesSection,
+                voting: !!votingSection
+            });
+            
+            if (!system) {
+                console.log('No system selected, hiding all');
+                partiesSection.style.display = 'none';
+                candidatesSection.style.display = 'none';
+                votingSection.style.display = 'none';
+                return;
+            }
+            
+            console.log('System selected, showing sections');
+            partiesSection.style.display = 'block';
+            candidatesSection.style.display = 'block';
+            votingSection.style.display = 'block';
+            
+            const desc = document.getElementById('systemDescription');
+            desc.innerHTML = `<p>${systemDescriptions[system] || 'Unknown system'}</p>`;
+        }
+    </script>
+</body>
+</html>
+

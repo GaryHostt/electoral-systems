@@ -11,6 +11,11 @@
         <header>
             <h1>🗳️ Electoral Systems Simulator</h1>
             <p class="subtitle">Compare different voting systems and understand their implications</p>
+            <div style="margin-top: 15px;">
+                <a href="learn-more.html" class="learn-more-btn" target="_blank">
+                    📚 Learn More About Electoral Systems
+                </a>
+            </div>
         </header>
 
         <div class="main-content">
@@ -22,6 +27,8 @@
                     <option value="fptp">First-Past-the-Post (FPTP) / Single-Member Plurality (SMP)</option>
                     <option value="trs">Two-Round System (TRS) / Runoff Voting</option>
                     <option value="irv">Instant-Runoff Voting (IRV) / Ranked-Choice Voting (RCV)</option>
+                    <option value="borda">Borda Count (Positional Voting)</option>
+                    <option value="condorcet">Condorcet Method (Pairwise Comparison)</option>
                     <option value="party-list-closed">Party-List Proportional Representation - Closed List</option>
                     <option value="party-list-open">Party-List Proportional Representation - Open List</option>
                     <option value="stv">Single Transferable Vote (STV)</option>
@@ -209,15 +216,31 @@
                 <h3>⚖️ Arrow's Impossibility Theorem Analysis</h3>
                 <div id="arrowAnalysis" class="arrow-analysis"></div>
             </section>
+
+            <!-- AI Analysis Section -->
+            <section class="card ai-analysis-section" id="aiAnalysisSection" style="display: none;">
+                <h2>🤖 AI Expert Analysis</h2>
+                <p>Get expert political science analysis of your election results using Mistral AI.</p>
+                
+                <button id="aiAnalysisBtn" class="btn-calculate" onclick="getAIAnalysisMain()" style="margin-top: 20px;">
+                    <span>🔍</span> Get AI Analysis of This Election
+                </button>
+                
+                <div id="aiResponseMain" class="ai-response-main"></div>
+            </section>
         </div>
     </div>
 
     <!-- Chart.js for improved visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="diagnostic.js"></script>
     <script src="calculations.js"></script>
     <script src="state-manager.js"></script>
     <script src="api-client.js"></script>
+    <script src="borda-condorcet.js"></script>
+    <script src="enhanced-viz.js"></script>
     <script src="advanced-features.js"></script>
+    <script src="ai-analysis-main.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

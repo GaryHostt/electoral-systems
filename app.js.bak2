@@ -392,6 +392,8 @@ const arrowAnalysis = {
 };
 
 // Initialize - wrap in DOMContentLoaded to ensure DOM is ready
+
+// Initialize - wrap in DOMContentLoaded to ensure DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('electoralSystem').addEventListener('change', onSystemChange);
     

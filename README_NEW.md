@@ -8,20 +8,6 @@ A comprehensive, educational web application for simulating and comparing 13 dif
 
 ---
 
-## ⚠️ Important Security Note
-
-**This repository contains sensitive API credentials in `learn-more.html`**
-
-- The file `learn-more.html` contains a Mistral AI API key
-- This file is added to `.gitignore` to prevent accidental commits
-- **DO NOT commit this file to public repositories**
-- If you clone this project, you'll need to add your own API key
-- For production deployment, move API calls to the backend (see `SECURITY_NOTES.md`)
-
-**Client-Side Limitation**: API keys in browser JavaScript are visible in DevTools. For production use, implement server-side API calls through the Python backend.
-
----
-
 ## ✨ Features
 
 ### 13 Electoral Systems Supported

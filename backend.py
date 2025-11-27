@@ -23,6 +23,8 @@ from calculators import (
     STVCandidate,
     STVBallot
 )
+from calculators.ranked_systems import BordaCountCalculator, CondorcetCalculator
+from calculators.multi_district import MultiDistrictCalculator, District
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend communication
@@ -342,15 +344,155 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'version': '1.0.0',
+        'version': '2.0.0',
         'features': [
             'advanced_stv',
             'strategic_voting',
             'ballot_generation',
             'batch_simulation',
-            'scenario_persistence'
+            'scenario_persistence',
+            'borda_count',
+            'condorcet_method',
+            'multi_district_mmp',
+            'multi_district_parallel'
         ]
     })
+
+
+@app.route('/api/multi-district/mmp', methods=['POST'])
+def calculate_multi_district_mmp():
+    """
+    Calculate Multi-District MMP
+    """
+    try:
+        data = request.json
+        
+        from calculators.multi_district import Candidate as MDCandidate
+        candidates = [MDCandidate(**c) for c in data['candidates']]
+        districts = [District(**d) for d in data['districts']]
+        
+        calculator = MultiDistrictCalculator(candidates, data['parties'])
+        results = calculator.calculate_multi_district_mmp(
+            districts=districts,
+            party_votes={int(k): v for k, v in data['party_votes'].items()},  # Ensure integer keys
+            list_seats=data['list_seats'],
+            allocation_method=data.get('allocation_method', 'dhondt'),
+            threshold=data.get('threshold', 0.0)
+        )
+        
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 400
+
+
+@app.route('/api/multi-district/parallel', methods=['POST'])
+def calculate_multi_district_parallel():
+    """
+    Calculate Multi-District Parallel Voting
+    
+    Same format as MMP endpoint
+    """
+    try:
+        data = request.json
+        
+        from calculators.multi_district import Candidate as MDCandidate
+        candidates = [MDCandidate(**c) for c in data['candidates']]
+        districts = [District(**d) for d in data['districts']]
+        
+        calculator = MultiDistrictCalculator(candidates, data['parties'])
+        results = calculator.calculate_multi_district_parallel(
+            districts=districts,
+            party_votes=data['party_votes'],
+            list_seats=data['list_seats'],
+            allocation_method=data.get('allocation_method', 'dhondt'),
+            threshold=data.get('threshold', 0.0)
+        )
+        
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+
+@app.route('/api/borda/calculate', methods=['POST'])
+def calculate_borda():
+    """
+    Calculate Borda Count results
+    
+    Request body:
+    {
+        "candidates": [...],
+        "ballots": [{"preferences": [1, 2, 3], "count": 100}]
+    }
+    """
+    try:
+        data = request.json
+        
+        from calculators.ranked_systems import Candidate as RankedCandidate, Ballot as RankedBallot
+        candidates = [RankedCandidate(**c) for c in data['candidates']]
+        ballots = [RankedBallot(**b) for b in data['ballots']]
+        
+        calculator = BordaCountCalculator(candidates)
+        results = calculator.calculate(ballots)
+        
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+
+@app.route('/api/condorcet/calculate', methods=['POST'])
+def calculate_condorcet():
+    """
+    Calculate Condorcet winner using pairwise comparisons
+    
+    Request body:
+    {
+        "candidates": [...],
+        "ballots": [{"preferences": [1, 2, 3], "count": 100}]
+    }
+    """
+    try:
+        data = request.json
+        
+        from calculators.ranked_systems import Candidate as RankedCandidate, Ballot as RankedBallot
+        candidates = [RankedCandidate(**c) for c in data['candidates']]
+        ballots = [RankedBallot(**b) for b in data['ballots']]
+        
+        calculator = CondorcetCalculator(candidates)
+        results = calculator.calculate(ballots)
+        
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
 
 
 if __name__ == '__main__':

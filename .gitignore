@@ -11,3 +11,8 @@ ENV/
 .vscode/
 .idea/
 *.log
+
+# API Keys and Secrets
+learn-more.html
+# Note: learn-more.html contains Mistral API key
+# If you need to commit this file, remove the API key first

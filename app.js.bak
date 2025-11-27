@@ -392,6 +392,130 @@ const arrowAnalysis = {
 };
 
 // Initialize - wrap in DOMContentLoaded to ensure DOM is ready
+    },
+    trs: {
+        title: "Two-Round System Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ✓ Satisfied",
+            "Independence of Irrelevant Alternatives: ✗ VIOLATED - Third-place candidates in round 1 can influence which top-two advance.",
+            "Monotonicity: ✗ Can be violated - Paradoxically, getting more votes in round 1 can harm a candidate."
+        ],
+        explanation: "TRS improves on FPTP by ensuring majority support, but still suffers from IIA violations. Third-place candidates affect who reaches the runoff. The monotonicity violation occurs when strong first-round performance changes voter behavior in unexpected ways.",
+        realWorld: "The system encourages first-round strategic voting and can disadvantage moderate candidates squeezed by polarized opponents."
+    },
+    irv: {
+        title: "Instant-Runoff Voting (IRV/RCV) Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ✓ Satisfied",
+            "Independence of Irrelevant Alternatives: ✗ VIOLATED - Elimination order affects final outcome.",
+            "Monotonicity: ✗ VIOLATED - Ranking a candidate higher can paradoxically cause them to lose."
+        ],
+        explanation: "IRV fails both IIA and monotonicity. The sequential elimination process means that the order in which candidates are eliminated affects the final winner. Paradoxically, receiving additional support can change the elimination order in ways that harm a candidate.",
+        realWorld: "Burlington, Vermont 2009: The IRV winner would have lost under traditional runoff, demonstrating monotonicity violation."
+    },
+    "party-list-closed": {
+        title: "Closed List PR Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied at voter level (but party leaders have strong control)",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ~ Partially satisfied (depends on threshold and rounding)",
+            "Independence of Irrelevant Alternatives: ✓ Generally satisfied for proportional allocation",
+            "Proportionality: Strong, but threshold rules can exclude small parties"
+        ],
+        explanation: "Closed list systems excel at proportional representation but sacrifice voter choice over specific candidates. Party leadership controls candidate selection and ordering. Electoral thresholds (e.g., 5%) can exclude smaller parties, creating strategic voting incentives.",
+        realWorld: "Small parties near the threshold may lose all representation, wasting votes. Voters cannot remove unpopular candidates from party lists."
+    },
+    "party-list-open": {
+        title: "Open List PR Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ~ Partially satisfied",
+            "Independence of Irrelevant Alternatives: ✓ Generally satisfied",
+            "Proportionality: Strong, with added candidate choice"
+        ],
+        explanation: "Open lists improve on closed lists by giving voters control over both party and candidate preferences. However, this can create intra-party competition and complexity. The system still relies on proportional allocation formulas (D'Hondt, Sainte-Laguë) which have their own biases.",
+        realWorld: "In Finland's open list system, personal popularity can override party preferences, but campaign costs increase as candidates compete within their own party."
+    },
+    stv: {
+        title: "Single Transferable Vote Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ✓ Satisfied",
+            "Independence of Irrelevant Alternatives: ✗ VIOLATED - Transfer order affects outcomes",
+            "Monotonicity: ✗ Can be violated in complex scenarios"
+        ],
+        explanation: "STV provides proportional representation while maintaining candidate-focused voting. However, the complex transfer system violates IIA - the order of eliminations and surplus transfers affects final seat allocation. Non-monotonicity can occur when additional support changes the transfer cascade.",
+        realWorld: "Malta uses STV successfully but experienced a case where a party with more votes received fewer seats due to transfer patterns."
+    },
+    mmp: {
+        title: "Mixed-Member Proportional Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ✓ Satisfied",
+            "Independence of Irrelevant Alternatives: ~ Partially violated in district races",
+            "Proportionality: Strong overall, but overhang seats can distort results"
+        ],
+        explanation: "MMP combines local representation with proportionality. The compensatory mechanism generally ensures proportional outcomes. However, when a party wins more district seats than their proportional share, 'overhang seats' can distort the proportional balance. District races retain FPTP's IIA problems.",
+        realWorld: "Germany's Bundestag: Overhang seats have expanded parliament size and created disproportionate representation. New Zealand successfully uses MMP with fewer issues."
+    },
+    parallel: {
+        title: "Parallel Voting Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ~ Partially satisfied",
+            "Independence of Irrelevant Alternatives: ✗ VIOLATED in district tier",
+            "Proportionality: Weak - two tiers don't compensate each other"
+        ],
+        explanation: "Parallel systems provide less proportionality than MMP because the district and list tiers operate independently. The district tier suffers from all of FPTP's problems while the list tier may not compensate for district disproportionality. This can amplify dominant party advantages.",
+        realWorld: "Japan's system produces less proportional results than Germany's MMP, often giving large parties even larger seat bonuses."
+    },
+    block: {
+        title: "Block Voting Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ✓ Satisfied",
+            "Independence of Irrelevant Alternatives: ✗ VIOLATED",
+            "Proportionality: ✗ Severely violated - winner-take-all nature"
+        ],
+        explanation: "Block voting can produce extremely disproportionate results. A narrow majority can win all seats in a constituency. This violates proportionality and amplifies majority dominance. Minority groups often receive no representation despite significant vote shares.",
+        realWorld: "Historically used in British colonial systems, block voting often resulted in complete exclusion of minority parties and ethnic groups."
+    },
+    limited: {
+        title: "Limited Voting Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ✓ Satisfied",
+            "Pareto Efficiency: ~ Partially satisfied",
+            "Independence of Irrelevant Alternatives: ✗ VIOLATED",
+            "Proportionality: Improved over block voting but still weak"
+        ],
+        explanation: "Limited voting improves on block voting by restricting votes below the number of seats, creating opportunities for minority representation. However, results depend heavily on strategic coordination. Vote splitting among majority factions can allow minorities to win, but this is unreliable.",
+        realWorld: "Used in some Spanish municipal elections. Effectiveness depends on strategic behavior and can lead to unexpected outcomes when vote coordination fails."
+    },
+    approval: {
+        title: "Approval Voting Analysis",
+        violations: [
+            "Non-Dictatorship: ✓ Satisfied",
+            "Unrestricted Domain: ~ Limited - binary approve/disapprove only",
+            "Pareto Efficiency: ✓ Satisfied",
+            "Independence of Irrelevant Alternatives: ✓ Generally satisfied",
+            "Strategy-proofness: ✗ VIOLATED - strong strategic voting incentives"
+        ],
+        explanation: "Approval voting satisfies IIA better than most systems since adding or removing candidates doesn't change approval counts for others. However, it restricts preference expression to binary approve/disapprove. Strategic voters face dilemmas about whether to approve second-choice candidates, potentially harming their first choice.",
+        realWorld: "Used by several academic societies. Tends to favor consensus candidates over polarizing ones. Strategic considerations about the 'approval threshold' dominate voter decisions."
+    }
+};
+
+// Initialize - wrap in DOMContentLoaded to ensure DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('electoralSystem').addEventListener('change', onSystemChange);
     
