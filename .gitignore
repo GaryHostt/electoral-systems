@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+electoral_data.db
+*.db
+.env
+venv/
+ENV/
+.vscode/
+.idea/
+*.log
