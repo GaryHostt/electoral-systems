@@ -34,18 +34,11 @@ function formatNumberInput(event) {
 // System descriptions
 const systemDescriptions = {
     fptp: "First-Past-the-Post: The candidate with the most votes wins, regardless of whether they have a majority. Simple and fast, but can lead to vote splitting.",
-    trs: "Two-Round System: If no candidate gets >50% in the first round, the top two candidates proceed to a runoff. Common in presidential elections.",
     irv: "Instant-Runoff Voting: Voters rank candidates. The candidate with fewest votes is eliminated and their votes redistributed until someone has a majority.",
-    borda: "Borda Count: Voters rank all candidates. Points awarded based on position (1st=n-1 points, 2nd=n-2, etc.). Candidate with most points wins.",
-    condorcet: "Condorcet Method: The candidate who would beat every other candidate in head-to-head competition wins. May have no winner (Condorcet paradox).",
-    "party-list-closed": "Closed List PR: Voters choose a party. Seats are allocated proportionally, and parties decide which candidates fill those seats.",
-    "party-list-open": "Open List PR: Voters can vote for both a party and specific candidates within that party. Seats are allocated proportionally.",
+    "party-list": "Party-List Proportional Representation: Voters choose a party. Seats are allocated proportionally to each party's vote share. You can optionally allow voters to also select specific candidates within a party (Open List).",
     stv: "Single Transferable Vote: Multi-winner proportional system where voters rank candidates and votes are transferred based on quotas.",
     mmp: "Mixed-Member Proportional: Combines district seats (FPTP) with proportional party list seats to ensure overall proportionality.",
-    parallel: "Parallel Voting: Combines district seats and party list seats, but they're calculated independently (not compensatory).",
-    block: "Block Voting: Voters can vote for multiple candidates in a multi-seat constituency. Top vote-getters win.",
-    limited: "Limited Voting: Like Block Voting, but voters have fewer votes than available seats, promoting minority representation.",
-    approval: "Approval Voting: Voters can approve of as many candidates as they wish. The candidate with most approvals wins."
+    parallel: "Parallel Voting: Combines district seats and party list seats, but they're calculated independently (not compensatory)."
 };
 
 // Arrow's Theorem analysis for each system
@@ -211,10 +204,10 @@ function onSystemChange() {
     document.getElementById('systemDescription').innerHTML = `<p>${systemDescriptions[system]}</p>`;
     
     // Systems that use a party vote (and thus need electoral threshold)
-    const systemsWithPartyVote = ['party-list-closed', 'party-list-open', 'mmp', 'parallel'];
+    const systemsWithPartyVote = ['party-list', 'mmp', 'parallel'];
     
     // Systems that use proportional allocation methods
-    const systemsWithAllocationMethod = ['party-list-closed', 'party-list-open', 'mmp', 'parallel'];
+    const systemsWithAllocationMethod = ['party-list', 'mmp', 'parallel'];
     
     // Show/hide electoral threshold input
     const thresholdContainer = document.getElementById('electoralThresholdContainer');
@@ -232,29 +225,28 @@ function onSystemChange() {
         allocationContainer.style.display = 'none';
     }
     
+    // Configure race type options based on system
+    configureRaceTypeForSystem(system);
+    
+    // Configure advanced features visibility based on system
+    configureAdvancedFeatures(system);
+    
     // Systems that need BOTH parties and candidates
     const needsBothPartiesAndCandidates = [
-        'party-list-open', 
         'mmp', 
         'parallel'
     ];
     
     // Systems that need ONLY parties (no individual candidates)
     const needsOnlyParties = [
-        'party-list-closed'
+        'party-list'
     ];
     
     // Systems that are candidate-focused (parties are just for organization/color)
     const candidateFocused = [
         'fptp',
-        'trs', 
         'irv',
-        'borda',
-        'condorcet',
-        'stv',
-        'block',
-        'limited',
-        'approval'
+        'stv'
     ];
     
     // Show/hide sections based on system requirements
@@ -298,6 +290,88 @@ function updateSectionNumbers(partiesNum, candidatesNum, votingNum) {
 
 function updateSystemDescription() {
     onSystemChange();
+}
+
+function configureRaceTypeForSystem(system) {
+    const singleRadio = document.getElementById('singleRaceRadio');
+    const legislativeRadio = document.getElementById('legislativeRaceRadio');
+    const singleOption = document.getElementById('singleRaceOption');
+    const legislativeOption = document.getElementById('legislativeRaceOption');
+    
+    // Define system categories
+    // Individual Race (Single-Seat): FPTP, TRS, IRV, Borda, Condorcet
+    const singleSeatOnly = ['fptp', 'trs', 'irv', 'borda', 'condorcet'];
+    
+    // Individual Race (Multi-Seat): Block, Limited, Approval (though approval can be both)
+    const multiSeatIndividual = ['block', 'limited'];
+    
+    // Entire Legislative Branch: STV, Closed List PR, Open List PR
+    const legislativeOnly = ['stv', 'party-list-closed', 'party-list-open'];
+    
+    // Both: MMP, Parallel, Approval
+    const bothAllowed = ['mmp', 'parallel', 'approval'];
+    
+    // Reset styles
+    singleOption.style.opacity = '1';
+    singleOption.style.cursor = 'pointer';
+    legislativeOption.style.opacity = '1';
+    legislativeOption.style.cursor = 'pointer';
+    singleRadio.disabled = false;
+    legislativeRadio.disabled = false;
+    
+    if (singleSeatOnly.includes(system) || multiSeatIndividual.includes(system)) {
+        // Disable legislative, enable single only
+        legislativeRadio.disabled = true;
+        legislativeOption.style.opacity = '0.4';
+        legislativeOption.style.cursor = 'not-allowed';
+        
+        // Force selection to single
+        if (legislativeRadio.checked) {
+            singleRadio.checked = true;
+            updateRaceType();
+        }
+    } else if (legislativeOnly.includes(system)) {
+        // Disable single, enable legislative only
+        singleRadio.disabled = true;
+        singleOption.style.opacity = '0.4';
+        singleOption.style.cursor = 'not-allowed';
+        
+        // Force selection to legislative
+        if (singleRadio.checked) {
+            legislativeRadio.checked = true;
+            updateRaceType();
+        }
+    }
+    // For bothAllowed systems, leave both enabled (no changes needed)
+}
+
+function configureAdvancedFeatures(system) {
+    // Show/hide strategic voting button (only for FPTP)
+    const strategicBtn = document.querySelector('button[onclick="showStrategicSimulator()"]');
+    if (strategicBtn) {
+        if (system === 'fptp') {
+            strategicBtn.style.display = 'inline-block';
+        } else {
+            strategicBtn.style.display = 'none';
+            // Also hide the panel if it's open
+            const panel = document.getElementById('strategicVotingPanel');
+            if (panel) panel.style.display = 'none';
+        }
+    }
+    
+    // Show/hide ballot generator button (only for ranking systems)
+    const ballotGenBtn = document.querySelector('button[onclick="showBallotGenerator()"]');
+    const rankingSystems = ['irv', 'stv'];
+    if (ballotGenBtn) {
+        if (rankingSystems.includes(system)) {
+            ballotGenBtn.style.display = 'inline-block';
+        } else {
+            ballotGenBtn.style.display = 'none';
+            // Also hide the panel if it's open
+            const panel = document.getElementById('ballotGeneratorPanel');
+            if (panel) panel.style.display = 'none';
+        }
+    }
 }
 
 function updateRaceType() {
@@ -478,18 +552,17 @@ function updateVotingInputs() {
     let html = '';
     
     // Check if this is a ranking system
-    const isRankingSystem = system === 'irv' || system === 'stv' || system === 'borda' || system === 'condorcet';
+    const isRankingSystem = system === 'irv' || system === 'stv';
     
     // Systems that use a party vote:
-    // - Party-List PR (Closed and Open List)
+    // - Party-List PR
     // - Mixed-Member Proportional (MMP/AMS)
     // - Parallel Voting (MMM)
-    const systemsWithPartyVote = ['party-list-closed', 'party-list-open', 'mmp', 'parallel'];
+    const systemsWithPartyVote = ['party-list', 'mmp', 'parallel'];
     
     // Systems that do NOT use a party vote:
-    // - FPTP, TRS, IRV
+    // - FPTP, IRV
     // - STV (candidate-focused, no distinct party vote)
-    // - Block Voting, Limited Voting, Approval Voting
     
     if (systemsWithPartyVote.includes(system)) {
         html += '<div class="voting-input-section"><h4>Party Votes</h4>';
@@ -514,19 +587,17 @@ function updateVotingInputs() {
     }
     
     // For candidate-based systems
-    // Show candidate votes for all systems except pure closed list
-    if (system !== 'party-list-closed') {
+    // Show candidate votes for all systems except pure party-list AND ranking systems
+    if (system !== 'party-list' && !isRankingSystem) {
         html += '<div class="voting-input-section"><h4>Candidate Votes</h4>';
         
         // System-specific instructions
         if (system === 'mmp' || system === 'parallel') {
             html += '<p style="margin-bottom: 10px; color: #666; font-style: italic;">This is the constituency vote (first vote) for individual candidates.</p>';
-        } else if (isRankingSystem) {
-            html += '<p style="margin-bottom: 10px; color: #666;">Enter first-preference vote totals here. Rankings can be configured below.</p>';
         } else if (system === 'approval') {
             html += '<p style="margin-bottom: 10px; color: #666;">Enter number of voters who approve each candidate</p>';
-        } else if (system === 'party-list-open') {
-            html += '<p style="margin-bottom: 10px; color: #666; font-style: italic;">Optional: Personal votes for specific candidates within their party.</p>';
+        } else if (system === 'party-list') {
+            html += '<p style="margin-bottom: 10px; color: #666; font-style: italic;">Optional: Personal votes for specific candidates within their party (for Open List variant).</p>';
         }
         
         candidates.forEach(candidate => {
@@ -541,6 +612,21 @@ function updateVotingInputs() {
                 </div>
             `;
         });
+        html += '</div>';
+    } else if (isRankingSystem) {
+        // For ranking systems, show a note instead of candidate vote inputs
+        html += '<div class="voting-input-section">';
+        html += '<div style="padding: 15px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px; margin-bottom: 15px;">';
+        html += '<p style="margin: 0; color: #1976d2;"><strong>ℹ️ Note:</strong> This system uses ranking ballots instead of candidate vote totals.</p>';
+        html += '<p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">Configure voter preferences in the "Ranking Ballots" section below.</p>';
+        html += '</div>';
+        
+        // Add total voters input for ranking systems
+        html += '<div style="margin-top: 15px;">';
+        html += '<label for="totalVoters" style="display: block; margin-bottom: 8px; font-weight: 600; color: #667eea;">Total Number of Voters:</label>';
+        html += '<input type="text" id="totalVoters" class="number-input" value="10,000" style="width: 200px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;" onblur="formatNumberInput(event)">';
+        html += '<p style="margin-top: 8px; color: #666; font-size: 0.9em; font-style: italic;">Total voter turnout - percentages in ranking ballots will be calculated from this number.</p>';
+        html += '</div>';
         html += '</div>';
     }
     
@@ -576,6 +662,30 @@ function updateRankingBallots() {
     const numBallotTypes = parseInt(document.getElementById('numBallotTypes').value) || 5;
     const maxBallots = Math.min(Math.max(1, numBallotTypes), 20); // Between 1 and 20
     
+    // PRESERVE EXISTING VALUES before regenerating HTML
+    const existingValues = {};
+    for (let i = 0; i < 20; i++) { // Check up to max possible
+        const nameInput = document.getElementById(`ballot-${i}-name`);
+        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+        
+        if (nameInput || percentageInput) {
+            existingValues[i] = {
+                name: nameInput ? nameInput.value : '',
+                percentage: percentageInput ? percentageInput.value : '0',
+                rankings: {}
+            };
+            
+            // Preserve ranking selections
+            const maxRanks = Math.min(candidates.length, 5);
+            for (let rank = 1; rank <= maxRanks; rank++) {
+                const select = document.getElementById(`ballot-${i}-rank-${rank}`);
+                if (select) {
+                    existingValues[i].rankings[rank] = select.value;
+                }
+            }
+        }
+    }
+    
     let html = '<div class="ranking-input-container">';
     html += '<div class="ranking-grid">';
     
@@ -586,12 +696,19 @@ function updateRankingBallots() {
                     <span style="background: #667eea; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9em;">${i + 1}</span>
                     Ballot Type ${i + 1}
                 </h5>
+                <div style="margin-bottom: 10px;">
+                    <input type="text" id="ballot-${i}-name" placeholder="e.g., Progressive voters, Rural conservatives..." 
+                           value="${existingValues[i]?.name || ''}"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;"
+                           title="Optional: Name this ballot pattern for your reference">
+                </div>
                 <div class="ranking-inputs">
         `;
         
         // Add ranking dropdowns for each preference
         const maxRanks = Math.min(candidates.length, 5);
         for (let rank = 1; rank <= maxRanks; rank++) {
+            const savedValue = existingValues[i]?.rankings[rank] || '';
             html += `
                 <div class="ranking-row">
                     <label>${rank}${getOrdinalSuffix(rank)} choice:</label>
@@ -601,7 +718,8 @@ function updateRankingBallots() {
             
             candidates.forEach(candidate => {
                 const party = parties.find(p => p.id === candidate.partyId);
-                html += `<option value="${candidate.id}">${candidate.name} (${party.name})</option>`;
+                const selected = savedValue == candidate.id ? ' selected' : '';
+                html += `<option value="${candidate.id}"${selected}>${candidate.name} (${party.name})</option>`;
             });
             
             html += `
@@ -611,10 +729,11 @@ function updateRankingBallots() {
         }
         
         // Add percentage input for this ballot type
+        const savedPercentage = existingValues[i]?.percentage || '0';
         html += `
             <div class="ranking-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
                 <label style="font-weight: 600;">% of Voters:</label>
-                <input type="number" id="ballot-${i}-percentage" min="0" max="100" step="0.1" value="0" style="padding: 6px; width: 80px;" />
+                <input type="number" id="ballot-${i}-percentage" min="0" max="100" step="0.1" value="${savedPercentage}" style="padding: 6px; width: 80px;" />
                 <span style="font-size: 0.9em; color: #666; margin-left: 5px;">%</span>
             </div>
         `;
@@ -626,10 +745,71 @@ function updateRankingBallots() {
     }
     
     html += '</div>';
-    html += '<p style="margin-top: 15px; color: #666; font-size: 0.9em; font-style: italic;">💡 Tip: Leave a choice blank if voters don\'t rank that many candidates. Enter the percentage of voters with each ranking pattern - they don\'t need to add up to 100% if some voters don\'t appear in these patterns.</p>';
+    html += '<p style="margin-top: 15px; color: #666; font-size: 0.9em; font-style: italic;">💡 Tip: Name your ballot types to keep track of different voter groups. Leave a choice blank if voters don\'t rank that many candidates. <strong>Percentages must add up to 100%.</strong></p>';
+    html += '<div id="percentageValidation" style="margin-top: 10px; padding: 10px; border-radius: 6px; display: none;"></div>';
     html += '</div>';
     
     container.innerHTML = html;
+    
+    // Add event listeners for percentage validation
+    for (let i = 0; i < maxBallots; i++) {
+        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+        if (percentageInput) {
+            percentageInput.addEventListener('input', validateBallotPercentages);
+            percentageInput.addEventListener('blur', validateBallotPercentages);
+        }
+    }
+    
+    // Trigger validation after restoring values
+    validateBallotPercentages();
+}
+
+function validateBallotPercentages() {
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 2;
+    const validationDiv = document.getElementById('percentageValidation');
+    
+    if (!validationDiv) return;
+    
+    let total = 0;
+    let hasValues = false;
+    
+    for (let i = 0; i < numBallotTypes; i++) {
+        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+        if (percentageInput) {
+            const value = parseFloat(percentageInput.value) || 0;
+            if (value > 0) {
+                hasValues = true;
+                total += value;
+            }
+        }
+    }
+    
+    if (!hasValues) {
+        validationDiv.style.display = 'none';
+        return;
+    }
+    
+    validationDiv.style.display = 'block';
+    
+    if (Math.abs(total - 100) < 0.01) {
+        // Valid: total is 100% (with small tolerance for floating point)
+        validationDiv.style.background = '#d4edda';
+        validationDiv.style.border = '1px solid #c3e6cb';
+        validationDiv.style.color = '#155724';
+        validationDiv.innerHTML = `✅ <strong>Valid:</strong> Percentages add up to 100% (Total: ${total.toFixed(1)}%)`;
+    } else if (total < 100) {
+        // Warning: under 100%
+        validationDiv.style.background = '#fff3cd';
+        validationDiv.style.border = '1px solid #ffc107';
+        validationDiv.style.color = '#856404';
+        validationDiv.innerHTML = `⚠️ <strong>Warning:</strong> Percentages only add up to ${total.toFixed(1)}%. Remaining ${(100 - total).toFixed(1)}% of voters are unaccounted for.`;
+    } else {
+        // Error: over 100%
+        validationDiv.style.background = '#f8d7da';
+        validationDiv.style.border = '1px solid #f5c6cb';
+        validationDiv.style.color = '#721c24';
+        validationDiv.innerHTML = `❌ <strong>Error:</strong> Percentages add up to ${total.toFixed(1)}%, which exceeds 100% by ${(total - 100).toFixed(1)}%.`;
+    }
 }
 
 function getOrdinalSuffix(n) {
@@ -676,23 +856,11 @@ function calculateResults() {
         case 'fptp':
             results = calculateFPTP(votes);
             break;
-        case 'trs':
-            results = calculateTRS(votes);
-            break;
         case 'irv':
             results = calculateIRV(votes);
             break;
-        case 'borda':
-            results = calculateBorda(votes);
-            break;
-        case 'condorcet':
-            results = calculateCondorcet(votes);
-            break;
-        case 'party-list-closed':
-            results = calculateClosedList(votes);
-            break;
-        case 'party-list-open':
-            results = calculateOpenList(votes);
+        case 'party-list':
+            results = calculatePartyListPR(votes);
             break;
         case 'stv':
             results = calculateSTV(votes);
@@ -702,15 +870,6 @@ function calculateResults() {
             break;
         case 'parallel':
             results = calculateParallel(votes);
-            break;
-        case 'block':
-            results = calculateBlock(votes);
-            break;
-        case 'limited':
-            results = calculateLimited(votes);
-            break;
-        case 'approval':
-            results = calculateApproval(votes);
             break;
     }
     
@@ -804,14 +963,14 @@ function calculateIRV(votes) {
     // Get race type
     const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
     
-    // Get total votes from first-preference candidate votes
-    let totalVotes = 0;
-    candidates.forEach(candidate => {
-        const input = document.getElementById(`candidate-${candidate.id}`);
-        if (input) {
-            totalVotes += parseFormattedNumber(input.value);
-        }
-    });
+    // Get total votes from the totalVoters input for ranking systems
+    const totalVotersInput = document.getElementById('totalVoters');
+    let totalVotes = totalVotersInput ? parseFormattedNumber(totalVotersInput.value) : 0;
+    
+    if (totalVotes === 0) {
+        alert('Please enter the total number of voters');
+        return null;
+    }
     
     // Collect ballot data from ranking inputs (now using percentages)
     const ballots = [];
@@ -908,10 +1067,13 @@ function calculateIRV(votes) {
     // Run IRV with full ranking data
     const candidateIds = candidates.map(c => c.id);
     let eliminated = new Set();
-    let rounds = 0;
+    let roundNumber = 0;
     const maxRounds = candidates.length - 1;
+    const roundsData = []; // Track rounds for visualization
     
-    while (rounds < maxRounds) {
+    while (roundNumber < maxRounds) {
+        roundNumber++;
+        
         // Count current votes
         const voteCounts = {};
         candidateIds.forEach(id => voteCounts[id] = 0);
@@ -930,6 +1092,13 @@ function calculateIRV(votes) {
         const activeCandidates = candidateIds.filter(id => !eliminated.has(id));
         if (activeCandidates.length === 1) {
             // Winner found
+            const winner = activeCandidates[0];
+            roundsData.push({
+                round: roundNumber,
+                voteCounts: {...voteCounts},
+                winner: winner,
+                action: 'winner'
+            });
             break;
         }
         
@@ -940,6 +1109,13 @@ function calculateIRV(votes) {
         const maxVotes = Math.max(...activeCandidates.map(id => voteCounts[id]));
         if (maxVotes / activeTotal > 0.5) {
             // Majority winner
+            const winner = activeCandidates.find(id => voteCounts[id] === maxVotes);
+            roundsData.push({
+                round: roundNumber,
+                voteCounts: {...voteCounts},
+                winner: winner,
+                action: 'winner'
+            });
             break;
         }
         
@@ -948,7 +1124,13 @@ function calculateIRV(votes) {
         const toEliminate = activeCandidates.find(id => voteCounts[id] === minVotes);
         eliminated.add(toEliminate);
         
-        rounds++;
+        // Record round data
+        roundsData.push({
+            round: roundNumber,
+            voteCounts: {...voteCounts},
+            eliminated: toEliminate,
+            action: 'eliminated'
+        });
     }
     
     // Final count
@@ -978,7 +1160,7 @@ function calculateIRV(votes) {
             votes: voteCount,
             percentage: totalBallots > 0 ? (voteCount / totalBallots * 100) : 0,
             winner: isWinner,
-            note: isEliminated ? 'Eliminated' : (isWinner ? `Won after ${rounds} round(s)` : '')
+            note: isEliminated ? 'Eliminated' : (isWinner ? `Won after ${roundNumber} round(s)` : '')
         };
     });
     
@@ -988,11 +1170,12 @@ function calculateIRV(votes) {
         type: 'candidate',
         results: results,
         totalVotes: totalBallots,
-        note: `Instant-Runoff Voting with ranked ballots (${rounds} elimination rounds)`
+        rounds: roundsData,
+        note: `Instant-Runoff Voting with ranked ballots (${roundNumber} elimination rounds)`
     };
 }
 
-function calculateClosedList(votes) {
+function calculatePartyListPR(votes) {
     const totalVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
     const seats = getSeatsCount();
     
@@ -1085,14 +1268,14 @@ function calculateSTV(votes) {
     const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
     const seats = raceType === 'single' ? 1 : 3; // 1 seat for single race, 3 for legislative
     
-    // Get total votes from first-preference candidate votes
-    let totalVotes = 0;
-    candidates.forEach(candidate => {
-        const input = document.getElementById(`candidate-${candidate.id}`);
-        if (input) {
-            totalVotes += parseFormattedNumber(input.value);
-        }
-    });
+    // Get total votes from the totalVoters input for ranking systems
+    const totalVotersInput = document.getElementById('totalVoters');
+    let totalVotes = totalVotersInput ? parseFormattedNumber(totalVotersInput.value) : 0;
+    
+    if (totalVotes === 0) {
+        alert('Please enter the total number of voters');
+        return null;
+    }
     
     // Collect ballot data from ranking inputs (now using percentages)
     const ballots = [];
@@ -1182,9 +1365,13 @@ function calculateSTV(votes) {
     const candidateIds = candidates.map(c => c.id);
     let elected = [];
     let eliminated = new Set();
+    const roundsData = []; // Track rounds for visualization
+    let roundNumber = 0;
     
     // Run rounds until all seats filled or no more candidates
     while (elected.length < seats && eliminated.size + elected.length < candidateIds.length) {
+        roundNumber++;
+        
         // Count current votes
         const voteCounts = {};
         candidateIds.forEach(id => voteCounts[id] = 0);
@@ -1207,17 +1394,53 @@ function calculateSTV(votes) {
             // Elect candidate with most votes
             const winner = activeCandidates.find(id => voteCounts[id] === maxVotes);
             elected.push(winner);
+            
+            // Record round data
+            roundsData.push({
+                round: roundNumber,
+                voteCounts: {...voteCounts},
+                quota: quota,
+                candidate_id: winner,
+                action: 'elected',
+                surplus: maxVotes - quota
+            });
             // In real STV, surplus votes would transfer; simplified here
+        } else if (elected.length + activeCandidates.length <= seats) {
+            // Elect all remaining candidates
+            roundsData.push({
+                round: roundNumber,
+                voteCounts: {...voteCounts},
+                quota: quota,
+                action: 'elected_remaining'
+            });
+            activeCandidates.forEach(id => {
+                if (!elected.includes(id)) {
+                    elected.push(id);
+                }
+            });
+            break;
         } else {
             // Eliminate candidate with fewest votes
             const minVotes = Math.min(...activeCandidates.map(id => voteCounts[id] || 0));
             const toEliminate = activeCandidates.find(id => voteCounts[id] === minVotes);
             if (toEliminate) {
                 eliminated.add(toEliminate);
+                
+                // Record round data
+                roundsData.push({
+                    round: roundNumber,
+                    voteCounts: {...voteCounts},
+                    quota: quota,
+                    eliminated: toEliminate,
+                    action: 'eliminated'
+                });
             } else {
                 break;
             }
         }
+        
+        // Safety check
+        if (roundNumber > 50) break;
     }
     
     // Build results
@@ -1260,6 +1483,7 @@ function calculateSTV(votes) {
         totalVotes: totalBallots,
         seats: seats,
         quota: quota,
+        rounds: roundsData,
         note: `Single Transferable Vote with ranked ballots (Quota: ${quota} votes)`
     };
 }
@@ -1267,7 +1491,11 @@ function calculateSTV(votes) {
 function calculateMMP(votes) {
     // Mixed system: half seats from districts (FPTP), half from party lists (compensatory)
     const totalSeats = getSeatsCount();
-    const districtSeats = Math.floor(totalSeats / 2);
+    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+    
+    // For single race: 1 district seat only (simulate one race)
+    // For legislative: multiple districts + list seats
+    const districtSeats = raceType === 'single' ? 1 : Math.floor(totalSeats / 2);
     const listSeats = totalSeats - districtSeats;
     
     // Get electoral threshold
@@ -1399,6 +1627,11 @@ function calculateMMP(votes) {
     });
     const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
     
+    // Add descriptive note based on race type
+    const raceTypeNote = raceType === 'single' 
+        ? "Single District: Simulating 1 constituency race (FPTP) with compensatory list seats added to achieve proportionality"
+        : `Legislative Simulation: ${districtSeats} district races (FPTP) with ${listSeats} compensatory list seats for overall proportionality`;
+    
     return {
         type: 'mixed',
         results: results,
@@ -1410,14 +1643,20 @@ function calculateMMP(votes) {
         overhangSeats: overhangSeats,
         threshold: threshold,
         allocationMethod: allocationMethod,
-        disproportionality: disproportionality
+        disproportionality: disproportionality,
+        raceType: raceType,
+        note: raceTypeNote
     };
 }
 
 function calculateParallel(votes) {
     // Similar to MMP but non-compensatory
     const totalSeats = getSeatsCount();
-    const districtSeats = Math.floor(totalSeats / 2);
+    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+    
+    // For single race: 1 district seat only (simulate one race)
+    // For legislative: multiple districts + list seats
+    const districtSeats = raceType === 'single' ? 1 : Math.floor(totalSeats / 2);
     const listSeats = totalSeats - districtSeats;
     
     // Get electoral threshold
@@ -1506,6 +1745,11 @@ function calculateParallel(votes) {
     });
     const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
     
+    // Add descriptive note based on race type
+    const raceTypeNote = raceType === 'single'
+        ? "Single District: Simulating 1 constituency race (FPTP) with separate list seats (non-compensatory)"
+        : `Legislative Simulation: ${districtSeats} district races (FPTP) with ${listSeats} list seats calculated independently (non-compensatory)`;
+    
     return {
         type: 'mixed',
         results: results,
@@ -1513,10 +1757,11 @@ function calculateParallel(votes) {
         totalSeats: totalSeats,
         districtSeats: districtSeats,
         listSeats: listSeats,
-        note: "District and list seats calculated independently (non-compensatory)",
         threshold: threshold,
         allocationMethod: allocationMethod,
-        disproportionality: disproportionality
+        disproportionality: disproportionality,
+        raceType: raceType,
+        note: raceTypeNote
     };
 }
 
@@ -1647,10 +1892,17 @@ function displayResults(results, system) {
     let seatsChartData = [];
     
     if (results.type === 'candidate') {
+        // For candidate-based results, check if we should skip vote chart for ranking systems
+        const system = document.getElementById('electoralSystem').value;
+        const rankingSystems = ['irv', 'stv'];
+        const isRankingSystem = rankingSystems.includes(system);
+        
         // Add pie charts section
         html += '<div class="charts-container">';
-        html += '<canvas id="votesChart" width="400" height="400"></canvas>';
-        html += '<canvas id="winnerChart" width="400" height="400"></canvas>';
+        if (!isRankingSystem) {
+            html += '<canvas id="votesChart" width="400" height="400"></canvas>';
+        }
+        html += '<canvas id="winnerChart" width="400" height="400" style="' + (isRankingSystem ? 'margin: 0 auto;' : '') + '"></canvas>';
         html += '</div>';
         
         html += '<h3>Results by Candidate</h3>';
@@ -1661,36 +1913,44 @@ function displayResults(results, system) {
                         <div class="result-name">
                             ${r.name}
                             ${r.winner ? '<span class="winner-badge">WINNER</span>' : ''}
+                            ${r.elected ? '<span class="winner-badge">ELECTED</span>' : ''}
                         </div>
                         <div class="result-stats">
-                            ${r.party} • ${formatNumber(r.votes)} votes • ${r.percentage.toFixed(1)}%
+                            ${r.party} • ${formatNumber(r.votes || r.points || 0)} ${r.points !== undefined ? 'points' : 'votes'} • ${r.percentage ? r.percentage.toFixed(1) + '%' : ''}
                             ${r.note ? `<br><em>${r.note}</em>` : ''}
                         </div>
                     </div>
                     <div class="result-bar">
-                        <div class="result-bar-fill" style="width: ${r.percentage}%">
-                            ${r.percentage.toFixed(1)}%
+                        <div class="result-bar-fill" style="width: ${r.percentage || 0}%">
+                            ${r.percentage ? r.percentage.toFixed(1) + '%' : ''}
                         </div>
                     </div>
                 </div>
             `;
             
-            // Collect data for votes chart
-            votesChartData.push({
-                label: r.name,
-                value: r.votes,
-                color: r.color
-            });
+            // Collect data for charts
+            if (!isRankingSystem) {
+                votesChartData.push({
+                    label: r.name,
+                    value: r.votes || r.points || 0,
+                    color: r.color
+                });
+            }
             
-            // Collect data for winner chart (winner gets 1, others get 0)
-            if (r.winner) {
+            // Collect data for winner/elected chart
+            if (r.winner || r.elected) {
                 seatsChartData.push({
-                    label: r.name + ' (Winner)',
+                    label: r.name + (r.winner ? ' (Winner)' : ' (Elected)'),
                     value: 1,
                     color: r.color
                 });
             }
         });
+        
+        // Add round-by-round visualization for IRV
+        if (system === 'irv' && results.rounds && results.rounds.length > 0) {
+            html += createRoundByRoundDisplay(results.rounds, candidates, 'irv');
+        }
     } else if (results.type === 'party') {
         // Add charts section
         html += '<div class="charts-container">';
@@ -1926,9 +2186,9 @@ function displayResults(results, system) {
             html += `<p style="margin-top: 10px;"><strong>Quota needed:</strong> ${formatNumber(results.quota)} votes</p>`;
         }
         
-        // Display round-by-round flow for IRV/STV
-        if ((system === 'irv' || system === 'stv') && results.rounds && typeof displayRoundByRoundFlow === 'function') {
-            html += displayRoundByRoundFlow(results.rounds, candidates);
+        // Display round-by-round flow for STV
+        if (system === 'stv' && results.rounds && results.rounds.length > 0) {
+            html += createRoundByRoundDisplay(results.rounds, candidates, 'stv');
         }
     } else if (results.type === 'borda') {
         // Borda Count results
@@ -2127,13 +2387,21 @@ function displayResults(results, system) {
                 return;
             }
             
+            const system = document.getElementById('electoralSystem').value;
+            const rankingSystems = ['irv', 'stv'];
+            const isRankingSystem = rankingSystems.includes(system);
+            
             console.log('📊 Creating charts with data:', { 
                 votes: votesChartData.length, 
-                seats: seatsChartData.length 
+                seats: seatsChartData.length,
+                isRankingSystem: isRankingSystem
             });
             
-            const votesTitle = results.type === 'approval' ? 'Vote Distribution (Approvals)' : 'Vote Distribution';
-            window.createPieChart('votesChart', votesChartData, votesTitle);
+            // For non-ranking systems, show vote distribution chart
+            if (!isRankingSystem && votesChartData.length > 0) {
+                const votesTitle = results.type === 'approval' ? 'Vote Distribution (Approvals)' : 'Vote Distribution';
+                window.createPieChart('votesChart', votesChartData, votesTitle);
+            }
             
             // For party and mixed systems, use comparison bar chart instead of pie chart
             if ((results.type === 'party' || results.type === 'mixed') && results._comparisonData) {

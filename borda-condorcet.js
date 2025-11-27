@@ -11,17 +11,12 @@ function calculateNaturalThreshold(seats) {
  * Borda Count Calculation
  */
 async function calculateBorda(votes) {
-    // Get total votes from first-preference candidate votes
-    let totalVotes = 0;
-    candidates.forEach(candidate => {
-        const input = document.getElementById(`candidate-${candidate.id}`);
-        if (input) {
-            totalVotes += parseFormattedNumber(input.value);
-        }
-    });
+    // Get total votes from the totalVoters input for ranking systems
+    const totalVotersInput = document.getElementById('totalVoters');
+    let totalVotes = totalVotersInput ? parseFormattedNumber(totalVotersInput.value) : 0;
     
     if (totalVotes === 0) {
-        alert('Please enter candidate vote totals (first preference votes) to calculate ballot counts');
+        alert('Please enter the total number of voters');
         return null;
     }
     
@@ -142,17 +137,12 @@ async function calculateBorda(votes) {
  * Condorcet Method Calculation
  */
 async function calculateCondorcet(votes) {
-    // Get total votes from first-preference candidate votes
-    let totalVotes = 0;
-    candidates.forEach(candidate => {
-        const input = document.getElementById(`candidate-${candidate.id}`);
-        if (input) {
-            totalVotes += parseFormattedNumber(input.value);
-        }
-    });
+    // Get total votes from the totalVoters input for ranking systems
+    const totalVotersInput = document.getElementById('totalVoters');
+    let totalVotes = totalVotersInput ? parseFormattedNumber(totalVotersInput.value) : 0;
     
     if (totalVotes === 0) {
-        alert('Please enter candidate vote totals (first preference votes) to calculate ballot counts');
+        alert('Please enter the total number of voters');
         return null;
     }
     

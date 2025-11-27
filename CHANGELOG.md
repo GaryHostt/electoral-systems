@@ -5,6 +5,143 @@ All notable changes to the Electoral Systems Simulator project will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2025-11-27
+
+### ✨ Added
+- **Round-by-Round Visualization for IRV and STV**
+  - IRV now displays complete elimination rounds with vote transfers
+  - STV now displays election/elimination rounds with quota information
+  - Professional table layout with color-coded actions (eliminated/elected)
+  - Explanatory text for each system
+  - Transparent audit trail of all vote counting steps
+
+### 🐛 Fixed
+- **IRV Calculate Button** - Fixed undefined variable error (`rounds` → `roundNumber`)
+- **Party-List Auto-Fill** - Updated system name check to use 'party-list' instead of old 'party-list-closed/open' names
+- **MMP Race Type Handling** - Now properly distinguishes between single race (1 district) and legislative (5 districts + 5 list) modes
+- **Parallel Race Type Handling** - Now properly distinguishes between single race (1 district) and legislative (5 districts + 5 list) modes
+
+### 🎯 Improvements
+- **MMP Results** - Added descriptive notes explaining simulation type (single district vs legislative)
+- **Parallel Results** - Added descriptive notes explaining simulation type (single district vs legislative)
+- **Mixed Systems Clarity** - Both MMP and Parallel now clearly indicate whether simulating one race or full legislature
+
+### 📚 Documentation
+- Added `docs/ROUND_BY_ROUND_VISUALIZATION.md` - Full technical documentation
+- Added `docs/ROUND_BY_ROUND_SUMMARY.md` - Implementation summary
+- Added `test-round-by-round.html` - Visual test guide
+- Added `docs/ELECTORAL_SYSTEMS_REVIEW.md` - Expert review of all 6 systems
+- Added `docs/REVIEW_SUMMARY.md` - Executive summary of system validation
+- Added `docs/BUG_FIX_IRV_PR.md` - Bug fix documentation
+- Added `docs/SYSTEM_VERIFICATION_AND_FIX.md` - System verification and race type fix documentation
+
+### 🔧 Technical Changes
+- Enhanced `calculateIRV()` to track rounds data
+- Enhanced `calculateSTV()` to track rounds data
+- Enhanced `calculateMMP()` to detect and respond to race type selection
+- Enhanced `calculateParallel()` to detect and respond to race type selection
+- Integrated `createRoundByRoundDisplay()` function into results display
+- Updated `autofillVotes()` system name list
+- No breaking changes - backwards compatible
+
+---
+
+## [2.3.0] - 2025-11-27
+
+### ⚠️ Breaking Changes
+- **System Simplification** - Removed 7 electoral systems to focus on core, widely-used systems:
+  - **Two-Round System (TRS)** removed - Use IRV instead for majority-seeking elections
+  - **Borda Count** removed - Moved to roadmap for future implementation
+  - **Condorcet Method** removed - Moved to roadmap for future implementation
+  - **Block Voting** removed - May be re-implemented in future versions
+  - **Limited Voting** removed - May be re-implemented in future versions
+  - **Approval Voting** removed - May be re-implemented in future versions
+- **Party-List Merge** - Closed and Open List PR merged into single "Party-List PR" option
+  - Single system now supports both variants
+  - Description clarifies both closed and open list functionality
+
+### Added
+- **Ballot Value Retention** - When increasing number of ballot types for ranking systems, existing values are now preserved
+  - Names, percentages, and ranking selections all retained
+  - Validation automatically recalculates after update
+- **Simplified System Selection** - Dropdown now organized with 6 core systems:
+  - Plurality: FPTP
+  - Ranked: IRV, STV
+  - Proportional: Party-List PR
+  - Mixed: MMP, Parallel
+- **Roadmap Section in README** - Added clear documentation of deprecated and future systems
+
+### Changed
+- **Strategic Voting Button** - Now only visible for FPTP (removed TRS support)
+- **Ballot Generator Button** - Now only visible for IRV and STV (removed Borda/Condorcet support)
+- **Race Type Configuration** - Updated to reflect new system list:
+  - Single-only: FPTP, IRV
+  - Legislative-only: STV, Party-List PR
+  - Flexible: MMP, Parallel
+- **Arrow's Theorem Analysis** - Simplified to 6 core systems
+
+### Removed
+- `calculateTRS()` function and all TRS logic
+- `calculateBorda()` function (was in `borda-condorcet.js`)
+- `calculateCondorcet()` function (was in `borda-condorcet.js`)
+- `calculateBlock()` function
+- `calculateLimited()` function
+- `calculateApproval()` function
+- `calculateOpenList()` function - merged into `calculatePartyListPR()`
+- System descriptions for removed systems
+- Arrow's Theorem analysis for removed systems
+
+### Technical Details
+- Renamed `calculateClosedList()` to `calculatePartyListPR()`
+- Updated all system references throughout codebase
+- Cleaned up ranking system detection logic
+- Streamlined advanced features configuration
+
+### Migration Guide
+If you were using removed systems:
+- **TRS users**: Switch to IRV - provides similar majority-seeking behavior with ranked ballots
+- **Closed/Open List users**: Use "Party-List PR" - supports both closed and open list functionality
+- **Other removed systems**: Features may be re-implemented in future versions
+
+---
+
+## [Unreleased]
+
+### Added
+- **Named Ballot Types** - Optional name field for each ballot pattern to help users track voter groups
+- **AI Analysis Endpoint** - Implemented missing `/api/ai-analysis` endpoint in Python backend
+- **Race Type Restrictions** - Electoral systems now enforce appropriate simulation scope:
+  - Single-seat systems (FPTP, TRS, IRV, Borda, Condorcet) disable "Entire Legislature" option
+  - Legislative systems (STV, Closed/Open List PR) disable "Single Race" option
+  - Mixed and flexible systems (MMP, Parallel, Block, Limited, Approval) allow both options
+- **System Rationale in README** - Added detailed explanations for why each system uses specific simulation scopes
+- **Percentage Validation** - Real-time validation ensures ballot percentages add up to 100%
+  - ✅ Green message when percentages equal 100%
+  - ⚠️ Warning when under 100% (shows missing percentage)
+  - ❌ Error when over 100% (shows excess percentage)
+- **Total Voters Input** - For ranking systems (IRV/STV/Borda/Condorcet), added dedicated input for total number of voters
+
+### Changed
+- **Default Ballot Types** - Changed from 5 to 2 for simpler initial setup
+- **Race Type UI** - Grayed out and disabled inappropriate race type options based on electoral system
+- **Ranking System Input** - Candidate vote inputs hidden for IRV/STV/Borda/Condorcet
+  - Replaced with informational message directing users to ranking ballots section
+  - Added "Total Number of Voters" input field instead
+  - Percentages now calculated from this total
+- **Advanced Features Buttons** - Dynamic visibility based on system:
+  - "Generate Realistic Ballots" only shown for ranking systems
+  - "Simulate Strategic Voting" only shown for FPTP and TRS
+- **Chart Display for Ranking Systems** - Only show winner/elected chart (centered), skip vote distribution chart
+- **Results Table** - Properly displays percentages for Borda Count (points) and all ranking systems
+
+### Fixed
+- **AI Analysis Error** - Fixed "Failed to fetch" error by properly implementing backend proxy endpoint
+- Backend now includes AI analysis feature in health check
+- **Percentage Display** - Results table now correctly shows percentages calculated from total votes/ballots
+- **Chart Centering** - Winner chart properly centered for ranking systems when vote chart is hidden
+
+---
+
 ## [2.2.0] - 2025-11-27
 
 ### Added

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chart Debug Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .test-box { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        button { background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        canvas { border: 1px solid #ddd; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Chart.js Debugging</h1>
+    
+    <div class="test-box">
+        <h2>Test 1: Check Script Loading</h2>
+        <div id="test1Result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h2>Test 2: Create Simple Pie Chart</h2>
+        <canvas id="testPie" width="400" height="400"></canvas>
+        <button onclick="createTestPie()">Create Pie Chart</button>
+        <div id="test2Result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h2>Test 3: Test Wrapper Functions</h2>
+        <canvas id="testWrapper" width="400" height="400"></canvas>
+        <button onclick="testWrapper()">Test createPieChart()</button>
+        <div id="test3Result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h2>Test 4: Full Simulation Test</h2>
+        <button onclick="runFullTest()">Run Full Simulation</button>
+        <div id="test4Result"></div>
+    </div>
+
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Load wrapper -->
+    <script src="chartjs-wrapper.js"></script>
+    
+    <script>
+        // Test 1: Check loading
+        window.addEventListener('DOMContentLoaded', function() {
+            const result = document.getElementById('test1Result');
+            let html = '';
+            
+            html += `<p class="${typeof Chart !== 'undefined' ? 'success' : 'error'}">Chart.js: ${typeof Chart !== 'undefined' ? '✅ LOADED' : '❌ NOT LOADED'}</p>`;
+            
+            if (typeof Chart !== 'undefined') {
+                html += `<p class="success">Chart.js version: ${Chart.version || 'Unknown'}</p>`;
+            }
+            
+            html += `<p class="${typeof createPieChart !== 'undefined' ? 'success' : 'error'}">createPieChart: ${typeof createPieChart !== 'undefined' ? '✅ LOADED' : '❌ NOT LOADED'}</p>`;
+            html += `<p class="${typeof createComparisonBarChart !== 'undefined' ? 'success' : 'error'}">createComparisonBarChart: ${typeof createComparisonBarChart !== 'undefined' ? '✅ LOADED' : '❌ NOT LOADED'}</p>`;
+            
+            result.innerHTML = html;
+        });
+        
+        // Test 2: Simple Chart.js test
+        function createTestPie() {
+            const result = document.getElementById('test2Result');
+            
+            try {
+                const ctx = document.getElementById('testPie').getContext('2d');
+                const myChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Red', 'Blue', 'Green'],
+                        datasets: [{
+                            data: [30, 50, 20],
+                            backgroundColor: ['#ff0000', '#0000ff', '#00ff00']
+                        }]
+                    }
+                });
+                result.innerHTML = '<p class="success">✅ Chart.js works! Pie chart created.</p>';
+            } catch (error) {
+                result.innerHTML = `<p class="error">❌ Error: ${error.message}</p><pre>${error.stack}</pre>`;
+            }
+        }
+        
+        // Test 3: Wrapper function test
+        function testWrapper() {
+            const result = document.getElementById('test3Result');
+            
+            try {
+                const data = [
+                    { label: 'Candidate A', value: 1000, color: '#ff0000' },
+                    { label: 'Candidate B', value: 1500, color: '#0000ff' },
+                    { label: 'Candidate C', value: 800, color: '#00ff00' }
+                ];
+                
+                createPieChart('testWrapper', data, 'Test Chart');
+                result.innerHTML = '<p class="success">✅ Wrapper function works!</p>';
+            } catch (error) {
+                result.innerHTML = `<p class="error">❌ Error: ${error.message}</p><pre>${error.stack}</pre>`;
+            }
+        }
+        
+        // Test 4: Full simulation
+        function runFullTest() {
+            const result = document.getElementById('test4Result');
+            result.innerHTML = '<p>Running comprehensive test...</p>';
+            
+            let html = '';
+            
+            // Check all dependencies
+            html += '<h4>Dependency Check:</h4>';
+            html += `<p>Chart: ${typeof Chart}</p>`;
+            html += `<p>createPieChart: ${typeof createPieChart}</p>`;
+            html += `<p>chartInstances: ${typeof chartInstances}</p>`;
+            
+            // Try creating a chart
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.id = 'dynamicTest';
+                canvas.width = 400;
+                canvas.height = 400;
+                document.body.appendChild(canvas);
+                
+                const testData = [
+                    { label: 'Test A', value: 100, color: '#3498db' },
+                    { label: 'Test B', value: 200, color: '#e74c3c' }
+                ];
+                
+                createPieChart('dynamicTest', testData, 'Dynamic Test');
+                html += '<p class="success">✅ Dynamic chart creation works!</p>';
+                
+                setTimeout(() => canvas.remove(), 2000);
+            } catch (error) {
+                html += `<p class="error">❌ Dynamic test failed: ${error.message}</p>`;
+            }
+            
+            result.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+

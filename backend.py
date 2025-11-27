@@ -355,9 +355,95 @@ def health_check():
             'borda_count',
             'condorcet_method',
             'multi_district_mmp',
-            'multi_district_parallel'
+            'multi_district_parallel',
+            'ai_analysis'
         ]
     })
+
+@app.route('/api/ai-analysis', methods=['POST', 'OPTIONS'])
+def ai_analysis():
+    """
+    Proxy endpoint for Mistral AI analysis to keep API key secure
+    
+    Request body:
+    {
+        "election_data": "prompt text"
+    }
+    """
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        return response
+    
+    try:
+        if not MISTRAL_API_KEY:
+            return jsonify({
+                'success': False,
+                'error': 'MISTRAL_API_KEY not configured in environment'
+            }), 500
+        
+        data = request.json
+        election_prompt = data.get('election_data', '')
+        
+        if not election_prompt:
+            return jsonify({
+                'success': False,
+                'error': 'No election data provided'
+            }), 400
+        
+        # Call Mistral AI API
+        import requests as req
+        
+        mistral_response = req.post(
+            'https://api.mistral.ai/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {MISTRAL_API_KEY}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'model': 'mistral-small-latest',
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'You are a political science expert specializing in comparative electoral systems and voting theory.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': election_prompt
+                    }
+                ],
+                'max_tokens': 300,
+                'temperature': 0.7
+            },
+            timeout=30
+        )
+        
+        if mistral_response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'error': f'Mistral API error: {mistral_response.status_code}',
+                'message': mistral_response.text
+            }), mistral_response.status_code
+        
+        mistral_data = mistral_response.json()
+        analysis = mistral_data['choices'][0]['message']['content']
+        
+        return jsonify({
+            'success': True,
+            'analysis': analysis
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in AI analysis: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 @app.route('/api/multi-district/mmp', methods=['POST'])

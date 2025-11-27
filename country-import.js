@@ -216,7 +216,7 @@ window.autofillVotes = function() {
     });
     
     // Fill party votes (for systems that use them)
-    const systemsWithPartyVote = ['party-list-closed', 'party-list-open', 'mmp', 'parallel'];
+    const systemsWithPartyVote = ['party-list', 'mmp', 'parallel'];
     if (systemsWithPartyVote.includes(system)) {
         parties.forEach(party => {
             const randomFactor = 0.3 + Math.random() * variation;

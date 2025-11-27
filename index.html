@@ -25,18 +25,11 @@
                 <select id="electoralSystem" class="system-select">
                     <option value="">-- Select an Electoral System --</option>
                     <option value="fptp">First-Past-the-Post (FPTP) / Single-Member Plurality (SMP)</option>
-                    <option value="trs">Two-Round System (TRS) / Runoff Voting</option>
                     <option value="irv">Instant-Runoff Voting (IRV) / Ranked-Choice Voting (RCV)</option>
-                    <option value="borda">Borda Count (Positional Voting)</option>
-                    <option value="condorcet">Condorcet Method (Pairwise Comparison)</option>
-                    <option value="party-list-closed">Party-List Proportional Representation - Closed List</option>
-                    <option value="party-list-open">Party-List Proportional Representation - Open List</option>
+                    <option value="party-list">Party-List Proportional Representation (PR)</option>
                     <option value="stv">Single Transferable Vote (STV)</option>
                     <option value="mmp">Mixed-Member Proportional (MMP) / Additional Member System (AMS)</option>
                     <option value="parallel">Parallel Voting / Mixed-Member Majoritarian (MMM)</option>
-                    <option value="block">Block Voting (Plurality-at-Large)</option>
-                    <option value="limited">Limited Voting (LV)</option>
-                    <option value="approval">Approval Voting</option>
                 </select>
                 <div id="systemDescription" class="system-description"></div>
             </section>
@@ -269,12 +262,12 @@
                         Election Scope:
                     </label>
                     <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-                        <label class="radio-option">
-                            <input type="radio" name="raceType" value="single" checked onchange="updateRaceType()">
+                        <label class="radio-option" id="singleRaceOption">
+                            <input type="radio" name="raceType" id="singleRaceRadio" value="single" checked onchange="updateRaceType()">
                             <span>🏁 Single Race (1 seat or district)</span>
                         </label>
-                        <label class="radio-option">
-                            <input type="radio" name="raceType" value="legislative" onchange="updateRaceType()">
+                        <label class="radio-option" id="legislativeRaceOption">
+                            <input type="radio" name="raceType" id="legislativeRaceRadio" value="legislative" onchange="updateRaceType()">
                             <span>🏛️ Entire Legislature (10 seats)</span>
                         </label>
                     </div>
@@ -325,7 +318,7 @@
                             id="numBallotTypes" 
                             min="1" 
                             max="20" 
-                            value="5" 
+                            value="2" 
                             style="width: 80px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"
                             onchange="updateRankingBallots()"
                         >

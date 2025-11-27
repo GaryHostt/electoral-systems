@@ -1,10 +1,9 @@
-# 🗳️ Electoral Systems Simulator v2.0
+# 🗳️ Electoral Systems Simulator v2.3
 
-A comprehensive, educational web application for simulating and comparing 13 different electoral systems, with advanced computational features and visualizations.
+A comprehensive, educational web application for simulating and comparing 6 core electoral systems, with advanced computational features and visualizations.
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue)
-![Tests](https://img.shields.io/badge/tests-14%2F14%20passing-success)
-![Coverage](https://img.shields.io/badge/coverage-100%25-success)
+![Version](https://img.shields.io/badge/version-2.3.0-blue)
+![Tests](https://img.shields.io/badge/tests-passing-success)
 ![Charts](https://img.shields.io/badge/charting-Chart.js-brightgreen)
 
 ---
@@ -25,30 +24,44 @@ A comprehensive, educational web application for simulating and comparing 13 dif
 
 ## ✨ Features
 
-### 13 Electoral Systems Supported
+### 6 Core Electoral Systems Supported
 
-#### Winner-Take-All Systems
-- **First-Past-the-Post (FPTP)** - Simple plurality voting
-- **Two-Round System (TRS)** - Runoff between top two
-- **Block Voting** - Multi-seat plurality
-- **Limited Voting** - Restricted votes for minority representation
+#### Plurality Systems
+- **First-Past-the-Post (FPTP)** - Simple plurality voting  
+  *Individual race simulation: Single-seat system where each district elects one member*
 
 #### Ranked-Choice Systems
-- **Instant-Runoff Voting (IRV/RCV)** - Ranked elimination with transfers
-- **Single Transferable Vote (STV)** - Multi-winner proportional
-- **Borda Count** ⭐ NEW - Positional voting (n-1, n-2, ..., 0)
-- **Condorcet Method** ⭐ NEW - Pairwise comparison winner
+- **Instant-Runoff Voting (IRV/RCV)** - Ranked elimination with transfers  
+  *Individual race simulation: Single-winner election using ranked choices to simulate runoffs*
+- **Single Transferable Vote (STV)** - Multi-winner proportional  
+  *Legislative simulation: Fundamentally proportional and multi-winner, requires multiple seats to demonstrate vote transfers*
 
 #### Proportional Systems
-- **Closed List PR** - Party-controlled seat allocation
-- **Open List PR** - Voter influence on candidates
+- **Party-List PR** - Proportional seat allocation by party  
+  *Legislative simulation: Allocates seats proportionally using divisor methods at national/regional level*
+  *Supports both Closed List (party-controlled) and Open List (voter influence on candidates)*
 
 #### Mixed Systems
-- **Mixed-Member Proportional (MMP)** - Compensatory proportionality
-- **Parallel Voting (MMM)** - Independent tiers
+- **Mixed-Member Proportional (MMP)** - Compensatory proportionality  
+  *Both simulation types: Combines district races (FPTP) with proportional top-up layer for overall proportionality*
+- **Parallel Voting (MMM)** - Independent tiers  
+  *Both simulation types: District races plus separate proportional list without compensatory adjustment*
 
-#### Approval-Based
-- **Approval Voting** - Approve multiple candidates
+---
+
+### 🗺️ System Roadmap
+
+#### Deprecated Systems (v2.3)
+For simplicity and focus, the following systems have been removed:
+- **Two-Round System (TRS)** - *Recommended alternative: Use IRV instead, which achieves similar majority-seeking goals through ranked-choice elimination*
+- **Block Voting** - *May be re-implemented in future versions*
+- **Limited Voting** - *May be re-implemented in future versions*
+- **Approval Voting** - *May be re-implemented in future versions*
+
+#### Future Roadmap
+Systems planned for future implementation:
+- **Borda Count** - Positional voting system (n-1, n-2, ..., 0 points)
+- **Condorcet Method** - Pairwise comparison winner
 
 ---
 
