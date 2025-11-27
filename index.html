@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electoral Systems Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗳️ Electoral Systems Simulator</h1>
+            <p class="subtitle">Compare different voting systems and understand their implications</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Electoral System Selection -->
+            <section class="card">
+                <h2>1. Choose Electoral System</h2>
+                <select id="electoralSystem" class="system-select">
+                    <option value="">-- Select an Electoral System --</option>
+                    <option value="fptp">First-Past-the-Post (FPTP) / Single-Member Plurality (SMP)</option>
+                    <option value="trs">Two-Round System (TRS) / Runoff Voting</option>
+                    <option value="irv">Instant-Runoff Voting (IRV) / Ranked-Choice Voting (RCV)</option>
+                    <option value="party-list-closed">Party-List Proportional Representation - Closed List</option>
+                    <option value="party-list-open">Party-List Proportional Representation - Open List</option>
+                    <option value="stv">Single Transferable Vote (STV)</option>
+                    <option value="mmp">Mixed-Member Proportional (MMP) / Additional Member System (AMS)</option>
+                    <option value="parallel">Parallel Voting / Mixed-Member Majoritarian (MMM)</option>
+                    <option value="block">Block Voting (Plurality-at-Large)</option>
+                    <option value="limited">Limited Voting (LV)</option>
+                    <option value="approval">Approval Voting</option>
+                </select>
+                <div id="systemDescription" class="system-description"></div>
+            </section>
+
+            <!-- Party Management Section -->
+            <section class="card" id="partiesSection" style="display: none;">
+                <h2><span class="section-number">2</span>. Political Parties</h2>
+                <div class="input-group">
+                    <input type="text" id="partyName" placeholder="Party name (e.g., Progressive Party)">
+                    <div class="color-picker-wrapper">
+                        <div class="color-presets" id="colorPresets">
+                            <button type="button" class="color-preset" data-color="#e74c3c" style="background: #e74c3c;" title="Red"></button>
+                            <button type="button" class="color-preset" data-color="#3498db" style="background: #3498db;" title="Blue"></button>
+                            <button type="button" class="color-preset" data-color="#2ecc71" style="background: #2ecc71;" title="Green"></button>
+                            <button type="button" class="color-preset" data-color="#f39c12" style="background: #f39c12;" title="Orange"></button>
+                            <button type="button" class="color-preset" data-color="#9b59b6" style="background: #9b59b6;" title="Purple"></button>
+                            <button type="button" class="color-preset" data-color="#1abc9c" style="background: #1abc9c;" title="Teal"></button>
+                            <button type="button" class="color-preset" data-color="#e91e63" style="background: #e91e63;" title="Pink"></button>
+                            <button type="button" class="color-preset" data-color="#34495e" style="background: #34495e;" title="Dark Gray"></button>
+                            <button type="button" class="color-preset" data-color="#f1c40f" style="background: #f1c40f;" title="Yellow"></button>
+                            <button type="button" class="color-preset custom-color" onclick="document.getElementById('partyColorPicker').click();" title="Custom Color">
+                                <span style="font-size: 16px;">+</span>
+                            </button>
+                        </div>
+                        <input type="color" id="partyColorPicker" style="display: none;" value="#3498db">
+                        <input type="hidden" id="partyColor" value="#3498db">
+                    </div>
+                    <button onclick="addParty()" class="btn-primary">Add Party</button>
+                </div>
+                <div id="partiesList" class="items-list"></div>
+            </section>
+
+            <!-- Candidate Management Section -->
+            <section class="card" id="candidatesSection" style="display: none;">
+                <h2><span class="section-number">3</span>. Candidates</h2>
+                <div class="input-group">
+                    <input type="text" id="candidateName" placeholder="Candidate name">
+                    <select id="candidateParty">
+                        <option value="">Select Party</option>
+                    </select>
+                    <button onclick="addCandidate()" class="btn-primary">Add Candidate</button>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <button onclick="autoGenerateCandidates()" class="btn-secondary">
+                        ⚡ Auto-Generate One Candidate per Party
+                    </button>
+                </div>
+                <div id="candidatesList" class="items-list"></div>
+            </section>
+
+            <!-- Voting Input Section -->
+            <section class="card" id="votingSection" style="display: none;">
+                <h2><span class="section-number">4</span>. Voting Results</h2>
+                
+                <!-- Race Type Selection -->
+                <div class="race-type-selector">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #667eea;">
+                        Election Scope:
+                    </label>
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <label class="radio-option">
+                            <input type="radio" name="raceType" value="single" checked onchange="updateRaceType()">
+                            <span>🏁 Single Race (1 seat or district)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="raceType" value="legislative" onchange="updateRaceType()">
+                            <span>🏛️ Entire Legislature (10 seats)</span>
+                        </label>
+                    </div>
+                    <p id="raceTypeDescription" style="color: #666; font-size: 0.9em; font-style: italic; margin-bottom: 20px;">
+                        Single race: Simulate one electoral district or seat (e.g., one House district).
+                    </p>
+                </div>
+                
+                <div id="electoralThresholdContainer" style="display: none; margin-bottom: 20px;">
+                    <label for="electoralThreshold" style="display: block; margin-bottom: 8px; font-weight: 600; color: #667eea;">
+                        Electoral Threshold (%)
+                    </label>
+                    <input type="number" id="electoralThreshold" min="0" max="100" step="0.1" value="5" 
+                           style="width: 150px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                    <p style="margin-top: 8px; color: #666; font-size: 0.9em; font-style: italic;">
+                        Minimum vote share (%) a party needs to win seats. Common values: 3%, 4%, or 5%
+                    </p>
+                </div>
+                <div id="votingInputs"></div>
+                <button onclick="calculateResults()" class="btn-calculate">🗳️ Calculate Election Results</button>
+            </section>
+
+            <!-- Results Section -->
+            <section class="card results-section" id="resultsSection" style="display: none;">
+                <h2>📊 Election Results</h2>
+                <div id="results"></div>
+                
+                <h3>⚖️ Arrow's Impossibility Theorem Analysis</h3>
+                <div id="arrowAnalysis" class="arrow-analysis"></div>
+            </section>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
