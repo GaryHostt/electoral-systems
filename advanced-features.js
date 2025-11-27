@@ -238,13 +238,24 @@ async function saveCurrentScenario() {
     }
 }
 
-// Check URL for shared scenario on load
+// Check URL for shared scenario on load (improved with URLSearchParams)
 window.addEventListener('DOMContentLoaded', async () => {
-    const path = window.location.pathname;
-    const match = path.match(/\/scenario\/([a-f0-9]+)/);
+    // Check both pathname and search params for scenario ID
+    let scenarioId = null;
     
-    if (match && backendAvailable) {
-        const scenarioId = match[1];
+    // Method 1: Check URL path (/scenario/abc123)
+    const pathMatch = window.location.pathname.match(/\/scenario\/([a-f0-9]+)/);
+    if (pathMatch) {
+        scenarioId = pathMatch[1];
+    }
+    
+    // Method 2: Check query parameters (?scenario=abc123)
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('scenario')) {
+        scenarioId = params.get('scenario');
+    }
+    
+    if (scenarioId && backendAvailable) {
         try {
             const scenario = await ElectoralAPI.loadScenario(scenarioId);
             if (scenario) {
@@ -263,19 +274,28 @@ window.addEventListener('DOMContentLoaded', async () => {
                 setTimeout(() => {
                     Object.entries(scenario.data.votes.parties).forEach(([id, count]) => {
                         const input = document.getElementById(`party-${id}`);
-                        if (input) input.value = count;
+                        if (input) {
+                            input.value = count;
+                            // Update state
+                            if (voteState.parties) voteState.parties[id] = count;
+                        }
                     });
                     
                     Object.entries(scenario.data.votes.candidates).forEach(([id, count]) => {
                         const input = document.getElementById(`candidate-${id}`);
-                        if (input) input.value = count;
+                        if (input) {
+                            input.value = count;
+                            // Update state
+                            if (voteState.candidates) voteState.candidates[id] = count;
+                        }
                     });
                 }, 500);
                 
-                alert(`Loaded scenario: ${scenario.name}`);
+                alert(`✅ Loaded scenario: ${scenario.name}`);
             }
         } catch (error) {
             console.error('Error loading scenario:', error);
+            alert('Failed to load scenario. It may have been deleted or the ID is invalid.');
         }
     }
 });
