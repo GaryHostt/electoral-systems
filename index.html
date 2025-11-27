@@ -44,6 +44,100 @@
             <!-- Party Management Section -->
             <section class="card" id="partiesSection" style="display: none;">
                 <h2><span class="section-number">2</span>. Political Parties</h2>
+                
+                <!-- Import Countries Feature - Collapsible -->
+                <div class="country-import-container">
+                    <button onclick="toggleCountryImport()" class="country-toggle-btn">
+                        <span id="countryToggleIcon">▶</span> 🌍 Import Political Parties from Country
+                    </button>
+                    
+                    <div id="countryImportPanel" class="country-import-panel" style="display: none;">
+                        <p style="margin-bottom: 15px; color: #666;">Select a country to import its major political parties with authentic names and colors:</p>
+                        <div class="country-grid">
+                            <button onclick="importCountryParties('USA')" class="country-btn">
+                                <span class="country-flag">🇺🇸</span>
+                                <span class="country-name">USA</span>
+                                <span class="country-count">4 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Canada')" class="country-btn">
+                                <span class="country-flag">🇨🇦</span>
+                                <span class="country-name">Canada</span>
+                                <span class="country-count">5 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Taiwan')" class="country-btn">
+                                <span class="country-flag">🇹🇼</span>
+                                <span class="country-name">Taiwan</span>
+                                <span class="country-count">4 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('France')" class="country-btn">
+                                <span class="country-flag">🇫🇷</span>
+                                <span class="country-name">France</span>
+                                <span class="country-count">6 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Germany')" class="country-btn">
+                                <span class="country-flag">🇩🇪</span>
+                                <span class="country-name">Germany</span>
+                                <span class="country-count">6 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Chile')" class="country-btn">
+                                <span class="country-flag">🇨🇱</span>
+                                <span class="country-name">Chile</span>
+                                <span class="country-count">6 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Spain')" class="country-btn">
+                                <span class="country-flag">🇪🇸</span>
+                                <span class="country-name">Spain</span>
+                                <span class="country-count">5 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Italy')" class="country-btn">
+                                <span class="country-flag">🇮🇹</span>
+                                <span class="country-name">Italy</span>
+                                <span class="country-count">6 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Finland')" class="country-btn">
+                                <span class="country-flag">🇫🇮</span>
+                                <span class="country-name">Finland</span>
+                                <span class="country-count">8 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Austria')" class="country-btn">
+                                <span class="country-flag">🇦🇹</span>
+                                <span class="country-name">Austria</span>
+                                <span class="country-count">5 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Portugal')" class="country-btn">
+                                <span class="country-flag">🇵🇹</span>
+                                <span class="country-name">Portugal</span>
+                                <span class="country-count">5 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Poland')" class="country-btn">
+                                <span class="country-flag">🇵🇱</span>
+                                <span class="country-name">Poland</span>
+                                <span class="country-count">6 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Ireland')" class="country-btn">
+                                <span class="country-flag">🇮🇪</span>
+                                <span class="country-name">Ireland</span>
+                                <span class="country-count">5 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Estonia')" class="country-btn">
+                                <span class="country-flag">🇪🇪</span>
+                                <span class="country-name">Estonia</span>
+                                <span class="country-count">5 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Latvia')" class="country-btn">
+                                <span class="country-flag">🇱🇻</span>
+                                <span class="country-name">Latvia</span>
+                                <span class="country-count">6 parties</span>
+                            </button>
+                            <button onclick="importCountryParties('Lithuania')" class="country-btn">
+                                <span class="country-flag">🇱🇹</span>
+                                <span class="country-name">Lithuania</span>
+                                <span class="country-count">6 parties</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="input-group">
                     <input type="text" id="partyName" placeholder="Party name (e.g., Progressive Party)">
                     <div class="color-picker-wrapper">
@@ -90,6 +184,15 @@
             <!-- Voting Input Section -->
             <section class="card" id="votingSection" style="display: none;">
                 <h2><span class="section-number">4</span>. Voting Results</h2>
+                
+                <!-- Autofill Button -->
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+                    <h4 style="margin: 0 0 10px 0; color: #856404;">⚡ Quick Fill</h4>
+                    <button onclick="autofillVotes()" class="btn-secondary" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                        🎲 Auto-Fill Random Votes
+                    </button>
+                    <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #856404;">Automatically generates realistic vote totals for all candidates/parties</p>
+                </div>
                 
                 <!-- Advanced Features (Python Backend) -->
                 <div id="advancedFeatures" style="display: none; background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
@@ -205,6 +308,35 @@
                 </div>
                 
                 <div id="votingInputs"></div>
+                
+                <!-- Ranking Ballots Section (for IRV, STV, Borda, Condorcet) -->
+                <div id="rankingBallotsSection" style="display: none; margin-top: 25px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">📊 Ranking Ballots</h3>
+                    <p style="color: #666; margin-bottom: 15px;">
+                        Define different ballot types showing voter preferences. Each ballot type represents a group of voters with the same ranking preferences.
+                    </p>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                        <label for="numBallotTypes" style="font-weight: 600; margin-right: 10px;">
+                            Number of Ballot Types:
+                        </label>
+                        <input 
+                            type="number" 
+                            id="numBallotTypes" 
+                            min="1" 
+                            max="20" 
+                            value="5" 
+                            style="width: 80px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"
+                            onchange="updateRankingBallots()"
+                        >
+                        <span style="margin-left: 10px; color: #666; font-size: 0.9em;">
+                            (Max: 20 different ballot patterns)
+                        </span>
+                    </div>
+                    
+                    <div id="rankingBallotsContainer"></div>
+                </div>
+                
                 <button onclick="calculateResults()" class="btn-calculate">🗳️ Calculate Election Results</button>
             </section>
 
@@ -233,7 +365,20 @@
 
     <!-- Chart.js for improved visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="diagnostic.js"></script>
+    <script>
+        // Verify Chart.js loaded
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof Chart === 'undefined') {
+                console.error('❌ Chart.js failed to load from CDN');
+                alert('Chart library failed to load. Charts may not display correctly.');
+            } else {
+                console.log('✅ Chart.js loaded successfully', Chart.version);
+            }
+        });
+    </script>
+    <script src="chartjs-wrapper.js"></script>
+    <script src="tie-breaking.js"></script>
+    <script src="round-by-round.js"></script>
     <script src="calculations.js"></script>
     <script src="state-manager.js"></script>
     <script src="api-client.js"></script>
@@ -241,6 +386,7 @@
     <script src="enhanced-viz.js"></script>
     <script src="advanced-features.js"></script>
     <script src="ai-analysis-main.js"></script>
+    <script src="country-import.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

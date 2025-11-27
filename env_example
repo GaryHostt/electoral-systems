@@ -10,3 +10,5 @@ FLASK_DEBUG=True
 MAX_VOTERS=1000000
 MAX_CANDIDATES=50
 
+# API Keys (keep secure!)
+MISTRAL_API_KEY=your_mistral_api_key_here

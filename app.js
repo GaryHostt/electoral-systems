@@ -30,241 +30,6 @@ function formatNumberInput(event) {
 }
 
 // Function to draw a pie chart
-function drawPieChart(canvasId, data, title) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 40;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Calculate total
-    const total = data.reduce((sum, item) => sum + item.value, 0);
-    
-    if (total === 0) {
-        ctx.fillStyle = '#666';
-        ctx.font = '16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('No data', centerX, centerY);
-        return;
-    }
-    
-    // Draw pie slices
-    let currentAngle = -Math.PI / 2; // Start at top
-    
-    data.forEach(item => {
-        const sliceAngle = (item.value / total) * 2 * Math.PI;
-        
-        // Draw slice
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-        ctx.closePath();
-        ctx.fillStyle = item.color;
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // Draw label if slice is large enough
-        if (sliceAngle > 0.1) {
-            const labelAngle = currentAngle + sliceAngle / 2;
-            const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
-            const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
-            
-            const percentage = ((item.value / total) * 100).toFixed(1);
-            
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 14px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 3;
-            ctx.strokeText(percentage + '%', labelX, labelY);
-            ctx.fillText(percentage + '%', labelX, labelY);
-        }
-        
-        currentAngle += sliceAngle;
-    });
-    
-    // Draw title
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(title, centerX, 25);
-    
-    // Draw legend
-    const legendX = 10;
-    let legendY = canvas.height - (data.length * 25) - 10;
-    
-    data.forEach(item => {
-        // Color box
-        ctx.fillStyle = item.color;
-        ctx.fillRect(legendX, legendY, 20, 20);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(legendX, legendY, 20, 20);
-        
-        // Label
-        ctx.fillStyle = '#333';
-        ctx.font = '12px sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(item.label, legendX + 25, legendY + 14);
-        
-        legendY += 25;
-    });
-}
-
-// Function to draw comparison bar chart (votes vs seats)
-function drawComparisonBarChart(canvasId, data, title) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Draw title
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(title, width / 2, 25);
-    
-    if (data.length === 0) {
-        ctx.fillStyle = '#666';
-        ctx.font = '16px sans-serif';
-        ctx.fillText('No data', width / 2, height / 2);
-        return;
-    }
-    
-    // Layout
-    const topMargin = 50;
-    const bottomMargin = 80;
-    const leftMargin = 60;
-    const rightMargin = 20;
-    const chartHeight = height - topMargin - bottomMargin;
-    const barHeight = Math.min(30, chartHeight / (data.length * 2.5));
-    const barSpacing = barHeight * 0.3;
-    const groupSpacing = barHeight * 1.5;
-    
-    // Find max percentage for scaling
-    const maxPct = Math.max(...data.map(d => Math.max(d.votePct, d.seatPct)));
-    const scale = (width - leftMargin - rightMargin) / Math.max(maxPct, 100);
-    
-    // Draw axes
-    ctx.strokeStyle = '#999';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(leftMargin, topMargin);
-    ctx.lineTo(leftMargin, topMargin + chartHeight);
-    ctx.lineTo(width - rightMargin, topMargin + chartHeight);
-    ctx.stroke();
-    
-    // Draw percentage gridlines
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 100; i += 20) {
-        const x = leftMargin + (i * scale);
-        ctx.beginPath();
-        ctx.moveTo(x, topMargin);
-        ctx.lineTo(x, topMargin + chartHeight);
-        ctx.stroke();
-        
-        // Label
-        ctx.fillStyle = '#666';
-        ctx.font = '12px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(i + '%', x, topMargin + chartHeight + 15);
-    }
-    
-    // Draw bars
-    let y = topMargin + 20;
-    
-    data.forEach((item, index) => {
-        // Party label
-        ctx.fillStyle = '#333';
-        ctx.font = 'bold 14px sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillText(item.label, leftMargin - 5, y + barHeight);
-        
-        // Vote bar
-        const voteWidth = item.votePct * scale;
-        ctx.fillStyle = item.color;
-        ctx.fillRect(leftMargin, y, voteWidth, barHeight);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(leftMargin, y, voteWidth, barHeight);
-        
-        // Vote label
-        ctx.fillStyle = '#333';
-        ctx.font = '12px sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Votes: ${item.votePct.toFixed(1)}%`, leftMargin + voteWidth + 5, y + barHeight / 2 + 4);
-        
-        y += barHeight + barSpacing;
-        
-        // Seat bar (lighter shade)
-        const seatWidth = item.seatPct * scale;
-        const lighterColor = adjustColorBrightness(item.color, 40);
-        ctx.fillStyle = lighterColor;
-        ctx.fillRect(leftMargin, y, seatWidth, barHeight);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(leftMargin, y, seatWidth, barHeight);
-        
-        // Seat label
-        ctx.fillStyle = '#333';
-        ctx.font = '12px sans-serif';
-        ctx.fillText(`Seats: ${item.seatPct.toFixed(1)}%`, leftMargin + seatWidth + 5, y + barHeight / 2 + 4);
-        
-        y += barHeight + groupSpacing;
-    });
-    
-    // Legend
-    const legendY = height - 50;
-    ctx.fillStyle = item => item.color;
-    ctx.fillRect(leftMargin, legendY, 20, 15);
-    ctx.strokeStyle = '#333';
-    ctx.strokeRect(leftMargin, legendY, 20, 15);
-    ctx.fillStyle = '#333';
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('Vote Share', leftMargin + 25, legendY + 11);
-    
-    const lighterDemo = adjustColorBrightness('#667eea', 40);
-    ctx.fillStyle = lighterDemo;
-    ctx.fillRect(leftMargin + 120, legendY, 20, 15);
-    ctx.strokeRect(leftMargin + 120, legendY, 20, 15);
-    ctx.fillStyle = '#333';
-    ctx.fillText('Seat Share', leftMargin + 145, legendY + 11);
-}
-
-// Helper function to adjust color brightness
-function adjustColorBrightness(color, amount) {
-    let usePound = false;
-    if (color[0] === "#") {
-        color = color.slice(1);
-        usePound = true;
-    }
-    
-    const num = parseInt(color, 16);
-    let r = (num >> 16) + amount;
-    let g = ((num >> 8) & 0x00FF) + amount;
-    let b = (num & 0x0000FF) + amount;
-    
-    r = Math.max(Math.min(255, r), 0);
-    g = Math.max(Math.min(255, g), 0);
-    b = Math.max(Math.min(255, b), 0);
-    
-    return (usePound ? "#" : "") + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
-}
 
 // System descriptions
 const systemDescriptions = {
@@ -781,7 +546,16 @@ function updateVotingInputs() {
     
     // Add ranking inputs for IRV and STV
     if (isRankingSystem && candidates.length > 0) {
-        html += generateRankingInputs(system);
+        const rankingSection = document.getElementById('rankingBallotsSection');
+        if (rankingSection) {
+            rankingSection.style.display = 'block';
+            updateRankingBallots();
+        }
+    } else {
+        const rankingSection = document.getElementById('rankingBallotsSection');
+        if (rankingSection) {
+            rankingSection.style.display = 'none';
+        }
     }
     
     container.innerHTML = html;
@@ -795,16 +569,17 @@ function updateVotingInputs() {
     });
 }
 
-function generateRankingInputs(system) {
-    let html = '<div class="ranking-input-container">';
-    html += '<h4 style="margin-top: 0; color: #667eea;">📊 Voter Preference Rankings</h4>';
-    html += '<p style="color: #666; margin-bottom: 15px;">Configure how voters rank candidates. Each ballot shows voter preferences in order.</p>';
+function updateRankingBallots() {
+    const container = document.getElementById('rankingBallotsContainer');
+    if (!container) return;
     
-    // Create sample ballots
-    const numBallots = Math.min(5, candidates.length);
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes').value) || 5;
+    const maxBallots = Math.min(Math.max(1, numBallotTypes), 20); // Between 1 and 20
+    
+    let html = '<div class="ranking-input-container">';
     html += '<div class="ranking-grid">';
     
-    for (let i = 0; i < numBallots; i++) {
+    for (let i = 0; i < maxBallots; i++) {
         html += `
             <div class="ranking-item">
                 <h5>
@@ -835,11 +610,12 @@ function generateRankingInputs(system) {
             `;
         }
         
-        // Add vote count for this ballot type
+        // Add percentage input for this ballot type
         html += `
             <div class="ranking-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
-                <label style="font-weight: 600;">Ballots:</label>
-                <input type="text" id="ballot-${i}-count" class="number-input" value="0" style="padding: 6px;" onblur="formatNumberInput(event)" />
+                <label style="font-weight: 600;">% of Voters:</label>
+                <input type="number" id="ballot-${i}-percentage" min="0" max="100" step="0.1" value="0" style="padding: 6px; width: 80px;" />
+                <span style="font-size: 0.9em; color: #666; margin-left: 5px;">%</span>
             </div>
         `;
         
@@ -850,10 +626,10 @@ function generateRankingInputs(system) {
     }
     
     html += '</div>';
-    html += '<p style="margin-top: 15px; color: #666; font-size: 0.9em; font-style: italic;">💡 Tip: Leave a choice blank if voters don\'t rank that many candidates. "Ballots" = number of voters with this exact ranking.</p>';
+    html += '<p style="margin-top: 15px; color: #666; font-size: 0.9em; font-style: italic;">💡 Tip: Leave a choice blank if voters don\'t rank that many candidates. Enter the percentage of voters with each ranking pattern - they don\'t need to add up to 100% if some voters don\'t appear in these patterns.</p>';
     html += '</div>';
     
-    return html;
+    container.innerHTML = html;
 }
 
 function getOrdinalSuffix(n) {
@@ -961,10 +737,24 @@ function calculateFPTP(votes) {
     
     results.sort((a, b) => b.votes - a.votes);
     
-    if (results.length > 0) {
-        results[0].winner = true;
+    // Use tie-breaking logic
+    const tieInfo = resolveTie(results, 'candidate');
+    
+    if (tieInfo) {
+        // Mark winner
+        results.forEach(r => r.winner = (r.name === tieInfo.winner.name));
+        
+        // Return with tie information
+        return {
+            type: 'candidate',
+            results: results,
+            totalVotes: totalVotes,
+            tieDetected: tieInfo.tieDetected,
+            tieInfo: tieInfo
+        };
     }
     
+    // Fallback (no results)
     return {
         type: 'candidate',
         results: results,
@@ -1014,18 +804,34 @@ function calculateIRV(votes) {
     // Get race type
     const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
     
-    // Collect ballot data from ranking inputs
+    // Get total votes from first-preference candidate votes
+    let totalVotes = 0;
+    candidates.forEach(candidate => {
+        const input = document.getElementById(`candidate-${candidate.id}`);
+        if (input) {
+            totalVotes += parseFormattedNumber(input.value);
+        }
+    });
+    
+    // Collect ballot data from ranking inputs (now using percentages)
     const ballots = [];
     let totalBallots = 0;
     
     // Check if we have ranking data
     let hasRankingData = false;
-    for (let i = 0; i < 5; i++) {
-        const countInput = document.getElementById(`ballot-${i}-count`);
-        if (countInput) {
-            const count = parseFormattedNumber(countInput.value);
-            if (count > 0) {
+    
+    // Get the number of ballot types from the UI
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 5;
+    
+    for (let i = 0; i < numBallotTypes; i++) {
+        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+        if (percentageInput) {
+            const percentage = parseFloat(percentageInput.value) || 0;
+            if (percentage > 0) {
                 hasRankingData = true;
+                
+                // Convert percentage to actual ballot count
+                const count = totalVotes > 0 ? Math.round((percentage / 100) * totalVotes) : 0;
                 const ballot = { count: count, preferences: [] };
                 
                 // Get preferences for this ballot
@@ -1036,7 +842,7 @@ function calculateIRV(votes) {
                     }
                 }
                 
-                if (ballot.preferences.length > 0) {
+                if (ballot.preferences.length > 0 && count > 0) {
                     ballots.push(ballot);
                     totalBallots += count;
                 }
@@ -1279,18 +1085,34 @@ function calculateSTV(votes) {
     const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
     const seats = raceType === 'single' ? 1 : 3; // 1 seat for single race, 3 for legislative
     
-    // Collect ballot data from ranking inputs
+    // Get total votes from first-preference candidate votes
+    let totalVotes = 0;
+    candidates.forEach(candidate => {
+        const input = document.getElementById(`candidate-${candidate.id}`);
+        if (input) {
+            totalVotes += parseFormattedNumber(input.value);
+        }
+    });
+    
+    // Collect ballot data from ranking inputs (now using percentages)
     const ballots = [];
     let totalBallots = 0;
     
     // Check if we have ranking data
     let hasRankingData = false;
-    for (let i = 0; i < 5; i++) {
-        const countInput = document.getElementById(`ballot-${i}-count`);
-        if (countInput) {
-            const count = parseFormattedNumber(countInput.value);
-            if (count > 0) {
+    
+    // Get the number of ballot types from the UI
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 5;
+    
+    for (let i = 0; i < numBallotTypes; i++) {
+        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+        if (percentageInput) {
+            const percentage = parseFloat(percentageInput.value) || 0;
+            if (percentage > 0) {
                 hasRankingData = true;
+                
+                // Convert percentage to actual ballot count
+                const count = totalVotes > 0 ? Math.round((percentage / 100) * totalVotes) : 0;
                 const ballot = { count: count, preferences: [] };
                 
                 // Get preferences for this ballot
@@ -1301,7 +1123,7 @@ function calculateSTV(votes) {
                     }
                 }
                 
-                if (ballot.preferences.length > 0) {
+                if (ballot.preferences.length > 0 && count > 0) {
                     ballots.push(ballot);
                     totalBallots += count;
                 }
@@ -1805,6 +1627,21 @@ function displayResults(results, system) {
     
     let html = '';
     
+    // Show tie notification if detected
+    if (results.tieDetected && results.tieInfo) {
+        const systemNames = {
+            'fptp': 'First-Past-the-Post',
+            'trs': 'Two-Round System',
+            'irv': 'Instant-Runoff Voting',
+            'block': 'Block Voting',
+            'limited': 'Limited Voting',
+            'approval': 'Approval Voting',
+            'borda': 'Borda Count',
+            'condorcet': 'Condorcet Method'
+        };
+        html += createTieNotification(results.tieInfo, systemNames[system] || system);
+    }
+    
     // Prepare data for pie charts
     let votesChartData = [];
     let seatsChartData = [];
@@ -1815,11 +1652,6 @@ function displayResults(results, system) {
         html += '<canvas id="votesChart" width="400" height="400"></canvas>';
         html += '<canvas id="winnerChart" width="400" height="400"></canvas>';
         html += '</div>';
-        
-        // Display ideological spectrum
-        if (typeof displayIdeologicalSpectrum === 'function' && candidates.length > 0) {
-            html += displayIdeologicalSpectrum(candidates, results);
-        }
         
         html += '<h3>Results by Candidate</h3>';
         results.results.forEach(r => {
@@ -2098,11 +1930,6 @@ function displayResults(results, system) {
         if ((system === 'irv' || system === 'stv') && results.rounds && typeof displayRoundByRoundFlow === 'function') {
             html += displayRoundByRoundFlow(results.rounds, candidates);
         }
-        
-        // Display ideological spectrum
-        if (typeof displayIdeologicalSpectrum === 'function' && candidates.length > 0) {
-            html += displayIdeologicalSpectrum(candidates, results);
-        }
     } else if (results.type === 'borda') {
         // Borda Count results
         html += '<div class="charts-container">';
@@ -2255,54 +2082,81 @@ function displayResults(results, system) {
     
     // Display Arrow's Theorem analysis
     const analysis = arrowAnalysis[system];
-    let arrowHtml = `
-        <h4>${analysis.title}</h4>
-        <p style="margin-bottom: 15px;"><strong>Arrow's Impossibility Theorem</strong> states that no rank-order voting system can simultaneously satisfy all of the following fairness criteria when there are three or more alternatives:</p>
-        <ul>
-    `;
-    
-    analysis.violations.forEach(v => {
-        arrowHtml += `<li>${v}</li>`;
-    });
-    
-    arrowHtml += `
-        </ul>
-        <h4>Analysis for this System</h4>
-        <p>${analysis.explanation}</p>
-        <h4>Real-World Implications</h4>
-        <p>${analysis.realWorld}</p>
-    `;
-    
-    // Add Gibbard-Satterthwaite strategic voting analysis if available
-    if (analysis.strategicVoting) {
-        arrowHtml += `
-            <h4 style="margin-top: 20px;">🎯 Strategic Voting (Gibbard-Satterthwaite Theorem)</h4>
-            <p>${analysis.strategicVoting}</p>
+    if (!analysis) {
+        arrowDiv.innerHTML = '<p>Arrow\'s Theorem analysis not available for this system.</p>';
+        console.error('No Arrow analysis found for system:', system);
+        console.log('Available systems:', Object.keys(arrowAnalysis));
+    } else {
+        let arrowHtml = `
+            <h4>${analysis.title}</h4>
+            <div class="criterion-grid">
+                <div class="criterion"><strong>Non-Dictatorship:</strong> ${analysis.nonDictatorship}</div>
+                <div class="criterion"><strong>Unrestricted Domain:</strong> ${analysis.universality}</div>
+                <div class="criterion"><strong>IIA:</strong> ${analysis.independence}</div>
+                <div class="criterion"><strong>Monotonicity:</strong> ${analysis.monotonicity}</div>
+            </div>
+            <h4>Detailed Analysis</h4>
+            <p>${analysis.explanation || 'Analysis pending.'}</p>
         `;
+        
+        // Add strategic voting analysis if available
+        if (analysis.strategicVoting) {
+            arrowHtml += `
+                <h4 style="margin-top: 20px;">🎯 Strategic Voting (Gibbard-Satterthwaite Theorem)</h4>
+                <p>${analysis.strategicVoting}</p>
+            `;
+        }
+        
+        arrowDiv.innerHTML = arrowHtml;
     }
     
-    arrowDiv.innerHTML = arrowHtml;
-    
-    // Draw charts after DOM is updated
+    // Draw charts after DOM is updated using Chart.js
     setTimeout(() => {
-        const votesTitle = results.type === 'approval' ? 'Vote Distribution (Approvals)' : 'Vote Distribution';
-        drawPieChart('votesChart', votesChartData, votesTitle);
-        
-        // For party and mixed systems, use comparison bar chart instead of pie chart
-        if ((results.type === 'party' || results.type === 'mixed') && results._comparisonData) {
-            drawComparisonBarChart('comparisonChart', results._comparisonData, 'Vote Share vs Seat Share');
-        } else if (seatsChartData.length > 0) {
-            let seatsTitle = 'Seat Distribution';
-            if (results.type === 'candidate' || results.type === 'approval') {
-                seatsTitle = 'Winner';
-            } else if (results.type === 'multi-winner') {
-                seatsTitle = 'Elected Candidates';
+        try {
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('❌ Chart.js library not loaded!');
+                alert('Chart.js library failed to load. Please check your internet connection and refresh.');
+                return;
             }
             
-            const seatsChartId = (results.type === 'candidate' || results.type === 'approval') ? 'winnerChart' : 'seatsChart';
-            drawPieChart(seatsChartId, seatsChartData, seatsTitle);
+            // Check if wrapper functions exist on window object
+            if (typeof window.createPieChart === 'undefined' || typeof window.createComparisonBarChart === 'undefined') {
+                console.error('❌ Chart wrapper functions not loaded! Make sure chartjs-wrapper.js is included.');
+                alert('Chart functions not available. Please refresh the page.');
+                return;
+            }
+            
+            console.log('📊 Creating charts with data:', { 
+                votes: votesChartData.length, 
+                seats: seatsChartData.length 
+            });
+            
+            const votesTitle = results.type === 'approval' ? 'Vote Distribution (Approvals)' : 'Vote Distribution';
+            window.createPieChart('votesChart', votesChartData, votesTitle);
+            
+            // For party and mixed systems, use comparison bar chart instead of pie chart
+            if ((results.type === 'party' || results.type === 'mixed') && results._comparisonData) {
+                window.createComparisonBarChart('comparisonChart', results._comparisonData, 'Vote Share vs Seat Share');
+            } else if (seatsChartData.length > 0) {
+                let seatsTitle = 'Seat Distribution';
+                if (results.type === 'candidate' || results.type === 'approval') {
+                    seatsTitle = 'Winner';
+                } else if (results.type === 'multi-winner') {
+                    seatsTitle = 'Elected Candidates';
+                }
+                
+                const seatsChartId = (results.type === 'candidate' || results.type === 'approval') ? 'winnerChart' : 'seatsChart';
+                window.createPieChart(seatsChartId, seatsChartData, seatsTitle);
+            }
+            
+            console.log('✅ All charts created successfully');
+        } catch (error) {
+            console.error('❌ Chart creation error:', error);
+            console.error('Stack:', error.stack);
+            alert(`Chart error: ${error.message}\nCheck console for details.`);
         }
-    }, 100);
+    }, 200);
     
     // Scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

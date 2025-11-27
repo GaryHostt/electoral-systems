@@ -36,6 +36,14 @@ async function generateRealisticBallots() {
         return;
     }
     
+    const system = document.getElementById('electoralSystem').value;
+    const rankingSystems = ['irv', 'stv', 'borda', 'condorcet'];
+    
+    if (!rankingSystems.includes(system)) {
+        alert('Ballot generation is only available for ranking systems (IRV, STV, Borda, Condorcet).\n\nFor other systems, use the "Auto-Fill Random Votes" button instead.');
+        return;
+    }
+    
     if (candidates.length === 0) {
         alert('Please add candidates first');
         return;
@@ -57,8 +65,12 @@ async function generateRealisticBallots() {
             // Populate ranking inputs with generated ballots
             const ballots = result.ballots;
             
-            // Fill first 5 ballot types
-            for (let i = 0; i < Math.min(5, ballots.length); i++) {
+            // Get the current number of ballot types from the UI
+            const numBallotTypesInput = document.getElementById('numBallotTypes');
+            const maxBallots = numBallotTypesInput ? parseInt(numBallotTypesInput.value) || 5 : 5;
+            
+            // Fill ballot types up to the user-specified limit
+            for (let i = 0; i < Math.min(maxBallots, ballots.length); i++) {
                 const ballot = ballots[i];
                 
                 // Fill ranking dropdowns
@@ -69,14 +81,17 @@ async function generateRealisticBallots() {
                     }
                 });
                 
-                // Fill count
-                const countInput = document.getElementById(`ballot-${i}-count`);
-                if (countInput) {
-                    countInput.value = formatNumber(ballot.count);
+                // Calculate percentage of total voters
+                const percentage = (ballot.count / result.total_voters * 100).toFixed(1);
+                
+                // Fill percentage instead of count
+                const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+                if (percentageInput) {
+                    percentageInput.value = percentage;
                 }
             }
             
-            alert(`✅ Generated ${formatNumber(result.total_voters)} ballots (${result.unique_ballots} unique patterns) with ${distribution} distribution`);
+            alert(`✅ Generated ${formatNumber(result.total_voters)} ballots (${result.unique_ballots} unique patterns) with ${distribution} distribution\n\nFilled ${Math.min(maxBallots, ballots.length)} out of ${maxBallots} ballot type slots with percentages.`);
         }
     } catch (error) {
         alert('Error generating ballots: ' + error.message);

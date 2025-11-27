@@ -2,9 +2,10 @@
 
 A comprehensive, educational web application for simulating and comparing 13 different electoral systems, with advanced computational features and visualizations.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![Tests](https://img.shields.io/badge/tests-14%2F14%20passing-success)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-success)
+![Charts](https://img.shields.io/badge/charting-Chart.js-brightgreen)
 
 ---
 
@@ -138,20 +139,25 @@ python3 test_integration.py
 
 ---
 
-## 🆕 What's New in v2.0
+## 🆕 What's New in v2.2
 
-### New Systems
+### Latest Features (November 27, 2025)
+- ⭐ **Percentage-Based Ballot Input** - Enter percentages instead of absolute counts for ranked systems
+- ⭐ **Customizable Ballot Types** - Choose 1-20 ballot patterns for IRV/STV/Borda/Condorcet
+- ⭐ **Chart.js Integration** - Professional interactive charts with tooltips
+- ⭐ **Country Import** - 16 countries with 84+ authentic political parties
+- ⭐ **Secure AI Analysis** - Mistral AI integration with server-side API key
+- ⭐ **Auto-Fill Votes** - One-click realistic vote generation
+
+### New Systems (v2.0)
 - ⭐ Borda Count
 - ⭐ Condorcet Method
 
-### New Visualizations
-- ⭐ Ideological Spectrum Map
-- ⭐ Round-by-Round Flow
-- ⭐ Natural Threshold Display
-
-### New Backend
+### Enhanced Backend (v2.0)
 - ⭐ Multi-District Calculations
-- ⭐ Enhanced Testing (100% coverage)
+- ⭐ Strategic Voting Simulation
+- ⭐ Realistic Ballot Generation
+- ⭐ 100% Test Coverage
 
 ---
 
@@ -161,7 +167,7 @@ Educational use - Attribution appreciated
 
 ---
 
-**Version**: 2.0.0  
+**Version**: 2.2.0  
 **Status**: ✅ Production Ready  
 **Last Updated**: November 27, 2025
 

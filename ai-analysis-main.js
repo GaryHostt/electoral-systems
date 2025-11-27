@@ -32,36 +32,25 @@ async function getAIAnalysisMain() {
     const prompt = buildAnalysisPromptMain(electionData);
     
     try {
-        // Call Mistral API
-        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        // Call our secure backend proxy endpoint
+        const API_BASE = 'http://localhost:5000';
+        const response = await fetch(`${API_BASE}/api/ai-analysis`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer nnVBj4Z7f9Iib41hpG2JFZ9KpHdaL6Bv'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'mistral-small-latest',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Assume the role of a political science expert specializing in comparative electoral systems and voting theory.'
-                    },
-                    {
-                        role: 'user',
-                        content: prompt
-                    }
-                ],
-                max_tokens: 300,
-                temperature: 0.7
+                election_data: prompt
             })
         });
         
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error || `API Error: ${response.status}`);
         }
         
-        const data = await response.json();
-        const analysis = data.choices[0].message.content;
+        const analysis = data.analysis;
         
         // Display response
         responseDiv.innerHTML = `

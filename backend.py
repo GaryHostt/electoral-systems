@@ -36,6 +36,7 @@ FLASK_PORT = int(os.getenv('FLASK_PORT', 5000))
 FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
 MAX_VOTERS = int(os.getenv('MAX_VOTERS', 1000000))
 MAX_CANDIDATES = int(os.getenv('MAX_CANDIDATES', 50))
+MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY', '')
 
 def init_db():
     """Initialize SQLite database for scenario persistence"""
@@ -508,6 +509,7 @@ if __name__ == '__main__':
     print("  POST /api/batch-simulation")
     print("  POST /api/scenario/save")
     print("  GET  /api/scenario/<id>")
+    print("  POST /api/ai-analysis")
     print("  GET  /api/health")
     print("=" * 50)
     

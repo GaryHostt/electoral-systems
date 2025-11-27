@@ -11,15 +11,32 @@ function calculateNaturalThreshold(seats) {
  * Borda Count Calculation
  */
 async function calculateBorda(votes) {
-    // Collect ballot data from ranking inputs
-    const ballots = [];
-    let totalBallots = 0;
+    // Get total votes from first-preference candidate votes
+    let totalVotes = 0;
+    candidates.forEach(candidate => {
+        const input = document.getElementById(`candidate-${candidate.id}`);
+        if (input) {
+            totalVotes += parseFormattedNumber(input.value);
+        }
+    });
     
-    for (let i = 0; i < 5; i++) {
-        const countInput = document.getElementById(`ballot-${i}-count`);
-        if (countInput) {
-            const count = parseFormattedNumber(countInput.value);
-            if (count > 0) {
+    if (totalVotes === 0) {
+        alert('Please enter candidate vote totals (first preference votes) to calculate ballot counts');
+        return null;
+    }
+    
+    // Collect ballot data from ranking inputs (now using percentages)
+    const ballots = [];
+    let totalPercentage = 0;
+    
+    // Get the number of ballot types from the UI
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 5;
+    
+    for (let i = 0; i < numBallotTypes; i++) {
+        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+        if (percentageInput) {
+            const percentage = parseFloat(percentageInput.value) || 0;
+            if (percentage > 0) {
                 const preferences = [];
                 
                 for (let rank = 1; rank <= 5; rank++) {
@@ -30,17 +47,21 @@ async function calculateBorda(votes) {
                 }
                 
                 if (preferences.length > 0) {
+                    // Convert percentage to actual ballot count
+                    const count = Math.round((percentage / 100) * totalVotes);
                     ballots.push({ preferences, count });
-                    totalBallots += count;
+                    totalPercentage += percentage;
                 }
             }
         }
     }
     
     if (ballots.length === 0) {
-        alert('Please configure ballot rankings for Borda Count');
+        alert('Please configure ballot rankings and percentages for Borda Count');
         return null;
     }
+    
+    const totalBallots = ballots.reduce((sum, b) => sum + b.count, 0);
     
     // Try Python backend first
     if (backendAvailable) {
@@ -121,15 +142,31 @@ async function calculateBorda(votes) {
  * Condorcet Method Calculation
  */
 async function calculateCondorcet(votes) {
-    // Collect ballot data
-    const ballots = [];
-    let totalBallots = 0;
+    // Get total votes from first-preference candidate votes
+    let totalVotes = 0;
+    candidates.forEach(candidate => {
+        const input = document.getElementById(`candidate-${candidate.id}`);
+        if (input) {
+            totalVotes += parseFormattedNumber(input.value);
+        }
+    });
     
-    for (let i = 0; i < 5; i++) {
-        const countInput = document.getElementById(`ballot-${i}-count`);
-        if (countInput) {
-            const count = parseFormattedNumber(countInput.value);
-            if (count > 0) {
+    if (totalVotes === 0) {
+        alert('Please enter candidate vote totals (first preference votes) to calculate ballot counts');
+        return null;
+    }
+    
+    // Collect ballot data (now using percentages)
+    const ballots = [];
+    
+    // Get the number of ballot types from the UI
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 5;
+    
+    for (let i = 0; i < numBallotTypes; i++) {
+        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+        if (percentageInput) {
+            const percentage = parseFloat(percentageInput.value) || 0;
+            if (percentage > 0) {
                 const preferences = [];
                 
                 for (let rank = 1; rank <= 5; rank++) {
@@ -140,17 +177,20 @@ async function calculateCondorcet(votes) {
                 }
                 
                 if (preferences.length > 0) {
+                    // Convert percentage to actual ballot count
+                    const count = Math.round((percentage / 100) * totalVotes);
                     ballots.push({ preferences, count });
-                    totalBallots += count;
                 }
             }
         }
     }
     
     if (ballots.length === 0) {
-        alert('Please configure ballot rankings for Condorcet Method');
+        alert('Please configure ballot rankings and percentages for Condorcet Method');
         return null;
     }
+    
+    const totalBallots = ballots.reduce((sum, b) => sum + b.count, 0);
     
     // Try Python backend first
     if (backendAvailable) {
