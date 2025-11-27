@@ -114,6 +114,20 @@
                         Minimum vote share (%) a party needs to win seats. Common values: 3%, 4%, or 5%
                     </p>
                 </div>
+                
+                <div id="allocationMethodContainer" style="display: none; margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #667eea;">
+                        Seat Allocation Method
+                    </label>
+                    <select id="allocationMethod" style="width: 250px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        <option value="dhondt">D'Hondt (favors larger parties)</option>
+                        <option value="sainte-lague">Sainte-Laguë (more proportional)</option>
+                    </select>
+                    <p style="margin-top: 8px; color: #666; font-size: 0.9em; font-style: italic;">
+                        D'Hondt tends to give bonus seats to larger parties; Sainte-Laguë is more proportional to small parties.
+                    </p>
+                </div>
+                
                 <div id="votingInputs"></div>
                 <button onclick="calculateResults()" class="btn-calculate">🗳️ Calculate Election Results</button>
             </section>
@@ -129,6 +143,7 @@
         </div>
     </div>
 
+    <script src="calculations.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
