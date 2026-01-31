@@ -416,6 +416,11 @@ input[type="color"] {
     height: auto;
 }
 
+.info-icon:hover .threshold-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .race-type-selector {
     background: #f8f9fa;
     padding: 20px;

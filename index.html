@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Electoral Systems Simulator</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="comparison.css">
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -302,6 +304,48 @@
                 <div id="electoralThresholdContainer" style="display: none; margin-bottom: 20px;">
                     <label for="electoralThreshold" style="display: block; margin-bottom: 8px; font-weight: 600; color: #667eea;">
                         Electoral Threshold (%)
+                        <span class="info-icon" style="position: relative; display: inline-block; margin-left: 8px; cursor: help;">
+                            <span style="color: #667eea; font-size: 1.1em;">ℹ️</span>
+                            <div class="threshold-tooltip" style="
+                                position: absolute;
+                                bottom: 125%;
+                                left: 50%;
+                                transform: translateX(-50%);
+                                margin-bottom: 8px;
+                                padding: 12px 16px;
+                                background: #2d3748;
+                                color: white;
+                                border-radius: 8px;
+                                font-size: 0.9em;
+                                white-space: normal;
+                                min-width: 280px;
+                                opacity: 0;
+                                pointer-events: none;
+                                transition: opacity 0.2s;
+                                z-index: 1000;
+                                box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+                            ">
+                                <div style="font-weight: 600; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 6px;">
+                                    Real-World Thresholds:
+                                </div>
+                                <div style="line-height: 1.8;">
+                                    <div><strong>0.25% - 2%:</strong> Netherlands, Denmark, South Africa</div>
+                                    <div><strong>3% - 5%:</strong> Germany, Sweden, New Zealand, Greece, Czechia, Norway, Austria</div>
+                                    <div><strong>7% - 10%:</strong> Turkey, Russia, Liechtenstein</div>
+                                </div>
+                                <div style="
+                                    position: absolute;
+                                    bottom: -6px;
+                                    left: 50%;
+                                    transform: translateX(-50%);
+                                    width: 0;
+                                    height: 0;
+                                    border-left: 6px solid transparent;
+                                    border-right: 6px solid transparent;
+                                    border-top: 6px solid #2d3748;
+                                "></div>
+                            </div>
+                        </span>
                     </label>
                     <input type="number" id="electoralThreshold" min="0" max="100" step="0.1" value="5" 
                            style="width: 150px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
@@ -323,6 +367,16 @@
                     </p>
                 </div>
                 
+                <div id="mmpLevelingContainer" style="display: none; margin-top: 15px; margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="mmpLevelingToggle" style="width: 18px; height: 18px;">
+                        <span style="font-weight: 600; color: #667eea;">Enable Full Compensation (German Style)</span>
+                    </label>
+                    <p style="margin-top: 5px; font-size: 0.9em; color: #666; margin-left: 28px;">
+                        When enabled, other parties receive "leveling seats" to restore proportionality when overhang occurs.
+                    </p>
+                </div>
+                
                 <div id="votingInputs"></div>
                 
                 <!-- Ranking Ballots Section (for IRV, STV, Borda, Condorcet) -->
@@ -336,15 +390,43 @@
                         <label for="numBallotTypes" style="font-weight: 600; margin-right: 10px;">
                             Number of Ballot Types:
                         </label>
-                        <input 
-                            type="number" 
-                            id="numBallotTypes" 
-                            min="1" 
-                            max="20" 
-                            value="2" 
-                            style="width: 80px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"
-                            onchange="updateRankingBallots()"
-                        >
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <button type="button" onclick="decrementBallotTypes()" style="
+                                width: 30px; 
+                                height: 30px; 
+                                padding: 0; 
+                                border: 1px solid #ddd; 
+                                border-radius: 4px; 
+                                background: #f5f5f5; 
+                                cursor: pointer;
+                                font-size: 16px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">−</button>
+                            <input 
+                                type="number" 
+                                id="numBallotTypes" 
+                                min="1" 
+                                max="20" 
+                                value="3" 
+                                readonly
+                                style="width: 80px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"
+                            >
+                            <button type="button" onclick="incrementBallotTypes()" style="
+                                width: 30px; 
+                                height: 30px; 
+                                padding: 0; 
+                                border: 1px solid #ddd; 
+                                border-radius: 4px; 
+                                background: #f5f5f5; 
+                                cursor: pointer;
+                                font-size: 16px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">+</button>
+                        </div>
                         <span style="margin-left: 10px; color: #666; font-size: 0.9em;">
                             (Max: 20 different ballot patterns)
                         </span>
@@ -422,8 +504,14 @@
         <div id="aiResponseLearn" class="ai-response" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; display: none;"></div>
     </div>
     
-    <!-- Reset Simulator Button -->
-    <div style="text-align: center; margin: 40px 0 20px 0;">
+    <!-- Share and Reset Simulator Buttons -->
+    <div style="text-align: center; margin: 40px 0 20px 0; display: flex; gap: 15px; justify-content: center;">
+        <button onclick="shareScenario()" 
+                style="padding: 12px 24px; background: #667eea; color: white; border: none; 
+                       border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
+                       box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s;">
+            🔗 Share Scenario
+        </button>
         <button onclick="resetSimulator()" 
                 style="padding: 12px 24px; background: #dc3545; color: white; border: none; 
                        border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;

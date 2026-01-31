@@ -1,9 +1,71 @@
-// Data structures
-let parties = [];
-let candidates = [];
-let votes = {};
-let rankings = {}; // Store ranking preferences for IRV/STV
-let currentImportedCountry = null; // Track which country is currently imported
+// ===== STATE MANAGEMENT =====
+// Replace global variables with state object
+let electionState = {
+    parties: [],
+    candidates: [],
+    votes: {},
+    rankings: {}, // Store ranking preferences for IRV/STV
+    importedCountry: null, // Track which country is currently imported
+    system: null,
+    raceType: 'single',
+    totalSeats: 100,
+    threshold: 5,
+    allocationMethod: 'dhondt',
+    levelingEnabled: false
+};
+
+// Keep backward compatibility aliases for now (will remove after full migration)
+let parties = electionState.parties;
+let candidates = electionState.candidates;
+let votes = electionState.votes;
+let rankings = electionState.rankings;
+let currentImportedCountry = electionState.importedCountry;
+
+// State management functions
+function getState() {
+    return JSON.parse(JSON.stringify(electionState)); // Deep copy
+}
+
+function setState(newState) {
+    electionState = { ...electionState, ...newState };
+    // Update backward compatibility aliases
+    parties = electionState.parties;
+    candidates = electionState.candidates;
+    votes = electionState.votes;
+    rankings = electionState.rankings;
+    currentImportedCountry = electionState.importedCountry;
+    updateUI();
+    saveState(); // Auto-save to localStorage
+}
+
+function resetState() {
+    electionState = {
+        parties: [],
+        candidates: [],
+        votes: {},
+        rankings: {},
+        importedCountry: null,
+        system: null,
+        raceType: 'single',
+        totalSeats: 100,
+        threshold: 5,
+        allocationMethod: 'dhondt',
+        levelingEnabled: false
+    };
+    // Update backward compatibility aliases
+    parties = electionState.parties;
+    candidates = electionState.candidates;
+    votes = electionState.votes;
+    rankings = electionState.rankings;
+    currentImportedCountry = electionState.importedCountry;
+    updateUI();
+}
+
+function updateUI() {
+    // Update all UI elements from state
+    // This will be called after state changes
+    // Individual functions will handle their own UI updates
+}
 
 // Configuration
 // Helper to get custom seat count with validation (DRY principle)
@@ -310,9 +372,7 @@ const arrowAnalysis = {
 function saveState() {
     try {
         const state = {
-            parties: parties,
-            candidates: candidates,
-            importedCountry: currentImportedCountry,
+            ...electionState,
             timestamp: new Date().toISOString()
         };
         localStorage.setItem('electoralSimulatorState', JSON.stringify(state));
@@ -327,9 +387,21 @@ function loadState() {
         const saved = localStorage.getItem('electoralSimulatorState');
         if (saved) {
             const state = JSON.parse(saved);
-            parties = state.parties || [];
-            candidates = state.candidates || [];
-            currentImportedCountry = state.importedCountry || null;
+            // Migrate old format to new state object format
+            const migratedState = {
+                parties: state.parties || [],
+                candidates: state.candidates || [],
+                votes: state.votes || {},
+                rankings: state.rankings || {},
+                importedCountry: state.importedCountry || state.importedCountry || null,
+                system: state.system || null,
+                raceType: state.raceType || 'single',
+                totalSeats: state.totalSeats || 100,
+                threshold: state.threshold || 5,
+                allocationMethod: state.allocationMethod || 'dhondt',
+                levelingEnabled: state.levelingEnabled || false
+            };
+            setState(migratedState);
             updatePartiesList();
             updateCandidateList();
             updateCountryIndicator();
@@ -348,8 +420,71 @@ function resetSimulator() {
         localStorage.removeItem('electoralSimulatorState');
         localStorage.removeItem('lastElectionResults');
         
+        // Reset state object
+        resetState();
+        
+        // Clear URL parameters if present
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
         // Refresh page
         window.location.reload();
+    }
+}
+
+// Share scenario functionality with LZString compression
+function shareScenario() {
+    // Ensure we have parties and candidates to share
+    if (electionState.parties.length === 0) {
+        alert('Please add parties and candidates before sharing.');
+        return;
+    }
+    
+    // Step 1: Stringify state
+    const stateJson = JSON.stringify(electionState);
+    
+    // Step 2: Compress using LZString (reduces URL length by ~70-80%)
+    const compressed = LZString.compressToEncodedURIComponent(stateJson);
+    
+    // Step 3: Create shareable URL
+    const url = `${window.location.origin}${window.location.pathname}?scenario=${compressed}`;
+    
+    // Step 4: Copy to clipboard
+    navigator.clipboard.writeText(url).then(() => {
+        alert('✅ Scenario URL copied to clipboard! Share this link to let others load your exact simulation.');
+    }).catch(() => {
+        // Fallback: show URL in prompt
+        prompt('Copy this URL to share your scenario:', url);
+    });
+}
+
+function loadScenarioFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const compressed = params.get('scenario');
+    if (compressed) {
+        try {
+            // Step 1: Decompress
+            const stateJson = LZString.decompressFromEncodedURIComponent(compressed);
+            
+            if (!stateJson) {
+                // Fallback: try base64 decoding (for backward compatibility)
+                try {
+                    const stateJson = atob(compressed);
+                    const state = JSON.parse(stateJson);
+                    setState(state);
+                    return;
+                } catch (e) {
+                    console.error('Error loading scenario (both methods failed):', e);
+                    return;
+                }
+            }
+            
+            // Step 2: Parse JSON
+            const state = JSON.parse(stateJson);
+            setState(state);
+        } catch (e) {
+            console.error('Error loading scenario:', e);
+            alert('Error loading scenario. The link may be corrupted or from an older version.');
+        }
     }
 }
 
@@ -488,8 +623,13 @@ In under 150 words, identify the primary systemic flaw demonstrated by these res
 
 // Initialize - wrap in DOMContentLoaded to ensure DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Load saved state if available
-    loadState();
+    // Load scenario from URL if present (takes precedence over localStorage)
+    loadScenarioFromURL();
+    
+    // Load saved state if available (only if no URL scenario)
+    if (!new URLSearchParams(window.location.search).get('scenario')) {
+        loadState();
+    }
     
     document.getElementById('electoralSystem').addEventListener('change', onSystemChange);
     
@@ -715,6 +855,12 @@ function configureAdvancedFeatures(system) {
     const rules = SYSTEM_RULES[system];
     if (!rules) return;
     
+    // Show/hide MMP leveling toggle (only for MMP)
+    const levelingContainer = document.getElementById('mmpLevelingContainer');
+    if (levelingContainer) {
+        levelingContainer.style.display = system === 'mmp' ? 'block' : 'none';
+    }
+    
     // Show/hide strategic voting button (only for FPTP)
     const strategicBtn = document.querySelector('button[onclick="showStrategicSimulator()"]');
     if (strategicBtn) {
@@ -775,7 +921,8 @@ function addParty() {
         color: colorInput.value
     };
     
-    parties.push(party);
+    // Use setState instead of direct mutation
+    setState({ parties: [...electionState.parties, party] });
     nameInput.value = '';
     
     // Reset color selection to default (blue)
@@ -788,16 +935,26 @@ function addParty() {
     updatePartiesList();
     updateCandidatePartySelect();
     updateVotingInputs();
-    saveState(); // Auto-save
 }
 
 function removeParty(id) {
-    parties = parties.filter(p => p.id !== id);
-    candidates = candidates.filter(c => c.partyId !== id);
+    // Use setState instead of direct mutation
+    const updatedParties = electionState.parties.filter(p => p.id !== id);
+    const updatedCandidates = electionState.candidates.filter(c => c.partyId !== id);
+    
+    const newState = {
+        parties: updatedParties,
+        candidates: updatedCandidates
+    };
     
     // If all parties removed, clear country indicator
-    if (parties.length === 0) {
-        currentImportedCountry = null;
+    if (updatedParties.length === 0) {
+        newState.importedCountry = null;
+    }
+    
+    setState(newState);
+    
+    if (updatedParties.length === 0) {
         updateCountryIndicator();
     }
     
@@ -898,20 +1055,20 @@ function addCandidate() {
         partyId: partyId
     };
     
-    candidates.push(candidate);
+    // Use setState instead of direct mutation
+    setState({ candidates: [...electionState.candidates, candidate] });
     nameInput.value = '';
     partySelect.value = '';
     
     updateCandidatesList();
     updateVotingInputs();
-    saveState(); // Auto-save
 }
 
 function removeCandidate(id) {
-    candidates = candidates.filter(c => c.id !== id);
+    // Use setState instead of direct mutation
+    setState({ candidates: electionState.candidates.filter(c => c.id !== id) });
     updateCandidatesList();
     updateVotingInputs();
-    saveState(); // Auto-save
 }
 
 function updateCandidatesList() {
@@ -1081,6 +1238,22 @@ function updateVotingInputs() {
     });
 }
 
+function incrementBallotTypes() {
+    const input = document.getElementById('numBallotTypes');
+    const current = parseInt(input.value) || 3;
+    const newValue = Math.min(20, current + 1);
+    input.value = newValue;
+    updateRankingBallots();
+}
+
+function decrementBallotTypes() {
+    const input = document.getElementById('numBallotTypes');
+    const current = parseInt(input.value) || 3;
+    const newValue = Math.max(1, current - 1);
+    input.value = newValue;
+    updateRankingBallots();
+}
+
 function updateRankingBallots() {
     const container = document.getElementById('rankingBallotsContainer');
     if (!container) return;
@@ -1191,7 +1364,7 @@ function updateRankingBallots() {
 }
 
 function validateBallotPercentages() {
-    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 2;
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 3;
     const validationDiv = document.getElementById('percentageValidation');
     
     if (!validationDiv) return;
@@ -1272,44 +1445,145 @@ function getVotes() {
     return votes;
 }
 
-function calculateResults() {
+// ===== ADAPTER LAYER (Bridge between UI and Engine) =====
+// Helper function to collect ballots from UI
+function collectBallotsFromUI(totalVotes) {
+    const ballots = [];
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 5;
+    
+    for (let i = 0; i < numBallotTypes; i++) {
+        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+        if (percentageInput) {
+            const percentage = parseFloat(percentageInput.value) || 0;
+            if (percentage > 0) {
+                // Convert percentage to actual ballot count
+                const count = totalVotes > 0 ? Math.round((percentage / 100) * totalVotes) : 0;
+                const ballot = { 
+                    count: count, 
+                    preferences: [],
+                    weight: 1.0,  // For STV Gregory Method
+                    currentPreference: 0  // Track which preference we're currently at
+                };
+                
+                // Get preferences for this ballot
+                for (let rank = 1; rank <= 5; rank++) {
+                    const select = document.getElementById(`ballot-${i}-rank-${rank}`);
+                    if (select && select.value) {
+                        ballot.preferences.push(parseInt(select.value));
+                    }
+                }
+                
+                if (ballot.preferences.length > 0 && count > 0) {
+                    ballots.push(ballot);
+                }
+            }
+        }
+    }
+    
+    return ballots;
+}
+
+// Adapter function: Gathers all UI state and converts to calculation parameters
+function adaptUIStateToCalculationParams() {
     const system = document.getElementById('electoralSystem').value;
     const votes = getVotes();
+    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+    const totalSeats = getSeatsCount();
+    
+    // Get threshold and allocation method (for PR systems)
+    const threshold = parseFloat(document.getElementById('electoralThreshold')?.value) || 0;
+    const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
+    
+    // Get MMP leveling toggle (if exists)
+    const levelingEnabled = document.getElementById('mmpLevelingToggle')?.checked || false;
+    
+    // Get total voters and ballots (for ranking systems)
+    const totalVotersInput = document.getElementById('totalVoters');
+    const totalVoters = totalVotersInput ? parseFormattedNumber(totalVotersInput.value) : 0;
+    const ballots = totalVoters > 0 ? collectBallotsFromUI(totalVoters) : [];
+    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 5;
+    
+    return {
+        system: system,
+        votes: votes,
+        raceType: raceType,
+        totalSeats: totalSeats,
+        threshold: threshold,
+        allocationMethod: allocationMethod,
+        levelingEnabled: levelingEnabled,
+        totalVoters: totalVoters,
+        ballots: ballots,
+        numBallotTypes: numBallotTypes
+    };
+}
+
+// ===== UI LAYER (Orchestration) =====
+function calculateResults() {
+    // Step 1: Gather all UI state using adapter
+    const params = adaptUIStateToCalculationParams();
     
     // Store for shadow results comparison
-    window.lastCalculationSystem = system;
-    window.lastCalculationVotes = votes;
+    window.lastCalculationSystem = params.system;
+    window.lastCalculationVotes = params.votes;
+    window.lastCalculationParams = params; // Store all params for STV comparison
     
+    // Step 2: Call pure calculation function
     let results;
-    
-    switch(system) {
+    switch(params.system) {
         case 'fptp':
-            results = calculateFPTP(votes);
+            results = calculateFPTP(params.votes, params.totalSeats);
             break;
         case 'irv':
-            results = calculateIRV(votes);
+            if (params.totalVoters === 0) {
+                alert('Please enter the total number of voters');
+                return;
+            }
+            // Global ballot validity check
+            if (!params.ballots || params.ballots.length === 0) {
+                alert('No ranking ballots defined. Please add at least one ballot type below.');
+                return;
+            }
+            // Debug logging
+            console.log('IRV Calculation Debug:', {
+                totalVoters: params.totalVoters,
+                ballotsCount: params.ballots.length,
+                ballots: params.ballots
+            });
+            results = calculateIRV(params.votes, params.totalVoters, params.ballots, params.numBallotTypes);
+            if (!results) {
+                console.error('IRV calculation returned null');
+                alert('IRV calculation failed. Please check your ballot data.');
+                return; // Don't display if calculation failed
+            }
             break;
         case 'party-list':
-            results = calculatePartyListPR(votes);
+            results = calculatePartyListPR(params.votes, params.totalSeats, params.threshold, params.allocationMethod);
             break;
         case 'stv':
-            results = calculateSTV(votes);
+            if (params.totalVoters === 0) {
+                alert('Please enter the total number of voters');
+                return;
+            }
+            results = calculateSTV(params.votes, params.totalSeats, params.totalVoters, params.ballots, params.numBallotTypes);
             break;
         case 'mmp':
-            results = calculateMMP(votes);
+            results = calculateMMP(params.votes, params.totalSeats, params.threshold, params.levelingEnabled);
             break;
         case 'parallel':
-            results = calculateParallel(votes);
+            results = calculateParallel(params.votes, params.totalSeats, params.threshold, params.allocationMethod);
             break;
     }
     
     // Store results for shadow comparison
     window.lastCalculationResults = results;
     
-    displayResults(results, system);
+    // Step 3: Display results
+    displayResults(results, params.system);
 }
 
-function calculateFPTP(votes) {
+// ===== ENGINE LAYER (Pure Functions) =====
+function calculateFPTP(votes, totalSeats) {
+    // Pure function - no DOM access
     const results = candidates.map(candidate => {
         const voteCount = votes.candidates[candidate.id] || 0;
         const party = parties.find(p => p.id === candidate.partyId);
@@ -1392,58 +1666,23 @@ function calculateTRS(votes) {
     };
 }
 
-function calculateIRV(votes) {
-    // Get race type
-    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+function calculateIRV(votes, totalVoters, ballots, numBallotTypes) {
+    // Pure function - no DOM access
+    console.log('calculateIRV called with:', { totalVoters, ballotsCount: ballots?.length, numBallotTypes });
     
-    // Get total votes from the totalVoters input for ranking systems
-    const totalVotersInput = document.getElementById('totalVoters');
-    let totalVotes = totalVotersInput ? parseFormattedNumber(totalVotersInput.value) : 0;
-    
-    if (totalVotes === 0) {
-        alert('Please enter the total number of voters');
+    if (totalVoters === 0) {
+        // Return null to signal error (UI layer will handle alert)
+        console.warn('calculateIRV: totalVoters is 0');
         return null;
     }
     
-    // Collect ballot data from ranking inputs (now using percentages)
-    const ballots = [];
-    let totalBallots = 0;
-    
     // Check if we have ranking data
-    let hasRankingData = false;
-    
-    // Get the number of ballot types from the UI
-    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 5;
-    
-    for (let i = 0; i < numBallotTypes; i++) {
-        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
-        if (percentageInput) {
-            const percentage = parseFloat(percentageInput.value) || 0;
-            if (percentage > 0) {
-                hasRankingData = true;
-                
-                // Convert percentage to actual ballot count
-                const count = totalVotes > 0 ? Math.round((percentage / 100) * totalVotes) : 0;
-                const ballot = { count: count, preferences: [] };
-                
-                // Get preferences for this ballot
-                for (let rank = 1; rank <= 5; rank++) {
-                    const select = document.getElementById(`ballot-${i}-rank-${rank}`);
-                    if (select && select.value) {
-                        ballot.preferences.push(parseInt(select.value));
-                    }
-                }
-                
-                if (ballot.preferences.length > 0 && count > 0) {
-                    ballots.push(ballot);
-                    totalBallots += count;
-                }
-            }
-        }
-    }
+    const hasRankingData = ballots && ballots.length > 0;
+    console.log('calculateIRV: hasRankingData =', hasRankingData);
     
     // If no ranking data, fall back to simple first-preference counts
     if (!hasRankingData || ballots.length === 0) {
+        console.warn('calculateIRV: No ranking data, falling back to first-preference counts');
         const results = candidates.map(candidate => {
             const voteCount = votes.candidates[candidate.id] || 0;
             const party = parties.find(p => p.id === candidate.partyId);
@@ -1687,16 +1926,10 @@ function calculateIRV(votes) {
     };
 }
 
-function calculatePartyListPR(votes) {
+function calculatePartyListPR(votes, totalSeats, threshold, allocationMethod) {
+    // Pure function - no DOM access
     const totalVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
-    const seats = getSeatsCount();
-    
-    // Get electoral threshold
-    const thresholdInput = document.getElementById('electoralThreshold');
-    const threshold = thresholdInput ? parseFloat(thresholdInput.value) : 0;
-    
-    // Get allocation method
-    const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
+    const seats = totalSeats;
     
     // Filter parties that meet the threshold
     const partyVotes = {};
@@ -1777,60 +2010,15 @@ function calculateOpenList(votes) {
     return partyResults;
 }
 
-function calculateSTV(votes) {
-    // Get race type to determine number of seats
-    const seats = getSeatsCount(); // Use same function as other systems for fair comparison
-    
-    // Get total votes from the totalVoters input for ranking systems
-    const totalVotersInput = document.getElementById('totalVoters');
-    let totalVotes = totalVotersInput ? parseFormattedNumber(totalVotersInput.value) : 0;
-    
-    if (totalVotes === 0) {
-        alert('Please enter the total number of voters');
+function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
+    // Pure function - no DOM access
+    if (totalVoters === 0) {
+        // Return null to signal error (UI layer will handle alert)
         return null;
     }
     
-    // Collect ballot data from ranking inputs (now using percentages)
-    const ballots = [];
-    let totalBallots = 0;
-    
     // Check if we have ranking data
-    let hasRankingData = false;
-    
-    // Get the number of ballot types from the UI
-    const numBallotTypes = parseInt(document.getElementById('numBallotTypes')?.value) || 5;
-    
-    for (let i = 0; i < numBallotTypes; i++) {
-        const percentageInput = document.getElementById(`ballot-${i}-percentage`);
-        if (percentageInput) {
-            const percentage = parseFloat(percentageInput.value) || 0;
-            if (percentage > 0) {
-                hasRankingData = true;
-                
-                // Convert percentage to actual ballot count
-                const count = totalVotes > 0 ? Math.round((percentage / 100) * totalVotes) : 0;
-                const ballot = { 
-                    count: count, 
-                    preferences: [],
-                    weight: 1.0,  // Gregory Method: fractional transfer value
-                    currentPreference: 0  // Track which preference we're currently at
-                };
-                
-                // Get preferences for this ballot
-                for (let rank = 1; rank <= 5; rank++) {
-                    const select = document.getElementById(`ballot-${i}-rank-${rank}`);
-                    if (select && select.value) {
-                        ballot.preferences.push(parseInt(select.value));
-                    }
-                }
-                
-                if (ballot.preferences.length > 0 && count > 0) {
-                    ballots.push(ballot);
-                    totalBallots += count;
-                }
-            }
-        }
-    }
+    const hasRankingData = ballots && ballots.length > 0;
     
     // If no ranking data, fall back to simple calculation
     if (!hasRankingData || ballots.length === 0) {
@@ -1879,28 +2067,42 @@ function calculateSTV(votes) {
     }
     
     // Run STV with full ranking data
-    // DROOP QUOTA: Calculated once at start, never recalculated (even as ballots exhaust)
-    const quota = Math.floor(totalBallots / (seats + 1)) + 1;
+    // INTEGER SCALING: Multiply by 100,000 to preserve precision (5 decimal places)
+    const SCALE_FACTOR = 100000;
+    
+    // Convert ballots to integer weights
+    const scaledBallots = ballots.map(b => ({
+        ...b,
+        weight: Math.round((b.count || 1) * SCALE_FACTOR) // Integer weight
+    }));
+    
+    // Calculate total votes (integer)
+    const totalVotesScaled = scaledBallots.reduce((sum, b) => sum + b.weight, 0);
+    
+    // DROOP QUOTA: Calculated once at start with integer math
+    const quotaScaled = Math.floor(totalVotesScaled / (seats + 1)) + 1;
+    const quota = quotaScaled / SCALE_FACTOR; // For display only
+    
     const candidateIds = candidates.map(c => c.id);
     let elected = [];
     let eliminated = new Set();
     const roundsData = []; // Track rounds for visualization
     let roundNumber = 0;
-    let exhaustedVotes = 0; // Track exhausted ballots
+    let exhaustedVotesScaled = 0; // Track exhausted ballots (integer)
     
     // Run rounds until all seats filled or no more candidates
     while (elected.length < seats && eliminated.size + elected.length < candidateIds.length) {
         roundNumber++;
         
-        // Count current votes
-        const voteCounts = {};
-        candidateIds.forEach(id => voteCounts[id] = 0);
-        exhaustedVotes = 0; // Reset each round
+        // Count current votes (integer math)
+        const voteCountsScaled = {};
+        candidateIds.forEach(id => voteCountsScaled[id] = 0);
+        exhaustedVotesScaled = 0; // Reset each round
         
-        ballots.forEach(ballot => {
+        scaledBallots.forEach(ballot => {
             // Handle empty ballots (no preferences at all)
             if (ballot.preferences.length === 0) {
-                exhaustedVotes += ballot.count * ballot.weight;
+                exhaustedVotesScaled += ballot.weight; // Already integer
                 return;
             }
             
@@ -1908,7 +2110,7 @@ function calculateSTV(votes) {
             let assigned = false;
             for (let prefId of ballot.preferences) {
                 if (!eliminated.has(prefId) && !elected.includes(prefId)) {
-                    voteCounts[prefId] += ballot.count * ballot.weight;  // Gregory Method: apply weight
+                    voteCountsScaled[prefId] += ballot.weight;  // Integer addition
                     assigned = true;
                     break;
                 }
@@ -1916,27 +2118,26 @@ function calculateSTV(votes) {
             
             // If no valid preference found, ballot is exhausted
             if (!assigned) {
-                exhaustedVotes += ballot.count * ballot.weight;
+                exhaustedVotesScaled += ballot.weight;
             }
         });
         
-        // Check if anyone meets quota
+        // Check if anyone meets quota (integer comparison)
         const activeCandidates = candidateIds.filter(id => !eliminated.has(id) && !elected.includes(id));
-        const maxVotes = Math.max(...activeCandidates.map(id => voteCounts[id] || 0));
+        const maxVotesScaled = Math.max(...activeCandidates.map(id => voteCountsScaled[id] || 0));
         
-        if (maxVotes >= quota) {
+        if (maxVotesScaled >= quotaScaled) {
             // Elect candidate with most votes
-            const winner = activeCandidates.find(id => voteCounts[id] === maxVotes);
+            const winner = activeCandidates.find(id => voteCountsScaled[id] === maxVotesScaled);
             elected.push(winner);
             
-            const surplus = maxVotes - quota;
-            const transferValue = maxVotes > 0 ? surplus / maxVotes : 0;  // Gregory Method
+            const surplusScaled = maxVotesScaled - quotaScaled;
             
-            // Transfer surplus to next preferences using Gregory Method
-            let surplusExhausted = 0;
+            // Transfer surplus to next preferences using Gregory Method (integer math)
+            let surplusExhaustedScaled = 0;
             
-            if (surplus > 0) {
-                ballots.forEach(ballot => {
+            if (surplusScaled > 0) {
+                scaledBallots.forEach(ballot => {
                     // Check if this ballot is currently with the winner
                     const currentPref = ballot.preferences[ballot.currentPreference];
                     if (currentPref === winner) {
@@ -1946,21 +2147,34 @@ function calculateSTV(votes) {
                             const nextPref = ballot.preferences[i];
                             if (!eliminated.has(nextPref) && !elected.includes(nextPref)) {
                                 ballot.currentPreference = i;
-                                ballot.weight *= transferValue;  // Apply fractional transfer
+                                // Integer transfer: (surplus * weight) / maxVotes
+                                ballot.weight = Math.floor((surplusScaled * ballot.weight) / maxVotesScaled);
                                 nextPrefFound = true;
                                 break;
                             }
                         }
                         
-                        // If no next preference, surplus is exhausted
+                        // If no next preference, surplus is exhausted (Loss to System)
                         if (!nextPrefFound) {
-                            surplusExhausted += ballot.count * ballot.weight * transferValue;
+                            const lostAmount = Math.floor((surplusScaled * ballot.weight) / maxVotesScaled);
+                            surplusExhaustedScaled += lostAmount;
                         }
                     }
                 });
                 
-                exhaustedVotes += surplusExhausted;
+                exhaustedVotesScaled += surplusExhaustedScaled;
             }
+            
+            // Convert to display values for round data
+            const surplus = surplusScaled / SCALE_FACTOR;
+            const transferValue = maxVotesScaled > 0 ? surplusScaled / maxVotesScaled : 0;
+            const surplusExhausted = surplusExhaustedScaled / SCALE_FACTOR;
+            
+            // Convert vote counts for display
+            const voteCounts = {};
+            Object.keys(voteCountsScaled).forEach(id => {
+                voteCounts[id] = voteCountsScaled[id] / SCALE_FACTOR;
+            });
             
             // Record round data
             roundsData.push({
@@ -1975,6 +2189,11 @@ function calculateSTV(votes) {
             });
         } else if (elected.length + activeCandidates.length <= seats) {
             // Elect all remaining candidates
+            // Convert vote counts for display
+            const voteCounts = {};
+            Object.keys(voteCountsScaled).forEach(id => {
+                voteCounts[id] = voteCountsScaled[id] / SCALE_FACTOR;
+            });
             roundsData.push({
                 round: roundNumber,
                 voteCounts: {...voteCounts},
@@ -1988,9 +2207,15 @@ function calculateSTV(votes) {
             });
             break;
         } else {
-            // Eliminate candidate with fewest votes
-            const minVotes = Math.min(...activeCandidates.map(id => voteCounts[id] || 0));
-            const toEliminate = activeCandidates.find(id => voteCounts[id] === minVotes);
+            // Eliminate candidate with fewest votes (integer comparison)
+            const minVotesScaled = Math.min(...activeCandidates.map(id => voteCountsScaled[id] || 0));
+            const toEliminate = activeCandidates.find(id => voteCountsScaled[id] === minVotesScaled);
+            
+            // Convert vote counts for display
+            const voteCounts = {};
+            Object.keys(voteCountsScaled).forEach(id => {
+                voteCounts[id] = voteCountsScaled[id] / SCALE_FACTOR;
+            });
             if (toEliminate) {
                 eliminated.add(toEliminate);
                 
@@ -2015,30 +2240,35 @@ function calculateSTV(votes) {
         }
     }
     
-    // Build results
+    // Build results (convert from integer scaling)
+    const totalVotes = totalVotesScaled / SCALE_FACTOR;
+    const exhaustedVotes = exhaustedVotesScaled / SCALE_FACTOR;
+    
     const results = candidates.map(candidate => {
         const party = parties.find(p => p.id === candidate.partyId);
         const isElected = elected.includes(candidate.id);
         
-        // Get final vote count
-        let voteCount = 0;
-        ballots.forEach(ballot => {
+        // Get final vote count from scaled ballots
+        let voteCountScaled = 0;
+        scaledBallots.forEach(ballot => {
             for (let prefId of ballot.preferences) {
                 if (!eliminated.has(prefId) && !elected.includes(prefId) || prefId === candidate.id) {
                     if (prefId === candidate.id) {
-                        voteCount += ballot.count;
+                        voteCountScaled += ballot.weight;
                     }
                     break;
                 }
             }
         });
         
+        const voteCount = voteCountScaled / SCALE_FACTOR;
+        
         return {
             name: candidate.name,
             party: party.name,
             color: party.color,
             votes: voteCount,
-            percentage: totalBallots > 0 ? (voteCount / totalBallots * 100) : 0,
+            percentage: totalVotes > 0 ? (voteCount / totalVotes * 100) : 0,
             elected: isElected
         };
     });
@@ -2049,19 +2279,38 @@ function calculateSTV(votes) {
         return b.votes - a.votes;
     });
     
-    const exhaustedPercentage = totalBallots > 0 ? (exhaustedVotes / totalBallots * 100) : 0;
+    const exhaustedPercentage = totalVotes > 0 ? (exhaustedVotes / totalVotes * 100) : 0;
+    
+    // Verify vote conservation (integer comparison - exact match)
+    // Recalculate final vote totals from scaled ballots
+    let finalTotalScaled = exhaustedVotesScaled;
+    scaledBallots.forEach(ballot => {
+        if (ballot.preferences.length > 0) {
+            // Find first valid preference
+            for (let prefId of ballot.preferences) {
+                if (!eliminated.has(prefId) && !elected.includes(prefId)) {
+                    finalTotalScaled += ballot.weight;
+                    break;
+                }
+            }
+        }
+    });
+    
+    if (finalTotalScaled !== totalVotesScaled) {
+        console.warn(`STV Vote conservation warning: Expected ${totalVotesScaled}, got ${finalTotalScaled}. Difference: ${totalVotesScaled - finalTotalScaled}`);
+    }
     
     return {
         type: 'multi-winner',
         results: results,
-        totalVotes: totalBallots,
+        totalVotes: totalVotes,
         seats: seats,
         quota: quota,
         exhaustedVotes: exhaustedVotes,
         exhaustedPercentage: exhaustedPercentage,
         surplusLoss: exhaustedVotes,  // Track fractional surplus loss
         rounds: roundsData,
-        note: `Single Transferable Vote with Gregory Method surplus transfer (Quota: ${quota} votes)` +
+        note: `Single Transferable Vote with Gregory Method surplus transfer using integer scaling for precision (Quota: ${quota.toFixed(2)} votes)` +
               (exhaustedVotes > 0 ? `. ${formatNumber(exhaustedVotes)} ballots (${exhaustedPercentage.toFixed(1)}%) exhausted with no remaining valid preferences.` : '')
     };
 }
@@ -2119,9 +2368,72 @@ function simulateDistricts(candidateVotes, districtCount) {
     return partyDistrictWins; // { partyId: districtWinsCount }
 }
 
-function calculateMMP(votes) {
+// Calculate iterative leveling seats (German Ausgleichsmandate)
+function calculateIterativeLeveling(districtWins, targets, partyVotes, baseParliamentSize, totalVotes) {
+    // Start with basic overhang seats
+    let currentSeats = {};
+    Object.keys(districtWins).forEach(partyId => {
+        const target = targets[partyId] || 0;
+        const districtWon = districtWins[partyId] || 0;
+        const topUp = Math.max(0, target - districtWon);
+        currentSeats[partyId] = districtWon + topUp;
+    });
+    
+    let currentParliamentSize = baseParliamentSize;
+    const MAX_ITERATIONS = 100; // Safety limit
+    let iterations = 0;
+    
+    // Iteratively add leveling seats until proportionality is restored
+    while (iterations < MAX_ITERATIONS) {
+        let needsLeveling = false;
+        const levelingSeats = {};
+        
+        // Check each party: if seat share > vote share, add leveling seats to others
+        Object.keys(partyVotes).forEach(partyId => {
+            const voteShare = partyVotes[partyId] / totalVotes;
+            const currentTotal = Object.values(currentSeats).reduce((sum, s) => sum + s, 0);
+            if (currentTotal === 0) return; // Safety check
+            
+            const seatShare = (currentSeats[partyId] || 0) / currentTotal;
+            
+            if (seatShare > voteShare + 0.001) { // Small tolerance for floating point
+                needsLeveling = true;
+                
+                // Add leveling seats to other parties proportionally
+                Object.keys(partyVotes).forEach(otherPartyId => {
+                    if (otherPartyId !== partyId) {
+                        const otherVoteShare = partyVotes[otherPartyId] / totalVotes;
+                        const otherSeatShare = (currentSeats[otherPartyId] || 0) / currentTotal;
+                        
+                        if (otherSeatShare < otherVoteShare) {
+                            // This party needs leveling seats
+                            levelingSeats[otherPartyId] = (levelingSeats[otherPartyId] || 0) + 1;
+                        }
+                    }
+                });
+            }
+        });
+        
+        if (!needsLeveling) break; // Proportionality achieved
+        
+        // Apply leveling seats
+        Object.keys(levelingSeats).forEach(partyId => {
+            currentSeats[partyId] = (currentSeats[partyId] || 0) + (levelingSeats[partyId] || 0);
+            currentParliamentSize += (levelingSeats[partyId] || 0);
+        });
+        
+        iterations++;
+    }
+    
+    return {
+        finalSeats: currentSeats,
+        finalParliamentSize: currentParliamentSize
+    };
+}
+
+function calculateMMP(votes, totalSeats, threshold, levelingEnabled) {
+    // Pure function - no DOM access
     // Mixed-Member Proportional: Compensatory system with district + list seats
-    const totalSeats = getSeatsCount();
     
     // Germany Model: 50% Districts, 50% List (base allocation)
     const districtSeats = Math.floor(totalSeats / 2);
@@ -2136,8 +2448,7 @@ function calculateMMP(votes) {
     // Step B: Calculate Proportional Target Seats
     // ============================================
     const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
-    const threshold = parseFloat(document.getElementById('electoralThreshold')?.value) || 0;
-    const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
+    const allocationMethod = 'dhondt'; // Default for MMP (can be made configurable later)
     
     // Filter eligible parties (meet threshold OR won a district - Double Gate)
     const eligiblePartyVotes = {};
@@ -2166,9 +2477,9 @@ function calculateMMP(votes) {
     });
     
     // ============================================
-    // Step C: Calculate Top-Up (List Seats = Target - District)
+    // Step C: Calculate Initial Top-Up (List Seats = Target - District)
     // ============================================
-    const finalSeats = {};
+    const baseSeats = {};
     let overhangTotal = 0;
     
     parties.forEach(party => {
@@ -2177,21 +2488,39 @@ function calculateMMP(votes) {
         
         if (districtWon > target) {
             // OVERHANG: Party keeps all district seats (expands parliament)
-            finalSeats[party.id] = districtWon;
+            baseSeats[party.id] = districtWon;
             overhangTotal += (districtWon - target);
         } else {
             // NORMAL: Award list seats to reach target (already an integer from allocateSeats)
-            finalSeats[party.id] = target;
+            baseSeats[party.id] = target;
         }
     });
     
-    // ============================================
-    // Step D: Handle Overhang - BASIC APPROACH
-    // ============================================
-    // Simply expand parliament size, don't recalculate other parties (no leveling)
-    const actualTotalSeats = Object.values(finalSeats).reduce((sum, s) => sum + s, 0);
+    // Calculate base parliament size
+    const baseParliamentSize = Object.values(baseSeats).reduce((sum, s) => sum + s, 0);
     
-    // Format results
+    // ============================================
+    // Step D: Handle Overhang - Basic or Full Compensation
+    // ============================================
+    let finalSeats = { ...baseSeats };
+    let finalParliamentSize = baseParliamentSize;
+    
+    if (levelingEnabled && overhangTotal > 0) {
+        // Perform iterative leveling (German Ausgleichsmandate)
+        const levelingResult = calculateIterativeLeveling(
+            partyDistrictWins,
+            proportionalTargets,
+            eligiblePartyVotes,
+            baseParliamentSize,
+            totalPartyVotes
+        );
+        finalSeats = levelingResult.finalSeats;
+        finalParliamentSize = levelingResult.finalParliamentSize;
+    }
+    
+    const actualTotalSeats = finalParliamentSize;
+    
+    // Format results using final seats
     const results = parties.map(party => {
         const partyVotes = votes.parties[party.id] || 0;
         const districtWon = partyDistrictWins[party.id] || 0;
@@ -2217,7 +2546,7 @@ function calculateMMP(votes) {
     
     results.sort((a, b) => b.seats - a.seats || b.votes - a.votes);
     
-    // Calculate disproportionality (both indices)
+    // Calculate disproportionality (both indices) using final seats
     // NOTE: MMP should have LOW disproportionality (compensatory)
     // Parallel will have HIGHER disproportionality (non-compensatory)
     const voteShares = {};
@@ -2229,8 +2558,11 @@ function calculateMMP(votes) {
     const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
     const gallagher = calculateGallagher(voteShares, seatShares);
     
+    const levelingSeatsAdded = finalParliamentSize - baseParliamentSize;
     const overhangNote = overhangTotal > 0 
-        ? ` Parliament expanded by ${overhangTotal} overhang seat(s) from ${totalSeats} to ${actualTotalSeats}.`
+        ? levelingEnabled
+            ? ` Parliament expanded by ${levelingSeatsAdded} leveling seat(s) from ${baseParliamentSize} to ${finalParliamentSize} to restore proportionality.`
+            : ` Parliament expanded by ${overhangTotal} overhang seat(s) from ${totalSeats} to ${baseParliamentSize}.`
         : '';
     
     return {
@@ -2245,14 +2577,21 @@ function calculateMMP(votes) {
         threshold: threshold,
         allocationMethod: allocationMethod,
         disproportionality: disproportionality,
-        gallagher: gallagher,  // NEW: Gallagher Index
+        gallagher: gallagher,
+        // Base vs Final seats for UI display
+        baseSeats: baseSeats,
+        finalSeats: finalSeats,
+        baseParliamentSize: baseParliamentSize,
+        finalParliamentSize: finalParliamentSize,
+        levelingSeatsAdded: levelingSeatsAdded,
+        levelingEnabled: levelingEnabled,
         note: `Mixed-Member Proportional (Germany Model): ${districtSeats} district seats (${Math.round(districtSeats/totalSeats*100)}%) with compensatory list seats to ensure overall proportionality. Threshold: ${threshold}% OR 1+ district win for eligibility (Double Gate).${overhangNote}`
     };
 }
 
-function calculateParallel(votes) {
+function calculateParallel(votes, totalSeats, threshold, allocationMethod) {
+    // Pure function - no DOM access
     // Parallel Voting (MMM): Non-compensatory mixed system
-    const totalSeats = getSeatsCount();
     
     // Japan Model: ~62% Districts, ~38% List
     // This reflects real-world Parallel systems where district seats dominate
@@ -2271,8 +2610,6 @@ function calculateParallel(votes) {
     // SILO 2: List Tier (Proportional - INDEPENDENT)
     // ============================================
     const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
-    const threshold = parseFloat(document.getElementById('electoralThreshold')?.value) || 0;
-    const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
     
     // Filter parties meeting threshold
     const eligiblePartyVotes = {};
@@ -2458,17 +2795,23 @@ function getGallagherGrade(score, systemType) {
     return gradeInfo;
 }
 
-// Translate ranked ballot data to party vote totals (for hybrid comparisons)
-function translateRankedToPartyVotes(ballots) {
-    const partyTotals = {};
+// Flatten ranked ballots to party votes (Data Transformer for STV → MMP/PR comparisons)
+function flattenRankedToPartyVotes(ballots, candidates) {
+    const partyVotes = {};
     ballots.forEach(ballot => {
-        const firstChoiceId = ballot.preferences[0];
-        const candidate = candidates.find(c => c.id === firstChoiceId);
+        const firstPrefId = ballot.preferences[0];
+        const candidate = candidates.find(c => c.id === firstPrefId);
         if (candidate) {
-            partyTotals[candidate.partyId] = (partyTotals[candidate.partyId] || 0) + ballot.count;
+            partyVotes[candidate.partyId] = (partyVotes[candidate.partyId] || 0) + ballot.count;
         }
     });
-    return partyTotals;
+    return partyVotes;
+}
+
+// Translate ranked ballot data to party vote totals (for hybrid comparisons)
+function translateRankedToPartyVotes(ballots) {
+    // Use the flattenRankedToPartyVotes helper
+    return flattenRankedToPartyVotes(ballots, candidates);
 }
 
 // Convert FPTP candidate votes to synthetic IRV ballots
@@ -2551,7 +2894,37 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
     
     // STV → Party-List/MMP: Translate ranked to party votes
     if (currentSystem === 'stv' && ['mmp', 'party-list'].includes(compareToSystem)) {
-        translatedVotes = translateRankedToPartyVotes(votes.ballots);
+        console.log('STV Comparison Debug: Translating STV ballots to party votes', {
+            ballotsCount: votes.ballots?.length,
+            compareToSystem: compareToSystem
+        });
+        
+        if (!votes.ballots || votes.ballots.length === 0) {
+            console.error('STV Comparison: No ballots found in votes object');
+            return { error: 'No ballot data available for comparison' };
+        }
+        
+        const partyTotals = flattenRankedToPartyVotes(votes.ballots, candidates);
+        console.log('STV Comparison Debug: Flattened party totals', partyTotals);
+        
+        translatedVotes = {
+            parties: partyTotals
+        };
+        
+        // For MMP, also need candidate votes for district simulation
+        // Create synthetic candidate votes by distributing party votes evenly among candidates
+        if (compareToSystem === 'mmp') {
+            const candidateVotes = {};
+            candidates.forEach(candidate => {
+                const partyVotes = partyTotals[candidate.partyId] || 0;
+                // Count candidates per party
+                const candidatesInParty = candidates.filter(c => c.partyId === candidate.partyId).length;
+                // Distribute party votes evenly among candidates
+                candidateVotes[candidate.id] = candidatesInParty > 0 ? partyVotes / candidatesInParty : 0;
+            });
+            translatedVotes.candidates = candidateVotes;
+            console.log('STV Comparison Debug: Created synthetic candidate votes for MMP', candidateVotes);
+        }
     }
     
     // Run calculation
@@ -2564,7 +2937,44 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         'stv': calculateSTV
     };
     
-    const shadowResults = calculators[compareToSystem](translatedVotes);
+    // Handle STV's special parameter requirements
+    let shadowResults;
+    if (compareToSystem === 'stv') {
+        // When comparing TO STV, we need seats, totalVoters, ballots, numBallotTypes
+        // Use stored params if available, otherwise extract from translatedVotes
+        const params = window.lastCalculationParams || {};
+        const seats = params.totalSeats || 10;
+        const totalVoters = params.totalVoters || 0;
+        const ballots = translatedVotes.ballots || [];
+        const numBallotTypes = params.numBallotTypes || 5;
+        
+        shadowResults = calculateSTV(translatedVotes, seats, totalVoters, ballots, numBallotTypes);
+    } else if (currentSystem === 'stv') {
+        // When comparing FROM STV, use stored params for additional context
+        const params = window.lastCalculationParams || {};
+        // For party-list systems, we need threshold and allocationMethod
+        if (compareToSystem === 'party-list') {
+            shadowResults = calculatePartyListPR(
+                translatedVotes, 
+                params.totalSeats || 10, 
+                params.threshold || 5, 
+                params.allocationMethod || 'dhondt'
+            );
+        } else if (compareToSystem === 'mmp') {
+            shadowResults = calculateMMP(
+                translatedVotes, 
+                params.totalSeats || 10, 
+                params.threshold || 5, 
+                params.levelingEnabled || false
+            );
+        } else {
+            shadowResults = calculators[compareToSystem](translatedVotes);
+        }
+    } else {
+        // For other systems, use standard calculator call
+        shadowResults = calculators[compareToSystem](translatedVotes);
+    }
+    
     return shadowResults;
 }
 
@@ -2622,14 +3032,14 @@ function generateComparisonRows(primaryResults, shadowResults) {
         const shadowDisplay = isSingleWinner ? (data.shadow === 1 ? 'Winner' : '—') : data.shadow;
         
         html += `
-            <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 10px;">
-                    <span style="display: inline-block; width: 12px; height: 12px; background: ${data.color}; border-radius: 2px; margin-right: 8px;"></span>
+            <tr>
+                <td class="comparison-table td">
+                    <span class="party-label" style="--party-color: ${data.color}; display: inline-block; width: 12px; height: 12px; background: var(--party-color); border-radius: 2px; margin-right: 8px;"></span>
                     ${partyName}
                 </td>
-                <td style="padding: 10px; text-align: center;">${primaryDisplay}</td>
-                <td style="padding: 10px; text-align: center;">${shadowDisplay}</td>
-                <td style="padding: 10px; text-align: center;" class="${diffClass}">
+                <td class="comparison-table td comparison-table__td--center">${primaryDisplay}</td>
+                <td class="comparison-table td comparison-table__td--center">${shadowDisplay}</td>
+                <td class="comparison-table td comparison-table__td--center ${diffClass}">
                     ${diffText}
                 </td>
             </tr>
@@ -2741,12 +3151,11 @@ function showShadowResult() {
     const votes = window.lastCalculationVotes;
     const primaryResults = window.lastCalculationResults;
     
-    // DEBUG: Log to verify data exists
-    console.log('Shadow Result Debug:', {
+    console.log('showShadowResult Debug:', {
         currentSystem,
         compareSystem,
-        hasVotes: !!votes,
-        hasPrimaryResults: !!primaryResults,
+        votesExists: !!votes,
+        primaryResultsExists: !!primaryResults,
         votesStructure: votes ? Object.keys(votes) : null,
         primaryResultsStructure: primaryResults ? Object.keys(primaryResults) : null
     });
@@ -2758,8 +3167,21 @@ function showShadowResult() {
     
     const shadowResults = calculateShadowResult(currentSystem, compareSystem, votes);
     
+    console.log('showShadowResult: Shadow results received', {
+        hasError: !!shadowResults.error,
+        error: shadowResults.error,
+        resultsType: shadowResults?.type,
+        resultsCount: shadowResults?.results?.length
+    });
+    
     if (shadowResults.error) {
         alert(shadowResults.error);
+        return;
+    }
+    
+    if (!shadowResults || !shadowResults.results) {
+        console.error('showShadowResult: Invalid shadow results', shadowResults);
+        alert('Failed to calculate comparison. Please check console for details.');
         return;
     }
     
@@ -2778,9 +3200,9 @@ function showShadowResult() {
             <div class="shadow-header">
                 🔬 Counterfactual Analysis: ${SYSTEM_RULES[compareSystem].name}
             </div>
-            <table class="comparison-table" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <table class="comparison-table">
                 <thead>
-                    <tr style="background: #667eea; color: white;">
+                    <tr>
                         <th style="padding: 12px; text-align: left;">Party</th>
                         <th style="padding: 12px; text-align: center;">${systemNames[currentSystem]} Seats</th>
                         <th style="padding: 12px; text-align: center;">${systemNames[compareSystem]} Seats</th>
@@ -2846,6 +3268,27 @@ function displayResults(results, system) {
             'condorcet': 'Condorcet Method'
         };
         html += createTieNotification(results.tieInfo, systemNames[system] || system);
+    }
+    
+    // Add Simulation Notes section for auditability
+    const simulationNotes = [];
+    if (results.tieDetected && results.tieInfo) {
+        const entities = results.tieInfo.tiedEntities.join(' and ');
+        simulationNotes.push(`<strong>Tie-Breaking:</strong> Winner chosen by secure random draw due to absolute tie between ${entities}.`);
+    }
+    if (results.otherNotes && Array.isArray(results.otherNotes)) {
+        results.otherNotes.forEach(note => simulationNotes.push(note));
+    }
+    
+    if (simulationNotes.length > 0) {
+        html += `
+            <div class="simulation-notes" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin: 0 0 15px 0; color: #495057;">📋 Simulation Notes</h3>
+                <div class="notes-content">
+                    ${simulationNotes.map(note => `<p style="margin: 8px 0; color: #495057;">${note}</p>`).join('')}
+                </div>
+            </div>
+        `;
     }
     
     // Display paradox warnings if present
@@ -3025,6 +3468,21 @@ function displayResults(results, system) {
             </div>`;
         }
         
+        // Show Base vs Final parliament size for MMP with leveling
+        if (results.type === 'mixed' && results.levelingEnabled && results.baseParliamentSize !== results.finalParliamentSize) {
+            html += `
+                <div class="parliament-size-info">
+                    <h3>🏛️ Parliament Size</h3>
+                    <p><strong>Base Size:</strong> ${results.baseParliamentSize} seats</p>
+                    <p><strong>Final Size:</strong> ${results.finalParliamentSize} seats</p>
+                    <p><strong>Leveling Seats Added:</strong> ${results.levelingSeatsAdded} seats</p>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                        German-style leveling seats were added to restore proportionality.
+                    </p>
+                </div>
+            `;
+        }
+        
         html += '<h3>Seat Allocation by Party</h3>';
         
         // Prepare comparison data for bar chart
@@ -3094,10 +3552,17 @@ function displayResults(results, system) {
             });
         }
     } else if (results.type === 'mixed') {
-        // Add charts section
-        html += '<div class="charts-container">';
+        // Add charts section with two-row layout (Option B)
+        html += '<div class="charts-container" style="flex-direction: column; gap: 20px;">';
+        // Top row: votesChart and comparisonChart side by side
+        html += '<div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px;">';
         html += '<canvas id="votesChart" width="400" height="400"></canvas>';
         html += '<canvas id="comparisonChart" width="600" height="400"></canvas>';
+        html += '</div>';
+        // Bottom row: seatsChart centered
+        html += '<div style="display: flex; justify-content: center; align-items: center;">';
+        html += '<canvas id="seatsChart" width="400" height="400"></canvas>';
+        html += '</div>';
         html += '</div>';
         
         // Show overhang seats warning for MMP
@@ -3258,9 +3723,13 @@ function displayResults(results, system) {
         results._comparisonData = comparisonData;
     } else if (results.type === 'multi-winner') {
         // Add pie charts section
+        // For STV (ranking system), only show seats chart centered
+        const isSTV = system === 'stv';
         html += '<div class="charts-container">';
-        html += '<canvas id="votesChart" width="400" height="400"></canvas>';
-        html += '<canvas id="seatsChart" width="400" height="400"></canvas>';
+        if (!isSTV) {
+            html += '<canvas id="votesChart" width="400" height="400"></canvas>';
+        }
+        html += '<canvas id="seatsChart" width="400" height="400"' + (isSTV ? ' style="margin: 0 auto;"' : '') + '></canvas>';
         html += '</div>';
         
         html += '<h3>Elected Candidates</h3>';
@@ -3273,7 +3742,7 @@ function displayResults(results, system) {
                             ${r.elected ? '<span class="winner-badge">ELECTED</span>' : ''}
                         </div>
                         <div class="result-stats">
-                            ${r.party} • ${formatNumber(r.votes)} votes • ${r.percentage.toFixed(1)}%
+                            ${r.party} • ${formatNumber(Math.round(r.votes))} votes • ${r.percentage.toFixed(1)}%
                         </div>
                     </div>
                     <div class="result-bar">
@@ -3300,7 +3769,7 @@ function displayResults(results, system) {
             }
         });
         if (results.quota) {
-            html += `<p style="margin-top: 10px;"><strong>Quota needed:</strong> ${formatNumber(results.quota)} votes</p>`;
+            html += `<p style="margin-top: 10px;"><strong>Quota needed:</strong> ${formatNumber(Math.round(results.quota))} votes</p>`;
         }
         
         // Display round-by-round flow for STV
@@ -3557,6 +4026,11 @@ function displayResults(results, system) {
             // For party and mixed systems, use comparison bar chart instead of pie chart
             if ((results.type === 'party' || results.type === 'mixed') && results._comparisonData) {
                 window.createComparisonBarChart('comparisonChart', results._comparisonData, 'Vote Share vs Seat Share');
+                
+                // For mixed systems, also create seat distribution pie chart
+                if (results.type === 'mixed' && seatsChartData.length > 0) {
+                    window.createPieChart('seatsChart', seatsChartData, 'Seat Distribution');
+                }
             } else if (seatsChartData.length > 0) {
                 let seatsTitle = 'Seat Distribution';
                 if (results.type === 'candidate' || results.type === 'approval') {

@@ -157,29 +157,28 @@ window.importCountryParties = function(country) {
     }
     
     // If switching countries, clear existing parties with confirmation
-    if (parties.length > 0) {
-        const confirmMsg = currentImportedCountry && currentImportedCountry !== country
-            ? `This will replace your current ${currentImportedCountry} parties with parties from ${country}. Continue?`
-            : `This will replace your current ${parties.length} parties with parties from ${country}. Continue?`;
+    if (electionState.parties.length > 0) {
+        const confirmMsg = electionState.importedCountry && electionState.importedCountry !== country
+            ? `This will replace your current ${electionState.importedCountry} parties with parties from ${country}. Continue?`
+            : `This will replace your current ${electionState.parties.length} parties with parties from ${country}. Continue?`;
         
         if (!confirm(confirmMsg)) {
             return;
         }
     }
     
-    // Set current imported country
-    currentImportedCountry = country;
-    
-    parties = [];
-    candidates = [];
-    
     // Add parties from country
-    partyData.forEach((party, index) => {
-        parties.push({
-            id: Date.now() + index,
-            name: party.name,
-            color: party.color
-        });
+    const importedParties = partyData.map((party, index) => ({
+        id: Date.now() + index,
+        name: party.name,
+        color: party.color
+    }));
+    
+    // Use setState to update state
+    setState({
+        importedCountry: country,
+        parties: importedParties,
+        candidates: [] // Clear candidates when importing new country
     });
     
     // Update all UI elements
@@ -187,7 +186,6 @@ window.importCountryParties = function(country) {
     updateCountryIndicator(); // Show which country is imported
     updateCandidatePartySelect();
     updateVotingInputs();
-    saveState(); // Save the imported country to localStorage
     
     // Collapse the import panel after import
     const panel = document.getElementById('countryImportPanel');
@@ -196,7 +194,7 @@ window.importCountryParties = function(country) {
     icon.textContent = '▶';
     icon.classList.remove('open');
     
-    alert(`✅ Imported ${parties.length} political parties from ${country}!\n\nParties now appear in the list below.`);
+    alert(`✅ Imported ${importedParties.length} political parties from ${country}!\n\nParties now appear in the list below.`);
 };
 
 // Autofill votes function
@@ -247,6 +245,110 @@ window.autofillVotes = function() {
                 console.warn(`Input not found for party ${party.id}`);
             }
         });
+    }
+    
+    // Fill ranking ballots for IRV/STV systems
+    const rankingSystems = ['irv', 'stv'];
+    if (rankingSystems.includes(system)) {
+        if (candidates.length === 0) {
+            alert('Please add candidates first for ranking systems');
+            return;
+        }
+        
+        // Ensure numBallotTypes is set to 3
+        const numBallotTypesInput = document.getElementById('numBallotTypes');
+        if (numBallotTypesInput) {
+            numBallotTypesInput.value = 3;
+        }
+        
+        // Generate "Core Strength" pattern: creates Condorcet cycle
+        // Group candidates by party
+        const candidatesByParty = {};
+        candidates.forEach(candidate => {
+            if (!candidatesByParty[candidate.partyId]) {
+                candidatesByParty[candidate.partyId] = [];
+            }
+            candidatesByParty[candidate.partyId].push(candidate);
+        });
+        
+        const partyIds = Object.keys(candidatesByParty);
+        if (partyIds.length < 2) {
+            alert('Please add candidates from at least 2 different parties for ranking systems');
+            return;
+        }
+        
+        // Create 3 ballot patterns with "Core Strength" approach
+        const percentages = [40, 35, 25];
+        const ballotNames = ['Ballot Type 1', 'Ballot Type 2', 'Ballot Type 3'];
+        
+        // First, call updateRankingBallots() to ensure UI is ready
+        if (typeof updateRankingBallots === 'function') {
+            updateRankingBallots();
+        }
+        
+        // Wait a moment for DOM to update, then populate values
+        setTimeout(() => {
+            for (let i = 0; i < 3; i++) {
+                // Set ballot name
+                const nameInput = document.getElementById(`ballot-${i}-name`);
+                if (nameInput) {
+                    nameInput.value = ballotNames[i];
+                }
+                
+                // Set percentage
+                const percentageInput = document.getElementById(`ballot-${i}-percentage`);
+                if (percentageInput) {
+                    percentageInput.value = percentages[i];
+                }
+                
+                // Set rankings using "Core Strength" pattern
+                // Ballot 1: Party A strong (1st), Party B 2nd, Party C 3rd...
+                // Ballot 2: Party B strong (1st), Party C 2nd, Party A 3rd...
+                // Ballot 3: Party C strong (1st), Party A 2nd, Party B 3rd...
+                const primaryPartyIndex = i % partyIds.length;
+                const secondaryPartyIndex = (i + 1) % partyIds.length;
+                const tertiaryPartyIndex = (i + 2) % partyIds.length;
+                
+                const primaryParty = partyIds[primaryPartyIndex];
+                const secondaryParty = partyIds[secondaryPartyIndex];
+                const tertiaryParty = partyIds[tertiaryPartyIndex];
+                
+                // Set 1st choice: first candidate from primary party
+                const firstChoiceSelect = document.getElementById(`ballot-${i}-rank-1`);
+                if (firstChoiceSelect && candidatesByParty[primaryParty].length > 0) {
+                    firstChoiceSelect.value = candidatesByParty[primaryParty][0].id;
+                    // Trigger change event to update UI
+                    firstChoiceSelect.dispatchEvent(new Event('change'));
+                }
+                
+                // Set 2nd choice: first candidate from secondary party
+                if (candidates.length >= 2) {
+                    const secondChoiceSelect = document.getElementById(`ballot-${i}-rank-2`);
+                    if (secondChoiceSelect && candidatesByParty[secondaryParty].length > 0) {
+                        secondChoiceSelect.value = candidatesByParty[secondaryParty][0].id;
+                        secondChoiceSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+                
+                // Set 3rd choice: first candidate from tertiary party (if exists)
+                if (candidates.length >= 3 && partyIds.length >= 3) {
+                    const thirdChoiceSelect = document.getElementById(`ballot-${i}-rank-3`);
+                    if (thirdChoiceSelect && candidatesByParty[tertiaryParty].length > 0) {
+                        thirdChoiceSelect.value = candidatesByParty[tertiaryParty][0].id;
+                        thirdChoiceSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+            }
+            
+            // Trigger percentage validation
+            if (typeof validateBallotPercentages === 'function') {
+                validateBallotPercentages();
+            }
+            
+            alert('✅ Ranking ballots auto-filled with "Core Strength" pattern (creates Condorcet cycle)!');
+        }, 100);
+        
+        return; // Don't show the generic alert for ranking systems
     }
     
     alert('✅ Votes auto-filled with realistic random values!');
