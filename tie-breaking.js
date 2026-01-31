@@ -4,6 +4,18 @@
  */
 
 /**
+ * Generate cryptographically secure random integer
+ * Uses Web Crypto API for unpredictable random number generation
+ * @param {Number} max - Upper bound (exclusive)
+ * @returns {Number} - Random integer from 0 to max-1
+ */
+function getSecureRandomInt(max) {
+    const randomBuffer = new Uint32Array(1);
+    crypto.getRandomValues(randomBuffer);
+    return randomBuffer[0] % max;
+}
+
+/**
  * Detect and resolve ties in candidate/party results
  * @param {Array} results - Array of result objects with votes property
  * @param {String} type - 'candidate' or 'party'
@@ -26,15 +38,15 @@ function resolveTie(results, type = 'candidate') {
         };
     }
     
-    // Tie detected - use random lot drawing
-    const winner = topResults[Math.floor(Math.random() * topResults.length)];
+    // Tie detected - use cryptographically secure random lot drawing
+    const winner = topResults[getSecureRandomInt(topResults.length)];
     
     return {
         winner: winner,
         tieDetected: true,
         tiedEntities: topResults.map(r => r.name),
         tieVotes: maxVotes,
-        method: 'random_lot',
+        method: 'cryptographic_random_lot',
         numTied: topResults.length
     };
 }

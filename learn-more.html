@@ -281,64 +281,85 @@
                     <tr>
                         <th>System Name</th>
                         <th>Type of Race/Location</th>
-                        <th>Specific Examples</th>
+                        <th>Examples</th>
+                        <th>How It Works (Technical)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td><span class="system-number">1</span><strong>First-Past-the-Post (FPTP)</strong></td>
                         <td>Single-winner majoritarian for legislative and executive bodies</td>
-                        <td>United Kingdom, United States (House seats), Canada, India, Pakistan, Bangladesh, Belarus</td>
+                        <td>United Kingdom, United States (House seats), Canada, India, Pakistan, Bangladesh</td>
+                        <td>
+                            <strong>Calculation:</strong> Count votes for each candidate. Candidate with most votes wins.<br>
+                            <strong>Formula:</strong> Winner = max(votes<sub>i</sub>) for all candidates i<br>
+                            <strong>Threshold:</strong> None required. Simple plurality.
+                        </td>
                     </tr>
                     <tr>
-                        <td><span class="system-number">2</span><strong>Two-Round System (TRS)</strong></td>
-                        <td>Single-winner majoritarian, most commonly for presidential elections</td>
-                        <td>France, Finland, Austria, Portugal, Poland, Russia, many Latin American countries, Francophone Africa (Mali, Ivory Coast)</td>
-                    </tr>
-                    <tr>
-                        <td><span class="system-number">3</span><strong>Instant-Runoff Voting (IRV/RCV)</strong></td>
+                        <td><span class="system-number">2</span><strong>Instant-Runoff Voting (IRV/RCV)</strong></td>
                         <td>Single-winner ranked voting system</td>
-                        <td>Australian House of Representatives, Papua New Guinea Parliament, Irish Presidential election. US Cities: San Francisco, Portland ME, St. Paul MN</td>
+                        <td>Australian House of Representatives, Papua New Guinea Parliament, Irish Presidential election. US Cities: San Francisco, Portland ME, St. Paul MN, Alaska (state elections)</td>
+                        <td>
+                            <strong>Calculation:</strong> Multi-round elimination process:<br>
+                            1. Count first-preference votes<br>
+                            2. If no majority (&gt;50%), eliminate candidate with fewest votes<br>
+                            3. Transfer eliminated candidate's votes to next preferences<br>
+                            4. Repeat until one candidate has majority<br>
+                            <strong>Quota:</strong> floor(totalVotes / 2) + 1
+                        </td>
                     </tr>
                     <tr>
-                        <td><span class="system-number">4</span><strong>Party-List PR (Closed List)</strong></td>
+                        <td><span class="system-number">3</span><strong>Party-List Proportional Representation</strong></td>
                         <td>Multi-winner proportional representation</td>
-                        <td>Israel (nationwide list), Spain, Portugal, Russia, Kazakhstan, South Africa</td>
+                        <td><strong>Closed:</strong> Israel, Spain, Portugal, South Africa<br><strong>Open:</strong> Finland, Latvia, Sweden, Netherlands, Brazil</td>
+                        <td>
+                            <strong>Calculation:</strong> D'Hondt or Sainte-Laguë method<br>
+                            <strong>D'Hondt:</strong> quotient = votes / (seats_won + 1)<br>
+                            <strong>Sainte-Laguë:</strong> quotient = votes / (2 × seats_won + 1)<br>
+                            Award seats iteratively to party with highest quotient.<br>
+                            <strong>Threshold:</strong> Parties must exceed threshold % to win seats (typically 3-5%)
+                        </td>
                     </tr>
                     <tr>
-                        <td><span class="system-number">5</span><strong>Party-List PR (Open List)</strong></td>
-                        <td>Multi-winner proportional representation with candidate preference</td>
-                        <td>Finland, Latvia, Sweden, Netherlands, Brazil</td>
-                    </tr>
-                    <tr>
-                        <td><span class="system-number">6</span><strong>Single Transferable Vote (STV)</strong></td>
+                        <td><span class="system-number">4</span><strong>Single Transferable Vote (STV)</strong></td>
                         <td>Multi-winner proportional representation</td>
-                        <td>Republic of Ireland (parliament and presidential), Malta, Australian Senate. Regional: Northern Ireland, Scotland (local elections)</td>
+                        <td>Republic of Ireland (parliament), Malta, Australian Senate. Regional: Northern Ireland, Scotland (local elections)</td>
+                        <td>
+                            <strong>Calculation:</strong> Multi-winner ranked choice with quota<br>
+                            <strong>Droop Quota:</strong> floor(totalVotes / (seats + 1)) + 1<br>
+                            1. Count first preferences<br>
+                            2. Elect candidates meeting quota<br>
+                            3. Transfer surplus votes at fractional value<br>
+                            4. If no one meets quota, eliminate lowest and transfer votes<br>
+                            5. Repeat until all seats filled
+                        </td>
                     </tr>
                     <tr>
-                        <td><span class="system-number">7</span><strong>Mixed-Member Proportional (MMP)</strong></td>
+                        <td><span class="system-number">5</span><strong>Mixed-Member Proportional (MMP/AMS)</strong></td>
                         <td>Mixed system with compensatory list seats for overall proportionality</td>
-                        <td>Germany (inventor), New Zealand, Scottish Parliament (AMS), Welsh Assemblies (AMS)</td>
+                        <td>Germany (originator), New Zealand, Scottish Parliament, Welsh Assemblies</td>
+                        <td>
+                            <strong>Calculation:</strong> Compensatory mixed system<br>
+                            <strong>Step A:</strong> Simulate district winners (FPTP in virtual districts)<br>
+                            <strong>Step B:</strong> Calculate proportional targets using D'Hondt/Sainte-Laguë<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;Target = allocateSeats(partyVotes, totalSeats)<br>
+                            <strong>Step C:</strong> Award list seats to compensate<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;ListSeats = max(0, Target − DistrictSeats)<br>
+                            <strong>Step D:</strong> Handle overhang (party keeps excess district seats, parliament expands)
+                        </td>
                     </tr>
                     <tr>
-                        <td><span class="system-number">8</span><strong>Parallel Voting (MMM)</strong></td>
+                        <td><span class="system-number">6</span><strong>Parallel Voting (MMM)</strong></td>
                         <td>Mixed system where district and list seats are calculated independently</td>
                         <td>Japan, Russia, Taiwan, Lithuania, Thailand</td>
-                    </tr>
-                    <tr>
-                        <td><span class="system-number">9</span><strong>Block Voting</strong></td>
-                        <td>Multi-winner, winner-take-all plurality in multi-seat constituencies</td>
-                        <td>Philippines Senate (at-large), Laos National Assembly, Marshall Islands Legislature, Palau Senate</td>
-                    </tr>
-                    <tr>
-                        <td><span class="system-number">10</span><strong>Limited Voting</strong></td>
-                        <td>Multi-winner, semi-proportional where voters have fewer votes than seats</td>
-                        <td>Spain (Senate), Argentina (Chamber of Deputies, formerly), UK (historically)</td>
-                    </tr>
-                    <tr>
-                        <td><span class="system-number">11</span><strong>Approval Voting</strong></td>
-                        <td>Single-winner system where voters approve any number of candidates</td>
-                        <td>US Cities: St. Louis MO, Fargo ND (formerly). Used by many academic and professional societies</td>
+                        <td>
+                            <strong>Calculation:</strong> Non-compensatory two-tier system<br>
+                            <strong>SILO 1 (Districts):</strong> Simulate FPTP winners across districts<br>
+                            <strong>SILO 2 (Lists):</strong> Allocate list seats by party vote (D'Hondt/Sainte-Laguë)<br>
+                            <strong>Final:</strong> DistrictSeats + ListSeats (simple addition, no compensation)<br>
+                            <strong>Note:</strong> District performance does NOT affect list seat allocation
+                        </td>
                     </tr>
                 </tbody>
             </table>

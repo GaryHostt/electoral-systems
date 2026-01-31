@@ -80,7 +80,41 @@ function calculateLoosemoreHanby(voteShares, seatShares) {
 }
 
 /**
+ * Calculate Gallagher Index (Least Squares measure of disproportionality)
+ * Penalizes large deviations more heavily than Loosemore-Hanby by squaring differences
+ * Returns a value between 0 (perfectly proportional) and 100 (totally disproportional)
+ * 
+ * This is the academic standard used by political scientists.
+ * 
+ * Formula: sqrt((1/2) * sum((V_i - S_i)^2))
+ * Where V_i = vote share % for party i, S_i = seat share % for party i
+ */
+function calculateGallagher(voteShares, seatShares) {
+    let sumSquares = 0;
+    const parties = Object.keys(voteShares);
+    
+    parties.forEach(party => {
+        const votePct = voteShares[party] || 0;
+        const seatPct = seatShares[party] || 0;
+        const diff = votePct - seatPct;
+        sumSquares += Math.pow(diff, 2);
+    });
+    
+    return Math.sqrt(sumSquares / 2);
+}
+
+/**
  * Calculate Droop Quota for STV
+ * 
+ * CRITICAL: This quota should be calculated ONCE at the start of the election
+ * based on the initial valid vote count. It must NEVER be recalculated during
+ * elimination rounds, even as ballots become exhausted. The quota remains static
+ * throughout the entire STV process to maintain mathematical consistency.
+ * 
+ * Formula: floor(totalVotes / (seats + 1)) + 1
+ * 
+ * This ensures it's mathematically impossible for more candidates to reach the
+ * quota than there are seats available.
  */
 function calculateDroopQuota(totalVotes, seats) {
     return Math.floor(totalVotes / (seats + 1)) + 1;
@@ -276,6 +310,7 @@ if (typeof module !== 'undefined' && module.exports) {
         allocateSeats_DHondt,
         allocateSeats_SainteLague,
         calculateLoosemoreHanby,
+        calculateGallagher,  // NEW: Gallagher Index
         calculateDroopQuota,
         calculateIRV_Full,
         calculateSTV_Full

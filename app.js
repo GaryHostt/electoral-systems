@@ -41,6 +41,77 @@ const systemDescriptions = {
     parallel: "Parallel Voting: Combines district seats and party list seats, but they're calculated independently (not compensatory)."
 };
 
+// Centralized system configuration rules
+// This object defines the properties and behaviors of each electoral system
+const SYSTEM_RULES = {
+    'fptp': {
+        name: 'First-Past-the-Post',
+        isMixed: false,
+        compensatory: false,
+        hasDistricts: false,
+        needsPartyVote: false,
+        needsCandidates: true,
+        isRanking: false,
+        raceScopes: ['single', 'legislative'],
+        description: 'Simple plurality voting where highest vote wins'
+    },
+    'irv': {
+        name: 'Instant-Runoff Voting',
+        isMixed: false,
+        compensatory: false,
+        hasDistricts: false,
+        needsPartyVote: false,
+        needsCandidates: true,
+        isRanking: true,
+        raceScopes: ['single', 'legislative'],
+        description: 'Ranked choice with instant runoff elimination'
+    },
+    'party-list': {
+        name: 'Party-List PR',
+        isMixed: false,
+        compensatory: false,
+        hasDistricts: false,
+        needsPartyVote: true,
+        needsCandidates: false,
+        isRanking: false,
+        raceScopes: ['legislative'],
+        description: 'Pure proportional representation by party vote'
+    },
+    'stv': {
+        name: 'Single Transferable Vote',
+        isMixed: false,
+        compensatory: false,
+        hasDistricts: false,
+        needsPartyVote: false,
+        needsCandidates: true,
+        isRanking: true,
+        raceScopes: ['legislative'],
+        description: 'Multi-winner ranked choice with quota-based election'
+    },
+    'mmp': {
+        name: 'Mixed-Member Proportional',
+        isMixed: true,
+        compensatory: true,
+        hasDistricts: true,
+        needsPartyVote: true,
+        needsCandidates: true,
+        isRanking: false,
+        raceScopes: ['legislative'],
+        description: 'Combines FPTP districts with compensatory PR list'
+    },
+    'parallel': {
+        name: 'Parallel Voting',
+        isMixed: true,
+        compensatory: false,
+        hasDistricts: true,
+        needsPartyVote: true,
+        needsCandidates: true,
+        isRanking: false,
+        raceScopes: ['legislative'],
+        description: 'Independent district and list tiers without compensation'
+    }
+};
+
 // Arrow's Theorem analysis for each system
 const arrowAnalysis = {
     fptp: {
@@ -200,26 +271,24 @@ function onSystemChange() {
         return;
     }
     
+    // Get system rules from centralized configuration
+    const rules = SYSTEM_RULES[system];
+    if (!rules) return; // Unknown system
+    
     // Update system description
     document.getElementById('systemDescription').innerHTML = `<p>${systemDescriptions[system]}</p>`;
     
-    // Systems that use a party vote (and thus need electoral threshold)
-    const systemsWithPartyVote = ['party-list', 'mmp', 'parallel'];
-    
-    // Systems that use proportional allocation methods
-    const systemsWithAllocationMethod = ['party-list', 'mmp', 'parallel'];
-    
-    // Show/hide electoral threshold input
+    // Show/hide electoral threshold input (for systems with party vote)
     const thresholdContainer = document.getElementById('electoralThresholdContainer');
-    if (systemsWithPartyVote.includes(system)) {
+    if (rules.needsPartyVote) {
         thresholdContainer.style.display = 'block';
     } else {
         thresholdContainer.style.display = 'none';
     }
     
-    // Show/hide allocation method selector
+    // Show/hide allocation method selector (for systems with party vote)
     const allocationContainer = document.getElementById('allocationMethodContainer');
-    if (systemsWithAllocationMethod.includes(system)) {
+    if (rules.needsPartyVote) {
         allocationContainer.style.display = 'block';
     } else {
         allocationContainer.style.display = 'none';
@@ -231,43 +300,25 @@ function onSystemChange() {
     // Configure advanced features visibility based on system
     configureAdvancedFeatures(system);
     
-    // Systems that need BOTH parties and candidates
-    const needsBothPartiesAndCandidates = [
-        'mmp', 
-        'parallel'
-    ];
-    
-    // Systems that need ONLY parties (no individual candidates)
-    const needsOnlyParties = [
-        'party-list'
-    ];
-    
-    // Systems that are candidate-focused (parties are just for organization/color)
-    const candidateFocused = [
-        'fptp',
-        'irv',
-        'stv'
-    ];
-    
     // Show/hide sections based on system requirements
     const partiesSection = document.getElementById('partiesSection');
     const candidatesSection = document.getElementById('candidatesSection');
     const votingSection = document.getElementById('votingSection');
     
-    if (needsOnlyParties.includes(system)) {
-        // Only parties, no candidates
+    if (!rules.needsCandidates && rules.needsPartyVote) {
+        // Only parties, no candidates (e.g., Party-List PR)
         partiesSection.style.display = 'block';
         candidatesSection.style.display = 'none';
         votingSection.style.display = 'block';
         updateSectionNumbers(2, null, 3);
-    } else if (needsBothPartiesAndCandidates.includes(system)) {
-        // Both parties and candidates
+    } else if (rules.needsCandidates && rules.needsPartyVote) {
+        // Both parties and candidates (e.g., MMP, Parallel)
         partiesSection.style.display = 'block';
         candidatesSection.style.display = 'block';
         votingSection.style.display = 'block';
         updateSectionNumbers(2, 3, 4);
-    } else if (candidateFocused.includes(system)) {
-        // Candidates only (parties just for grouping/colors)
+    } else if (rules.needsCandidates && !rules.needsPartyVote) {
+        // Candidates only - parties just for grouping/colors (e.g., FPTP, IRV, STV)
         partiesSection.style.display = 'block';
         candidatesSection.style.display = 'block';
         votingSection.style.display = 'block';
@@ -298,18 +349,9 @@ function configureRaceTypeForSystem(system) {
     const singleOption = document.getElementById('singleRaceOption');
     const legislativeOption = document.getElementById('legislativeRaceOption');
     
-    // Define system categories
-    // Individual Race (Single-Seat): FPTP, TRS, IRV, Borda, Condorcet
-    const singleSeatOnly = ['fptp', 'trs', 'irv', 'borda', 'condorcet'];
-    
-    // Individual Race (Multi-Seat): Block, Limited, Approval (though approval can be both)
-    const multiSeatIndividual = ['block', 'limited'];
-    
-    // Entire Legislative Branch: STV, Closed List PR, Open List PR
-    const legislativeOnly = ['stv', 'party-list-closed', 'party-list-open'];
-    
-    // Both: MMP, Parallel, Approval
-    const bothAllowed = ['mmp', 'parallel', 'approval'];
+    // Get system rules from centralized configuration
+    const rules = SYSTEM_RULES[system];
+    if (!rules) return; // Unknown system
     
     // Reset styles
     singleOption.style.opacity = '1';
@@ -319,33 +361,41 @@ function configureRaceTypeForSystem(system) {
     singleRadio.disabled = false;
     legislativeRadio.disabled = false;
     
-    if (singleSeatOnly.includes(system) || multiSeatIndividual.includes(system)) {
-        // Disable legislative, enable single only
-        legislativeRadio.disabled = true;
-        legislativeOption.style.opacity = '0.4';
-        legislativeOption.style.cursor = 'not-allowed';
+    // Check if system only supports one race scope
+    if (rules.raceScopes.length === 1) {
+        const allowedScope = rules.raceScopes[0];
         
-        // Force selection to single
-        if (legislativeRadio.checked) {
-            singleRadio.checked = true;
-            updateRaceType();
-        }
-    } else if (legislativeOnly.includes(system)) {
-        // Disable single, enable legislative only
-        singleRadio.disabled = true;
-        singleOption.style.opacity = '0.4';
-        singleOption.style.cursor = 'not-allowed';
-        
-        // Force selection to legislative
-        if (singleRadio.checked) {
-            legislativeRadio.checked = true;
-            updateRaceType();
+        if (allowedScope === 'single') {
+            // Disable legislative, enable single only
+            legislativeRadio.disabled = true;
+            legislativeOption.style.opacity = '0.4';
+            legislativeOption.style.cursor = 'not-allowed';
+            
+            // Force selection to single
+            if (legislativeRadio.checked) {
+                singleRadio.checked = true;
+                updateRaceType();
+            }
+        } else if (allowedScope === 'legislative') {
+            // Disable single, enable legislative only
+            singleRadio.disabled = true;
+            singleOption.style.opacity = '0.4';
+            singleOption.style.cursor = 'not-allowed';
+            
+            // Force selection to legislative
+            if (singleRadio.checked) {
+                legislativeRadio.checked = true;
+                updateRaceType();
+            }
         }
     }
-    // For bothAllowed systems, leave both enabled (no changes needed)
+    // For systems with multiple race scopes, leave both enabled (no changes needed)
 }
 
 function configureAdvancedFeatures(system) {
+    const rules = SYSTEM_RULES[system];
+    if (!rules) return;
+    
     // Show/hide strategic voting button (only for FPTP)
     const strategicBtn = document.querySelector('button[onclick="showStrategicSimulator()"]');
     if (strategicBtn) {
@@ -361,9 +411,8 @@ function configureAdvancedFeatures(system) {
     
     // Show/hide ballot generator button (only for ranking systems)
     const ballotGenBtn = document.querySelector('button[onclick="showBallotGenerator()"]');
-    const rankingSystems = ['irv', 'stv'];
     if (ballotGenBtn) {
-        if (rankingSystems.includes(system)) {
+        if (rules.isRanking) {
             ballotGenBtn.style.display = 'inline-block';
         } else {
             ballotGenBtn.style.display = 'none';
@@ -1071,20 +1120,37 @@ function calculateIRV(votes) {
     const maxRounds = candidates.length - 1;
     const roundsData = []; // Track rounds for visualization
     
+    // Track exhausted ballots (ballots with no remaining valid preferences)
+    let exhaustedVotes = 0;
+    
     while (roundNumber < maxRounds) {
         roundNumber++;
         
         // Count current votes
         const voteCounts = {};
         candidateIds.forEach(id => voteCounts[id] = 0);
+        exhaustedVotes = 0; // Reset each round
         
         ballots.forEach(ballot => {
+            // Handle empty ballots (no preferences at all)
+            if (ballot.preferences.length === 0) {
+                exhaustedVotes += ballot.count;
+                return;
+            }
+            
             // Find first non-eliminated preference
+            let assigned = false;
             for (let prefId of ballot.preferences) {
                 if (!eliminated.has(prefId)) {
                     voteCounts[prefId] += ballot.count;
+                    assigned = true;
                     break;
                 }
+            }
+            
+            // If no valid preference found, ballot is exhausted
+            if (!assigned) {
+                exhaustedVotes += ballot.count;
             }
         });
         
@@ -1133,16 +1199,30 @@ function calculateIRV(votes) {
         });
     }
     
-    // Final count
+    // Final count (with exhausted ballot tracking)
     const finalCounts = {};
     candidateIds.forEach(id => finalCounts[id] = 0);
+    let finalExhaustedVotes = 0;
     
     ballots.forEach(ballot => {
+        // Handle empty ballots
+        if (ballot.preferences.length === 0) {
+            finalExhaustedVotes += ballot.count;
+            return;
+        }
+        
+        let assigned = false;
         for (let prefId of ballot.preferences) {
             if (!eliminated.has(prefId)) {
                 finalCounts[prefId] += ballot.count;
+                assigned = true;
                 break;
             }
+        }
+        
+        // Track exhausted ballots in final count
+        if (!assigned) {
+            finalExhaustedVotes += ballot.count;
         }
     });
     
@@ -1166,12 +1246,60 @@ function calculateIRV(votes) {
     
     results.sort((a, b) => b.votes - a.votes);
     
+    const exhaustedPercentage = totalBallots > 0 ? (finalExhaustedVotes / totalBallots * 100) : 0;
+    
+    // Check for Condorcet violation
+    function checkCondorcetWinner(ballots, candidates, totalBallots) {
+        const pairwiseWins = {};
+        candidates.forEach(c1 => {
+            pairwiseWins[c1.id] = 0;
+            candidates.forEach(c2 => {
+                if (c1.id !== c2.id) {
+                    let c1Pref = 0;
+                    ballots.forEach(ballot => {
+                        const c1Rank = ballot.preferences.indexOf(c1.id);
+                        const c2Rank = ballot.preferences.indexOf(c2.id);
+                        if (c1Rank !== -1 && (c2Rank === -1 || c1Rank < c2Rank)) {
+                            c1Pref += ballot.count;
+                        }
+                    });
+                    if (c1Pref > (totalBallots / 2)) {
+                        pairwiseWins[c1.id]++;
+                    }
+                }
+            });
+        });
+        
+        const condorcetWinner = candidates.find(c => 
+            pairwiseWins[c.id] === candidates.length - 1
+        );
+        
+        return condorcetWinner;
+    }
+    
+    const condorcetWinner = checkCondorcetWinner(ballots, candidates, totalBallots);
+    const irvWinner = results.find(r => r.winner);
+    
+    // Check for paradox
+    let paradox = null;
+    if (condorcetWinner && irvWinner && irvWinner.name !== condorcetWinner.name) {
+        paradox = {
+            type: 'condorcet_violation',
+            message: `⚠️ Condorcet Criterion Violation: ${condorcetWinner.name} would beat every other candidate head-to-head, but ${irvWinner.name} won under IRV.`,
+            severity: 'moderate'
+        };
+    }
+    
     return {
         type: 'candidate',
         results: results,
         totalVotes: totalBallots,
+        exhaustedVotes: finalExhaustedVotes,
+        exhaustedPercentage: exhaustedPercentage,
         rounds: roundsData,
-        note: `Instant-Runoff Voting with ranked ballots (${roundNumber} elimination rounds)`
+        paradox: paradox,  // NEW: Paradox detection
+        note: `Instant-Runoff Voting with ranked ballots (${roundNumber} elimination rounds)` +
+              (finalExhaustedVotes > 0 ? `. ${formatNumber(finalExhaustedVotes)} ballots (${exhaustedPercentage.toFixed(1)}%) exhausted with no remaining valid preferences.` : '')
     };
 }
 
@@ -1224,7 +1352,7 @@ function calculatePartyListPR(votes) {
     
     results.sort((a, b) => b.seats - a.seats || b.votes - a.votes);
     
-    // Calculate disproportionality
+    // Calculate disproportionality (both indices)
     const voteShares = {};
     const seatShares = {};
     results.forEach(r => {
@@ -1232,6 +1360,7 @@ function calculatePartyListPR(votes) {
         seatShares[r.id] = seats > 0 ? (r.seats / seats * 100) : 0;
     });
     const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
+    const gallagher = calculateGallagher(voteShares, seatShares);
     
     return {
         type: 'party',
@@ -1240,7 +1369,8 @@ function calculatePartyListPR(votes) {
         totalSeats: seats,
         threshold: threshold,
         allocationMethod: allocationMethod,
-        disproportionality: disproportionality
+        disproportionality: disproportionality,
+        gallagher: gallagher  // NEW: Gallagher Index
     };
 }
 
@@ -1296,7 +1426,12 @@ function calculateSTV(votes) {
                 
                 // Convert percentage to actual ballot count
                 const count = totalVotes > 0 ? Math.round((percentage / 100) * totalVotes) : 0;
-                const ballot = { count: count, preferences: [] };
+                const ballot = { 
+                    count: count, 
+                    preferences: [],
+                    weight: 1.0,  // Gregory Method: fractional transfer value
+                    currentPreference: 0  // Track which preference we're currently at
+                };
                 
                 // Get preferences for this ballot
                 for (let rank = 1; rank <= 5; rank++) {
@@ -1361,12 +1496,14 @@ function calculateSTV(votes) {
     }
     
     // Run STV with full ranking data
+    // DROOP QUOTA: Calculated once at start, never recalculated (even as ballots exhaust)
     const quota = Math.floor(totalBallots / (seats + 1)) + 1;
     const candidateIds = candidates.map(c => c.id);
     let elected = [];
     let eliminated = new Set();
     const roundsData = []; // Track rounds for visualization
     let roundNumber = 0;
+    let exhaustedVotes = 0; // Track exhausted ballots
     
     // Run rounds until all seats filled or no more candidates
     while (elected.length < seats && eliminated.size + elected.length < candidateIds.length) {
@@ -1375,14 +1512,28 @@ function calculateSTV(votes) {
         // Count current votes
         const voteCounts = {};
         candidateIds.forEach(id => voteCounts[id] = 0);
+        exhaustedVotes = 0; // Reset each round
         
         ballots.forEach(ballot => {
+            // Handle empty ballots (no preferences at all)
+            if (ballot.preferences.length === 0) {
+                exhaustedVotes += ballot.count * ballot.weight;
+                return;
+            }
+            
             // Find first non-eliminated, non-elected preference
+            let assigned = false;
             for (let prefId of ballot.preferences) {
                 if (!eliminated.has(prefId) && !elected.includes(prefId)) {
-                    voteCounts[prefId] += ballot.count;
+                    voteCounts[prefId] += ballot.count * ballot.weight;  // Gregory Method: apply weight
+                    assigned = true;
                     break;
                 }
+            }
+            
+            // If no valid preference found, ballot is exhausted
+            if (!assigned) {
+                exhaustedVotes += ballot.count * ballot.weight;
             }
         });
         
@@ -1395,6 +1546,39 @@ function calculateSTV(votes) {
             const winner = activeCandidates.find(id => voteCounts[id] === maxVotes);
             elected.push(winner);
             
+            const surplus = maxVotes - quota;
+            const transferValue = maxVotes > 0 ? surplus / maxVotes : 0;  // Gregory Method
+            
+            // Transfer surplus to next preferences using Gregory Method
+            let surplusExhausted = 0;
+            
+            if (surplus > 0) {
+                ballots.forEach(ballot => {
+                    // Check if this ballot is currently with the winner
+                    const currentPref = ballot.preferences[ballot.currentPreference];
+                    if (currentPref === winner) {
+                        // Find next valid preference
+                        let nextPrefFound = false;
+                        for (let i = ballot.currentPreference + 1; i < ballot.preferences.length; i++) {
+                            const nextPref = ballot.preferences[i];
+                            if (!eliminated.has(nextPref) && !elected.includes(nextPref)) {
+                                ballot.currentPreference = i;
+                                ballot.weight *= transferValue;  // Apply fractional transfer
+                                nextPrefFound = true;
+                                break;
+                            }
+                        }
+                        
+                        // If no next preference, surplus is exhausted
+                        if (!nextPrefFound) {
+                            surplusExhausted += ballot.count * ballot.weight * transferValue;
+                        }
+                    }
+                });
+                
+                exhaustedVotes += surplusExhausted;
+            }
+            
             // Record round data
             roundsData.push({
                 round: roundNumber,
@@ -1402,9 +1586,10 @@ function calculateSTV(votes) {
                 quota: quota,
                 candidate_id: winner,
                 action: 'elected',
-                surplus: maxVotes - quota
+                surplus: surplus,
+                transferValue: transferValue,
+                surplusExhausted: surplusExhausted
             });
-            // In real STV, surplus votes would transfer; simplified here
         } else if (elected.length + activeCandidates.length <= seats) {
             // Elect all remaining candidates
             roundsData.push({
@@ -1477,129 +1662,153 @@ function calculateSTV(votes) {
         return b.votes - a.votes;
     });
     
+    const exhaustedPercentage = totalBallots > 0 ? (exhaustedVotes / totalBallots * 100) : 0;
+    
     return {
         type: 'multi-winner',
         results: results,
         totalVotes: totalBallots,
         seats: seats,
         quota: quota,
+        exhaustedVotes: exhaustedVotes,
+        exhaustedPercentage: exhaustedPercentage,
+        surplusLoss: exhaustedVotes,  // Track fractional surplus loss
         rounds: roundsData,
-        note: `Single Transferable Vote with ranked ballots (Quota: ${quota} votes)`
+        note: `Single Transferable Vote with Gregory Method surplus transfer (Quota: ${quota} votes)` +
+              (exhaustedVotes > 0 ? `. ${formatNumber(exhaustedVotes)} ballots (${exhaustedPercentage.toFixed(1)}%) exhausted with no remaining valid preferences.` : '')
     };
 }
 
-function calculateMMP(votes) {
-    // Mixed system: half seats from districts (FPTP), half from party lists (compensatory)
-    const totalSeats = getSeatsCount();
-    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+// ============================================
+// Helper Function: Simulate District Elections
+// ============================================
+// Used by MMP and Parallel systems to simulate multiple FPTP district races
+// Applies variance to prevent one party from sweeping all districts
+function simulateDistricts(candidateVotes, districtCount) {
+    const partyDistrictWins = {};
+    parties.forEach(p => partyDistrictWins[p.id] = 0);
     
-    // For single race: 1 district seat only (simulate one race)
-    // For legislative: multiple districts + list seats
-    const districtSeats = raceType === 'single' ? 1 : Math.floor(totalSeats / 2);
-    const listSeats = totalSeats - districtSeats;
-    
-    // Get electoral threshold
-    const thresholdInput = document.getElementById('electoralThreshold');
-    const threshold = thresholdInput ? parseFloat(thresholdInput.value) : 0;
-    
-    // Get allocation method
-    const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
-    
-    // District seats (FPTP)
-    const candidateResults = candidates.map(candidate => {
-        const voteCount = votes.candidates[candidate.id] || 0;
-        const party = parties.find(p => p.id === candidate.partyId);
-        return {
-            candidateId: candidate.id,
-            name: candidate.name,
-            partyId: party.id,
-            party: party.name,
-            color: party.color,
-            votes: voteCount
-        };
-    });
-    candidateResults.sort((a, b) => b.votes - a.votes);
-    
-    // Allocate district seats
-    const partyDistrictSeats = {};
-    parties.forEach(p => partyDistrictSeats[p.id] = 0);
-    
-    for (let i = 0; i < Math.min(districtSeats, candidateResults.length); i++) {
-        candidateResults[i].districtSeat = true;
-        partyDistrictSeats[candidateResults[i].partyId]++;
+    for (let d = 0; d < districtCount; d++) {
+        const districtResults = {};
+        
+        candidates.forEach(candidate => {
+            // Partition: Divide total votes by number of districts
+            const baseVotes = (candidateVotes[candidate.id] || 0) / districtCount;
+            
+            // Zero Candidate Catch: Ensure parties with 0 votes cannot win
+            if (baseVotes === 0) {
+                districtResults[candidate.id] = 0; // No variance for zero-vote candidates
+            } else {
+                // Variance: ±20% noise so different parties win different districts
+                const variance = 0.8 + Math.random() * 0.4; // 80% to 120% of base
+                districtResults[candidate.id] = baseVotes * variance;
+            }
+        });
+        
+        // Find FPTP winner for this district
+        let maxVotes = 0;
+        let winnerId = null;
+        
+        Object.entries(districtResults).forEach(([candidateId, votes]) => {
+            if (votes > maxVotes) {
+                maxVotes = votes;
+                winnerId = candidateId;
+            } else if (votes === maxVotes && winnerId) {
+                // TIE: Use cryptographically secure random to pick winner
+                if (getSecureRandomInt(2) === 1) {
+                    winnerId = candidateId;
+                }
+            }
+        });
+        
+        if (winnerId) {
+            const winningCandidate = candidates.find(c => c.id == winnerId);
+            if (winningCandidate) {
+                partyDistrictWins[winningCandidate.partyId]++;
+            }
+        }
     }
     
-    // Calculate proportional entitlement based on party votes
-    const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+    return partyDistrictWins; // { partyId: districtWinsCount }
+}
+
+function calculateMMP(votes) {
+    // Mixed-Member Proportional: Compensatory system with district + list seats
+    const totalSeats = getSeatsCount(); // e.g., 10 seats
+    const districtSeats = Math.floor(totalSeats / 2); // e.g., 5 districts
+    const baseListSeats = totalSeats - districtSeats; // e.g., 5 list seats
     
-    // Filter parties meeting threshold
+    // ============================================
+    // Step A: District Tier (FPTP)
+    // ============================================
+    const partyDistrictWins = simulateDistricts(votes.candidates, districtSeats);
+    
+    // ============================================
+    // Step B: Calculate Proportional Target Seats
+    // ============================================
+    const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+    const threshold = parseFloat(document.getElementById('electoralThreshold')?.value) || 0;
+    const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
+    
+    // Filter eligible parties (meet threshold OR won a district - Double Gate)
     const eligiblePartyVotes = {};
     parties.forEach(party => {
         const voteShare = votes.parties[party.id] || 0;
         const percentage = totalPartyVotes > 0 ? (voteShare / totalPartyVotes * 100) : 0;
-        if (percentage >= threshold && voteShare > 0) {
+        const wonADistrict = (partyDistrictWins[party.id] || 0) > 0;
+        
+        // DOUBLE GATE: Meet threshold OR win at least one district (Germany/New Zealand rule)
+        if ((percentage >= threshold || wonADistrict) && voteShare > 0) {
             eligiblePartyVotes[party.id] = voteShare;
         }
     });
     
-    // Calculate proportional entitlement for entire parliament
-    const eligibleTotalVotes = Object.values(eligiblePartyVotes).reduce((sum, v) => sum + v, 0);
-    const proportionalEntitlement = {};
+    // REFINEMENT: Use allocateSeats_DHondt/SainteLague for precise target calculation
+    // This ensures targets sum exactly to totalSeats (avoids rounding errors)
+    const proportionalTargets = allocationMethod === 'sainte-lague'
+        ? allocateSeats_SainteLague(eligiblePartyVotes, totalSeats)
+        : allocateSeats_DHondt(eligiblePartyVotes, totalSeats);
     
+    // Initialize parties not meeting threshold
     parties.forEach(party => {
-        const voteShare = eligiblePartyVotes[party.id] || 0;
-        if (voteShare > 0) {
-            proportionalEntitlement[party.id] = (voteShare / eligibleTotalVotes) * totalSeats;
-        } else {
-            proportionalEntitlement[party.id] = 0;
+        if (!proportionalTargets[party.id]) {
+            proportionalTargets[party.id] = 0;
         }
     });
     
-    // Implement overhang seats
-    let overhangSeats = 0;
+    // ============================================
+    // Step C: Calculate Top-Up (List Seats = Target - District)
+    // ============================================
     const finalSeats = {};
+    let overhangTotal = 0;
     
     parties.forEach(party => {
-        const districtWon = partyDistrictSeats[party.id] || 0;
-        const entitled = proportionalEntitlement[party.id] || 0;
+        const districtWon = partyDistrictWins[party.id] || 0;
+        const target = proportionalTargets[party.id] || 0;
         
-        if (districtWon > entitled) {
-            // Overhang: party keeps all district seats
+        if (districtWon > target) {
+            // OVERHANG: Party keeps all district seats (expands parliament)
             finalSeats[party.id] = districtWon;
-            overhangSeats += (districtWon - Math.floor(entitled));
+            overhangTotal += (districtWon - target);
         } else {
-            // Normal: round up to entitled seats
-            finalSeats[party.id] = Math.max(districtWon, Math.round(entitled));
+            // NORMAL: Award list seats to reach target (already an integer from allocateSeats)
+            finalSeats[party.id] = target;
         }
     });
     
-    // If there are overhang seats, recalculate total parliament size
-    let actualTotalSeats = totalSeats;
-    if (overhangSeats > 0) {
-        actualTotalSeats = Object.values(finalSeats).reduce((sum, s) => sum + s, 0);
-        
-        // Recalculate other parties' seats to maintain proportionality
-        parties.forEach(party => {
-            const districtWon = partyDistrictSeats[party.id] || 0;
-            const entitled = proportionalEntitlement[party.id] || 0;
-            
-            if (districtWon <= entitled) {
-                // Adjust for expanded parliament
-                const newEntitlement = (eligiblePartyVotes[party.id] || 0) / eligibleTotalVotes * actualTotalSeats;
-                finalSeats[party.id] = Math.max(districtWon, Math.round(newEntitlement));
-            }
-        });
-        
-        actualTotalSeats = Object.values(finalSeats).reduce((sum, s) => sum + s, 0);
-    }
+    // ============================================
+    // Step D: Handle Overhang - BASIC APPROACH
+    // ============================================
+    // Simply expand parliament size, don't recalculate other parties (no leveling)
+    const actualTotalSeats = Object.values(finalSeats).reduce((sum, s) => sum + s, 0);
     
+    // Format results
     const results = parties.map(party => {
         const partyVotes = votes.parties[party.id] || 0;
-        const percentage = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
-        const meetsThreshold = percentage >= threshold;
-        const districtWon = partyDistrictSeats[party.id] || 0;
+        const districtWon = partyDistrictWins[party.id] || 0;
         const totalSeatsWon = finalSeats[party.id] || 0;
         const listSeatsWon = totalSeatsWon - districtWon;
+        const percentage = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
         
         return {
             id: party.id,
@@ -1610,15 +1819,18 @@ function calculateMMP(votes) {
             seats: totalSeatsWon,
             districtSeats: districtWon,
             listSeats: listSeatsWon,
-            meetsThreshold: meetsThreshold,
-            belowThreshold: !meetsThreshold && partyVotes > 0,
-            hasOverhang: districtWon > (proportionalEntitlement[party.id] || 0)
+            targetSeats: proportionalTargets[party.id] || 0,
+            meetsThreshold: percentage >= threshold,
+            belowThreshold: percentage < threshold && partyVotes > 0,
+            hasOverhang: districtWon > (proportionalTargets[party.id] || 0)
         };
     });
     
     results.sort((a, b) => b.seats - a.seats || b.votes - a.votes);
     
-    // Calculate disproportionality
+    // Calculate disproportionality (both indices)
+    // NOTE: MMP should have LOW disproportionality (compensatory)
+    // Parallel will have HIGHER disproportionality (non-compensatory)
     const voteShares = {};
     const seatShares = {};
     results.forEach(r => {
@@ -1626,99 +1838,79 @@ function calculateMMP(votes) {
         seatShares[r.id] = actualTotalSeats > 0 ? (r.seats / actualTotalSeats * 100) : 0;
     });
     const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
+    const gallagher = calculateGallagher(voteShares, seatShares);
     
-    // Add descriptive note based on race type
-    const raceTypeNote = raceType === 'single' 
-        ? "Single District: Simulating 1 constituency race (FPTP) with compensatory list seats added to achieve proportionality"
-        : `Legislative Simulation: ${districtSeats} district races (FPTP) with ${listSeats} compensatory list seats for overall proportionality`;
+    const overhangNote = overhangTotal > 0 
+        ? ` Parliament expanded by ${overhangTotal} overhang seat(s) from ${totalSeats} to ${actualTotalSeats}.`
+        : '';
     
     return {
         type: 'mixed',
         results: results,
-        totalVotes: totalPartyVotes,
         totalSeats: actualTotalSeats,
         plannedSeats: totalSeats,
+        totalVotes: totalPartyVotes,
+        overhangSeats: overhangTotal,
         districtSeats: districtSeats,
-        listSeats: listSeats,
-        overhangSeats: overhangSeats,
+        listSeats: actualTotalSeats - districtSeats,
         threshold: threshold,
         allocationMethod: allocationMethod,
         disproportionality: disproportionality,
-        raceType: raceType,
-        note: raceTypeNote
+        gallagher: gallagher,  // NEW: Gallagher Index
+        note: `Mixed-Member Proportional: ${districtSeats} district seats (FPTP) with compensatory list seats to ensure overall proportionality. Threshold: ${threshold}% OR 1+ district win for eligibility.${overhangNote}`
     };
 }
 
 function calculateParallel(votes) {
-    // Similar to MMP but non-compensatory
-    const totalSeats = getSeatsCount();
-    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+    // Parallel Voting (MMM): Non-compensatory mixed system
+    const totalSeats = getSeatsCount(); // e.g., 10 seats
+    const districtSeats = Math.floor(totalSeats / 2); // e.g., 5 districts
+    const listSeats = totalSeats - districtSeats; // e.g., 5 list seats
     
-    // For single race: 1 district seat only (simulate one race)
-    // For legislative: multiple districts + list seats
-    const districtSeats = raceType === 'single' ? 1 : Math.floor(totalSeats / 2);
-    const listSeats = totalSeats - districtSeats;
+    // ============================================
+    // SILO 1: District Tier (FPTP)
+    // ============================================
+    const partyDistrictWins = simulateDistricts(votes.candidates, districtSeats);
     
-    // Get electoral threshold
-    const thresholdInput = document.getElementById('electoralThreshold');
-    const threshold = thresholdInput ? parseFloat(thresholdInput.value) : 0;
+    // CRITICAL: Clear district variables before list calculation
+    // The two tiers must be completely independent
     
-    // Get allocation method
+    // ============================================
+    // SILO 2: List Tier (Proportional - INDEPENDENT)
+    // ============================================
+    const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+    const threshold = parseFloat(document.getElementById('electoralThreshold')?.value) || 0;
     const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
     
-    // District tier (FPTP)
-    const candidateResults = candidates.map(candidate => {
-        const voteCount = votes.candidates[candidate.id] || 0;
-        const party = parties.find(p => p.id === candidate.partyId);
-        return {
-            name: candidate.name,
-            partyId: party.id,
-            party: party.name,
-            color: party.color,
-            votes: voteCount
-        };
-    });
-    candidateResults.sort((a, b) => b.votes - a.votes);
-    
-    const partyDistrictSeats = {};
-    parties.forEach(p => partyDistrictSeats[p.id] = 0);
-    
-    for (let i = 0; i < Math.min(districtSeats, candidateResults.length); i++) {
-        partyDistrictSeats[candidateResults[i].partyId]++;
-    }
-    
-    // List tier (separate PR allocation with threshold)
-    const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
-    
-    // Filter parties that meet threshold
+    // Filter parties meeting threshold
     const eligiblePartyVotes = {};
     parties.forEach(party => {
         const voteShare = votes.parties[party.id] || 0;
         const percentage = totalPartyVotes > 0 ? (voteShare / totalPartyVotes * 100) : 0;
+        
         if (percentage >= threshold && voteShare > 0) {
             eligiblePartyVotes[party.id] = voteShare;
         }
     });
     
-    // Allocate list seats using chosen method
-    let partyListSeats;
-    if (allocationMethod === 'sainte-lague') {
-        partyListSeats = allocateSeats_SainteLague(eligiblePartyVotes, listSeats);
-    } else {
-        partyListSeats = allocateSeats_DHondt(eligiblePartyVotes, listSeats);
-    }
+    // Allocate list seats using D'Hondt or Sainte-Laguë
+    const partyListSeats = allocationMethod === 'sainte-lague'
+        ? allocateSeats_SainteLague(eligiblePartyVotes, listSeats)
+        : allocateSeats_DHondt(eligiblePartyVotes, listSeats);
     
-    // Ensure all parties have seat counts initialized
+    // Ensure all parties initialized
     parties.forEach(p => {
         if (!partyListSeats[p.id]) partyListSeats[p.id] = 0;
     });
     
+    // ============================================
+    // Step C: Simple Addition (NO COMPENSATION)
+    // ============================================
     const results = parties.map(party => {
         const partyVotes = votes.parties[party.id] || 0;
-        const distSeats = partyDistrictSeats[party.id] || 0;
-        const lstSeats = partyListSeats[party.id] || 0;
+        const districtWon = partyDistrictWins[party.id] || 0;
+        const listWon = partyListSeats[party.id] || 0;
         const percentage = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
-        const meetsThreshold = percentage >= threshold;
         
         return {
             id: party.id,
@@ -1726,17 +1918,19 @@ function calculateParallel(votes) {
             color: party.color,
             votes: partyVotes,
             percentage: percentage,
-            seats: distSeats + lstSeats,
-            districtSeats: distSeats,
-            listSeats: lstSeats,
-            meetsThreshold: meetsThreshold,
-            belowThreshold: !meetsThreshold && partyVotes > 0
+            seats: districtWon + listWon, // Simple sum - NO COMPENSATION
+            districtSeats: districtWon,
+            listSeats: listWon,
+            meetsThreshold: percentage >= threshold,
+            belowThreshold: percentage < threshold && partyVotes > 0
         };
     });
     
     results.sort((a, b) => b.seats - a.seats || b.votes - a.votes);
     
-    // Calculate disproportionality
+    // Calculate disproportionality (both indices)
+    // NOTE: Parallel voting will naturally have HIGHER disproportionality than MMP
+    // This is expected and proves the non-compensatory nature of the system
     const voteShares = {};
     const seatShares = {};
     results.forEach(r => {
@@ -1744,24 +1938,37 @@ function calculateParallel(votes) {
         seatShares[r.id] = totalSeats > 0 ? (r.seats / totalSeats * 100) : 0;
     });
     const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
+    const gallagher = calculateGallagher(voteShares, seatShares);
     
-    // Add descriptive note based on race type
-    const raceTypeNote = raceType === 'single'
-        ? "Single District: Simulating 1 constituency race (FPTP) with separate list seats (non-compensatory)"
-        : `Legislative Simulation: ${districtSeats} district races (FPTP) with ${listSeats} list seats calculated independently (non-compensatory)`;
+    // Check for "Majority Manufacture"
+    let paradox = null;
+    const winningParty = results[0];
+    if (winningParty) {
+        const seatPercentage = totalSeats > 0 ? (winningParty.seats / totalSeats * 100) : 0;
+        const votePercentage = winningParty.percentage;
+        
+        if (seatPercentage > 50 && votePercentage < 40) {
+            paradox = {
+                type: 'majority_manufacture',
+                message: `⚠️ Majority Manufacture: ${winningParty.name} won ${seatPercentage.toFixed(1)}% of seats with only ${votePercentage.toFixed(1)}% of votes. This is a common feature of non-compensatory mixed systems.`,
+                severity: 'informational'
+            };
+        }
+    }
     
     return {
         type: 'mixed',
         results: results,
-        totalVotes: totalPartyVotes,
         totalSeats: totalSeats,
+        totalVotes: totalPartyVotes,
         districtSeats: districtSeats,
         listSeats: listSeats,
         threshold: threshold,
         allocationMethod: allocationMethod,
         disproportionality: disproportionality,
-        raceType: raceType,
-        note: raceTypeNote
+        gallagher: gallagher,  // NEW: Gallagher Index
+        paradox: paradox,  // NEW: Paradox detection
+        note: `Parallel voting: ${districtSeats} district seats (FPTP) + ${listSeats} list seats (PR) calculated independently (non-compensatory)`
     };
 }
 
@@ -1887,6 +2094,23 @@ function displayResults(results, system) {
         html += createTieNotification(results.tieInfo, systemNames[system] || system);
     }
     
+    // Display paradox warnings if present
+    if (results.paradox) {
+        const severityColor = results.paradox.severity === 'moderate' ? '#ff9800' : '#2196f3';
+        html += `<div style="background: #e3f2fd; border-left: 4px solid ${severityColor}; 
+                             padding: 15px; margin: 20px 0; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; color: ${severityColor};">
+                🔔 Electoral Paradox Detected
+            </h4>
+            <p style="margin: 0 0 10px 0; color: #1565c0; line-height: 1.6;">
+                ${results.paradox.message}
+            </p>
+            <p style="margin: 0; font-size: 0.9em; color: #666; line-height: 1.5;">
+                ℹ️ This demonstrates why no electoral system can satisfy all fairness criteria simultaneously (Arrow's Impossibility Theorem).
+            </p>
+        </div>`;
+    }
+    
     // Prepare data for pie charts
     let votesChartData = [];
     let seatsChartData = [];
@@ -1960,12 +2184,43 @@ function displayResults(results, system) {
         
         // Show disproportionality index if available
         if (results.disproportionality !== undefined) {
-            const dispColor = results.disproportionality < 5 ? '#2ecc71' : results.disproportionality < 10 ? '#f39c12' : '#e74c3c';
-            const dispRating = results.disproportionality < 5 ? 'Excellent' : results.disproportionality < 10 ? 'Moderate' : 'High';
-            html += `<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${dispColor};">
-                <strong style="color: ${dispColor};">📊 Loosemore-Hanby Disproportionality Index: ${results.disproportionality.toFixed(2)}% (${dispRating})</strong>
-                <p style="margin-top: 5px; color: #2e7d32;">This measures deviation from perfect proportionality. 0% = perfect, higher = more disproportional.</p>
+            // Enhanced three-tier color grading
+            let dispColor, dispRating, dispGrade, bgColor;
+            if (results.disproportionality < 5) {
+                dispColor = '#2ecc71';
+                dispRating = 'Highly Proportional';
+                dispGrade = 'Excellent';
+                bgColor = '#d4edda';
+            } else if (results.disproportionality < 15) {
+                dispColor = '#f39c12';
+                dispRating = 'Moderately Disproportional';
+                dispGrade = 'Fair';
+                bgColor = '#fff3cd';
+            } else {
+                dispColor = '#e74c3c';
+                dispRating = 'Highly Disproportional';
+                dispGrade = 'Poor';
+                bgColor = '#f8d7da';
+            }
+            
+            html += `<div style="background: ${bgColor}; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${dispColor};">
+                <strong style="color: ${dispColor};">📊 Disproportionality Metrics - ${dispGrade}</strong>
+                <p style="margin-top: 8px; color: #333; line-height: 1.6;">
+                    <strong>Loosemore-Hanby Index:</strong> ${results.disproportionality.toFixed(2)}%<br>
+                    <strong>Gallagher Index (LSq):</strong> ${results.gallagher.toFixed(2)}%
+                </p>
+                <p style="margin-top: 8px; color: #333; line-height: 1.6;"><strong>${dispRating}:</strong> This means ${results.disproportionality.toFixed(1)}% of the seats in the legislature are held by parties that would not have them if the results were perfectly proportional to the vote share.</p>
+                <p style="margin-top: 5px; font-size: 0.9em; color: #666;">The Gallagher Index penalizes large deviations more heavily and is the academic standard.</p>
                 ${results.allocationMethod ? `<p style="margin-top: 5px; color: #666;"><em>Using ${results.allocationMethod === 'dhondt' ? 'D\'Hondt' : 'Sainte-Laguë'} method for seat allocation</em></p>` : ''}
+                
+                <details style="margin-top: 10px;">
+                    <summary style="cursor: pointer; color: #667eea; font-weight: 600;">📈 Compare to Real-World Elections</summary>
+                    <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.6); border-radius: 4px;">
+                        <p style="margin: 5px 0;"><span style="color: #e74c3c;">●</span> <strong>UK (FPTP):</strong> 15-25% - Highly Disproportional</p>
+                        <p style="margin: 5px 0;"><span style="color: #f39c12;">●</span> <strong>Japan (Parallel):</strong> 8-14% - Moderately Disproportional</p>
+                        <p style="margin: 5px 0;"><span style="color: #2ecc71;">●</span> <strong>Germany (MMP):</strong> 1-4% - Highly Proportional</p>
+                    </div>
+                </details>
             </div>`;
         }
         
@@ -2063,12 +2318,44 @@ function displayResults(results, system) {
         
         // Show disproportionality index if available
         if (results.disproportionality !== undefined) {
-            const dispColor = results.disproportionality < 5 ? '#2ecc71' : results.disproportionality < 10 ? '#f39c12' : '#e74c3c';
-            const dispRating = results.disproportionality < 5 ? 'Excellent' : results.disproportionality < 10 ? 'Moderate' : 'High';
-            html += `<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${dispColor};">
-                <strong style="color: ${dispColor};">📊 Loosemore-Hanby Disproportionality Index: ${results.disproportionality.toFixed(2)}% (${dispRating})</strong>
-                <p style="margin-top: 5px; color: #2e7d32;">Measures deviation from perfect proportionality. 0% = perfect, higher = more disproportional.</p>
+            // Enhanced three-tier color grading
+            let dispColor, dispRating, dispGrade, bgColor;
+            if (results.disproportionality < 5) {
+                dispColor = '#2ecc71';
+                dispRating = 'Highly Proportional';
+                dispGrade = 'Excellent';
+                bgColor = '#d4edda';
+            } else if (results.disproportionality < 15) {
+                dispColor = '#f39c12';
+                dispRating = 'Moderately Disproportional';
+                dispGrade = 'Fair';
+                bgColor = '#fff3cd';
+            } else {
+                dispColor = '#e74c3c';
+                dispRating = 'Highly Disproportional';
+                dispGrade = 'Poor';
+                bgColor = '#f8d7da';
+            }
+            
+            html += `<div style="background: ${bgColor}; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${dispColor};">
+                <strong style="color: ${dispColor};">📊 Disproportionality Metrics - ${dispGrade}</strong>
+                <p style="margin-top: 8px; color: #333; line-height: 1.6;">
+                    <strong>Loosemore-Hanby Index:</strong> ${results.disproportionality.toFixed(2)}%<br>
+                    <strong>Gallagher Index (LSq):</strong> ${results.gallagher.toFixed(2)}%
+                </p>
+                <p style="margin-top: 8px; color: #333; line-height: 1.6;"><strong>${dispRating}:</strong> ${results.disproportionality.toFixed(1)}% of seats deviate from perfect proportionality.</p>
+                <p style="margin-top: 5px; font-size: 0.9em; color: #666;">The Gallagher Index penalizes large deviations more heavily and is the academic standard.</p>
                 ${results.allocationMethod ? `<p style="margin-top: 5px; color: #666;"><em>Using ${results.allocationMethod === 'dhondt' ? 'D\'Hondt' : 'Sainte-Laguë'} method for list seats</em></p>` : ''}
+                
+                <details style="margin-top: 10px;">
+                    <summary style="cursor: pointer; color: #667eea; font-weight: 600;">📈 Compare to Real-World Elections</summary>
+                    <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.6); border-radius: 4px;">
+                        <p style="margin: 5px 0;"><span style="color: #e74c3c;">●</span> <strong>UK (FPTP):</strong> 15-25% - Highly Disproportional</p>
+                        <p style="margin: 5px 0;"><span style="color: #f39c12;">●</span> <strong>Japan (Parallel):</strong> 8-14% - Moderately Disproportional</p>
+                        <p style="margin: 5px 0;"><span style="color: #2ecc71;">●</span> <strong>Germany (MMP):</strong> 1-4% - Highly Proportional</p>
+                        <p style="margin-top: 10px; font-size: 0.9em; color: #666; font-style: italic;"><strong>Note:</strong> Parallel voting naturally shows higher disproportionality than MMP - this is a feature, not a bug! The system is non-compensatory by design.</p>
+                    </div>
+                </details>
             </div>`;
         }
         
