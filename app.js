@@ -81,7 +81,7 @@ const SYSTEM_RULES = {
         needsPartyVote: false,
         needsCandidates: true,
         isRanking: true,
-        raceScopes: ['single', 'legislative'],
+        raceScopes: ['single'],  // IRV is inherently single-winner only
         description: 'Ranked choice with instant runoff elimination'
     },
     'party-list': {
@@ -276,6 +276,17 @@ document.addEventListener('DOMContentLoaded', function() {
     loadState();
     
     document.getElementById('electoralSystem').addEventListener('change', onSystemChange);
+    
+    // Add event listener to legislature seats input to update labels dynamically
+    const seatsInput = document.getElementById('totalLegislatureSeats');
+    if (seatsInput) {
+        seatsInput.addEventListener('input', function() {
+            const currentSystem = document.getElementById('electoralSystem').value;
+            if (currentSystem) {
+                configureRaceTypeForSystem(currentSystem);
+            }
+        });
+    }
     
     // Setup color picker
     setupColorPicker();
@@ -2213,8 +2224,8 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
 // Get compatible systems for shadow comparison
 function getCompatibleSystems(currentSystem) {
     const compatibility = {
-        'fptp': ['irv'],
-        'irv': ['fptp'],
+        'fptp': [],  // Remove IRV - insufficient data for ranked comparison
+        'irv': [],   // Remove FPTP - IRV results can't translate back
         'party-list': ['mmp', 'parallel'],
         'mmp': ['party-list', 'parallel'],
         'parallel': ['party-list', 'mmp'],
@@ -2630,7 +2641,7 @@ function displayResults(results, system) {
                         </div>
                     </div>
                     <div class="result-bar">
-                        <div class="result-bar-fill" style="width: ${seatPercentage}%">
+                        <div class="result-bar-fill" style="width: ${seatPercentage}%; color: #000;">
                             ${r.seats} seats
                         </div>
                     </div>
@@ -2808,7 +2819,7 @@ function displayResults(results, system) {
                         </div>
                     </div>
                     <div class="result-bar">
-                        <div class="result-bar-fill" style="width: ${seatPercentage}%">
+                        <div class="result-bar-fill" style="width: ${seatPercentage}%; color: #000;">
                             ${r.seats} seats
                         </div>
                     </div>

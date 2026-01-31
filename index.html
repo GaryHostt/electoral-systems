@@ -276,13 +276,13 @@
                             <span>🏛️ Entire Legislature (10 seats)</span>
                         </label>
                         
-                        <div id="legislatureSeatsContainer" style="display: none; align-items: center; gap: 15px; margin-left: 20px; flex-wrap: wrap;">
+                        <div id="legislatureSeatsContainer" style="display: none; align-items: center; gap: 15px; margin-left: 20px; flex-wrap: wrap; width: 100%;">
                             <label for="totalLegislatureSeats" style="font-weight: 600; color: #667eea;">Seats:</label>
                             <input type="number" id="totalLegislatureSeats" value="100" min="2" max="1000" 
                                    style="width: 80px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px;">
                             
                             <select id="parliamentPresets" onchange="applyParliamentPreset()" 
-                                    style="padding: 8px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 14px;">
+                                    style="padding: 8px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 14px; min-width: 180px;">
                                 <option value="">-- Real-World Presets --</option>
                                 <option value="349">🇸🇪 Sweden (349)</option>
                                 <option value="598">🇩🇪 Germany (598)</option>
@@ -365,28 +365,6 @@
                 <div id="arrowAnalysis" class="arrow-analysis"></div>
             </section>
 
-            <!-- Arrow's Impossibility Theorem Section -->
-            <div class="video-section" style="background: #fff8e1; border-left: 4px solid #ffa000; padding: 20px; margin: 30px 0; border-radius: 8px;">
-                <h2 style="color: #f57c00; margin-top: 0;">⚖️ Arrow's Impossibility Theorem</h2>
-                <p style="line-height: 1.6; font-size: 1.05em;">
-                    In 1951, economist Kenneth Arrow proved mathematically that <strong>no voting system is perfect.</strong> 
-                    Any system that meets basic fairness criteria (like not having a dictator) will eventually produce 
-                    a paradox, such as the winner changing just because a "spoiler" candidate joined the race.
-                </p>
-                <div class="warning-box" style="background: #ffecb3; padding: 15px; margin-top: 15px; border-radius: 6px; border: 2px solid #ffa000;">
-                    <strong>💡 What This Means for You:</strong>
-                    <p style="margin-top: 8px; line-height: 1.6;">
-                        Look out for <strong>"Electoral Paradox"</strong> alerts in the simulator results! They highlight 
-                        exactly where these mathematical breaks happen. Understanding these paradoxes helps you choose the 
-                        right electoral system for your goals—not the "perfect" one (which doesn't exist), but the one 
-                        with trade-offs you can accept.
-                    </p>
-                </div>
-                <p style="margin-top: 15px; font-size: 0.9em; color: #666;">
-                    <strong>Further Reading:</strong> Arrow, K. J. (1951). <em>Social Choice and Individual Values</em>. 
-                    Yale University Press. (Won the Nobel Prize in Economics in 1972)
-                </p>
-            </div>
 
             <!-- AI Analysis Section -->
             <section class="card ai-analysis-section" id="aiAnalysisSection" style="display: none;">
