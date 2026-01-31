@@ -119,6 +119,16 @@ const countryParties = {
         { name: 'Labour Party', color: '#DD1F21' },
         { name: 'Freedom Party', color: '#F37021' },
         { name: 'Lithuanian Farmers and Greens Union', color: '#00843D' }
+    ],
+    Sweden: [
+        { name: 'Moderates (Moderaterna)', color: '#005EA8' },
+        { name: 'Sweden Democrats (Sverigedemokraterna)', color: '#FFD500' },
+        { name: 'Christian Democrats (Kristdemokraterna)', color: '#0059A3' },
+        { name: 'Liberals (Liberalerna)', color: '#006AB3' },
+        { name: 'Social Democrats (Socialdemokraterna)', color: '#E8112D' },
+        { name: 'Left Party (Vänsterpartiet)', color: '#DA291C' },
+        { name: 'Green Party (Miljöpartiet)', color: '#53A045' },
+        { name: 'Centre Party (Centerpartiet)', color: '#009933' }
     ]
 };
 

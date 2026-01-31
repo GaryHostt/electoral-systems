@@ -220,8 +220,43 @@ const arrowAnalysis = {
     }
 };
 
+// Save application state to localStorage
+function saveState() {
+    try {
+        const state = {
+            parties: parties,
+            candidates: candidates,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('electoralSimulatorState', JSON.stringify(state));
+    } catch (e) {
+        console.error('Error saving state:', e);
+    }
+}
+
+// Load application state from localStorage
+function loadState() {
+    try {
+        const saved = localStorage.getItem('electoralSimulatorState');
+        if (saved) {
+            const state = JSON.parse(saved);
+            parties = state.parties || [];
+            candidates = state.candidates || [];
+            updatePartiesList();
+            updateCandidateList();
+            return true;
+        }
+    } catch (e) {
+        console.error('Error loading state:', e);
+    }
+    return false;
+}
+
 // Initialize - wrap in DOMContentLoaded to ensure DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    // Load saved state if available
+    loadState();
+    
     document.getElementById('electoralSystem').addEventListener('change', onSystemChange);
     
     // Setup color picker
@@ -353,6 +388,23 @@ function configureRaceTypeForSystem(system) {
     const rules = SYSTEM_RULES[system];
     if (!rules) return; // Unknown system
     
+    // Get the span elements that contain the label text
+    const singleSpan = singleOption.querySelector('span');
+    const legislativeSpan = legislativeOption.querySelector('span');
+    
+    // Update span text based on system (keeps radio buttons intact)
+    if (system === 'irv') {
+        if (singleSpan) singleSpan.textContent = '🏁 Single District';
+        if (legislativeSpan) legislativeSpan.textContent = '🏛️ 10 Single-Member Districts';
+    } else if (system === 'stv') {
+        if (singleSpan) singleSpan.textContent = '🏁 Single Winner (IRV mode)';
+        if (legislativeSpan) legislativeSpan.textContent = '🏛️ Multi-Member District (10 seats)';
+    } else {
+        // Default labels for other systems
+        if (singleSpan) singleSpan.textContent = '🏁 Single Race (1 seat or district)';
+        if (legislativeSpan) legislativeSpan.textContent = '🏛️ Entire Legislature (10 seats)';
+    }
+    
     // Reset styles
     singleOption.style.opacity = '1';
     singleOption.style.cursor = 'pointer';
@@ -466,6 +518,7 @@ function addParty() {
     updatePartiesList();
     updateCandidatePartySelect();
     updateVotingInputs();
+    saveState(); // Auto-save
 }
 
 function removeParty(id) {
@@ -475,6 +528,7 @@ function removeParty(id) {
     updateCandidatesList();
     updateCandidatePartySelect();
     updateVotingInputs();
+    saveState(); // Auto-save
 }
 
 function updatePartiesList() {
@@ -529,12 +583,14 @@ function addCandidate() {
     
     updateCandidatesList();
     updateVotingInputs();
+    saveState(); // Auto-save
 }
 
 function removeCandidate(id) {
     candidates = candidates.filter(c => c.id !== id);
     updateCandidatesList();
     updateVotingInputs();
+    saveState(); // Auto-save
 }
 
 function updateCandidatesList() {
@@ -899,6 +955,10 @@ function calculateResults() {
     const system = document.getElementById('electoralSystem').value;
     const votes = getVotes();
     
+    // Store for shadow results comparison
+    window.lastCalculationSystem = system;
+    window.lastCalculationVotes = votes;
+    
     let results;
     
     switch(system) {
@@ -921,6 +981,9 @@ function calculateResults() {
             results = calculateParallel(votes);
             break;
     }
+    
+    // Store results for shadow comparison
+    window.lastCalculationResults = results;
     
     displayResults(results, system);
 }
@@ -1395,8 +1458,7 @@ function calculateOpenList(votes) {
 
 function calculateSTV(votes) {
     // Get race type to determine number of seats
-    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
-    const seats = raceType === 'single' ? 1 : 3; // 1 seat for single race, 3 for legislative
+    const seats = getSeatsCount(); // Use same function as other systems for fair comparison
     
     // Get total votes from the totalVoters input for ranking systems
     const totalVotersInput = document.getElementById('totalVoters');
@@ -2048,6 +2110,249 @@ function calculateApproval(votes) {
     };
 }
 
+// Get Gallagher Index grade with color and label
+function getGallagherGrade(score, systemType) {
+    let gradeInfo;
+    if (score < 3) gradeInfo = { grade: 'A', color: '#2ecc71', label: 'Excellent' };
+    else if (score < 5) gradeInfo = { grade: 'B', color: '#3498db', label: 'Very Good' };
+    else if (score < 8) gradeInfo = { grade: 'C', color: '#f39c12', label: 'Fair' };
+    else if (score < 12) gradeInfo = { grade: 'D', color: '#e67e22', label: 'Poor' };
+    else if (score < 18) gradeInfo = { grade: 'E', color: '#e74c3c', label: 'Very Poor' };
+    else gradeInfo = { grade: 'F', color: '#c0392b', label: 'Highly Disproportional' };
+    
+    // Add educational note for Parallel (MMM) systems
+    if (systemType === 'parallel' && (gradeInfo.grade === 'D' || gradeInfo.grade === 'E')) {
+        gradeInfo.note = 'This is expected behavior for Parallel Voting, which prioritizes local representation over proportionality.';
+    }
+    
+    return gradeInfo;
+}
+
+// Translate ranked ballot data to party vote totals (for hybrid comparisons)
+function translateRankedToPartyVotes(ballots) {
+    const partyTotals = {};
+    ballots.forEach(ballot => {
+        const firstChoiceId = ballot.preferences[0];
+        const candidate = candidates.find(c => c.id === firstChoiceId);
+        if (candidate) {
+            partyTotals[candidate.partyId] = (partyTotals[candidate.partyId] || 0) + ballot.count;
+        }
+    });
+    return partyTotals;
+}
+
+// Calculate shadow result for cross-system comparison
+function calculateShadowResult(currentSystem, compareToSystem, votes) {
+    // Validate compatibility
+    const compatibility = {
+        'fptp': ['irv'],
+        'irv': ['fptp'],
+        'party-list': ['mmp', 'parallel'],
+        'mmp': ['party-list', 'parallel'],
+        'parallel': ['party-list', 'mmp'],
+        'stv': ['mmp', 'party-list'] // Translate ranked → party
+    };
+    
+    if (!compatibility[currentSystem]?.includes(compareToSystem)) {
+        return { error: 'Systems not comparable with current data' };
+    }
+    
+    // Data translation for hybrid comparisons
+    let translatedVotes = votes;
+    if (currentSystem === 'stv' && ['mmp', 'party-list'].includes(compareToSystem)) {
+        translatedVotes = translateRankedToPartyVotes(votes.ballots);
+    }
+    
+    // Run calculation
+    const calculators = {
+        'fptp': calculateFPTP,
+        'irv': calculateIRV,
+        'party-list': calculatePartyListPR,
+        'mmp': calculateMMP,
+        'parallel': calculateParallel,
+        'stv': calculateSTV
+    };
+    
+    const shadowResults = calculators[compareToSystem](translatedVotes);
+    return shadowResults;
+}
+
+// Get compatible systems for shadow comparison
+function getCompatibleSystems(currentSystem) {
+    const compatibility = {
+        'fptp': ['irv'],
+        'irv': ['fptp'],
+        'party-list': ['mmp', 'parallel'],
+        'mmp': ['party-list', 'parallel'],
+        'parallel': ['party-list', 'mmp'],
+        'stv': ['mmp', 'party-list']
+    };
+    return compatibility[currentSystem] || [];
+}
+
+// Generate comparison rows for shadow results table
+function generateComparisonRows(primaryResults, shadowResults) {
+    let html = '';
+    
+    // Get party results from both systems
+    const primaryParties = primaryResults.results || [];
+    const shadowParties = shadowResults.results || [];
+    
+    // Create a map of parties
+    const partyMap = new Map();
+    
+    primaryParties.forEach(p => {
+        partyMap.set(p.name, { primary: p.seats || 0, shadow: 0, color: p.color });
+    });
+    
+    shadowParties.forEach(p => {
+        if (partyMap.has(p.name)) {
+            partyMap.get(p.name).shadow = p.seats || 0;
+        } else {
+            partyMap.set(p.name, { primary: 0, shadow: p.seats || 0, color: p.color });
+        }
+    });
+    
+    // Generate rows
+    partyMap.forEach((data, partyName) => {
+        const diff = data.shadow - data.primary;
+        const diffSign = diff > 0 ? '+' : '';
+        const diffColor = diff > 0 ? '#2ecc71' : (diff < 0 ? '#e74c3c' : '#666');
+        
+        html += `
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 10px;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: ${data.color}; border-radius: 2px; margin-right: 8px;"></span>
+                    ${partyName}
+                </td>
+                <td style="padding: 10px; text-align: center;">${data.primary}</td>
+                <td style="padding: 10px; text-align: center;">${data.shadow}</td>
+                <td style="padding: 10px; text-align: center; font-weight: bold; color: ${diffColor};">
+                    ${diff !== 0 ? diffSign + diff : '—'}
+                </td>
+            </tr>
+        `;
+    });
+    
+    return html;
+}
+
+// Generate insight text for comparison
+function generateComparisonInsight(primaryResults, shadowResults, currentSystem, compareSystem) {
+    const systemNames = {
+        'fptp': 'First-Past-the-Post',
+        'irv': 'Instant-Runoff Voting',
+        'party-list': 'Party-List PR',
+        'mmp': 'Mixed-Member Proportional',
+        'parallel': 'Parallel Voting',
+        'stv': 'Single Transferable Vote'
+    };
+    
+    const currentName = systemNames[currentSystem] || currentSystem;
+    const compareName = systemNames[compareSystem] || compareSystem;
+    
+    // Calculate total seat shifts
+    const primaryParties = primaryResults.results || [];
+    const shadowParties = shadowResults.results || [];
+    
+    let totalShift = 0;
+    const partyMap = new Map();
+    
+    primaryParties.forEach(p => {
+        partyMap.set(p.name, { primary: p.seats || 0, shadow: 0 });
+    });
+    
+    shadowParties.forEach(p => {
+        if (partyMap.has(p.name)) {
+            partyMap.get(p.name).shadow = p.seats || 0;
+        }
+    });
+    
+    partyMap.forEach(data => {
+        totalShift += Math.abs(data.shadow - data.primary);
+    });
+    
+    const halfShift = totalShift / 2; // Each seat shift is counted twice
+    
+    let insight = `Under ${currentName}, the seat allocation differs from ${compareName} by ${halfShift} seat${halfShift !== 1 ? 's' : ''}. `;
+    
+    // Add system-specific insights
+    if (currentSystem === 'mmp' && compareSystem === 'parallel') {
+        insight += 'MMP\'s compensatory mechanism makes it more proportional than Parallel Voting.';
+    } else if (currentSystem === 'parallel' && compareSystem === 'mmp') {
+        insight += 'Parallel Voting prioritizes local representation, while MMP balances it with proportionality.';
+    } else if ((currentSystem === 'mmp' || currentSystem === 'parallel') && compareSystem === 'party-list') {
+        insight += 'The mixed system includes district seats, which can create deviations from pure proportionality.';
+    } else if (currentSystem === 'fptp' && compareSystem === 'irv') {
+        insight += 'IRV eliminates the "spoiler effect" by considering voters\' full ranking preferences.';
+    } else if (currentSystem === 'irv' && compareSystem === 'fptp') {
+        insight += 'FPTP only considers first preferences, which can lead to different outcomes when there are multiple candidates.';
+    }
+    
+    return insight;
+}
+
+// Show shadow result comparison
+function showShadowResult() {
+    const compareSystem = document.getElementById('shadowSystemSelect').value;
+    if (!compareSystem) {
+        alert('Please select a system to compare');
+        return;
+    }
+    
+    const currentSystem = window.lastCalculationSystem;
+    const votes = window.lastCalculationVotes;
+    const primaryResults = window.lastCalculationResults;
+    
+    if (!currentSystem || !votes || !primaryResults) {
+        alert('Please calculate results first');
+        return;
+    }
+    
+    const shadowResults = calculateShadowResult(currentSystem, compareSystem, votes);
+    
+    if (shadowResults.error) {
+        alert(shadowResults.error);
+        return;
+    }
+    
+    const systemNames = {
+        'fptp': 'FPTP',
+        'irv': 'IRV',
+        'party-list': 'Party-List PR',
+        'mmp': 'MMP',
+        'parallel': 'Parallel',
+        'stv': 'STV'
+    };
+    
+    // Build comparison table
+    const comparisonHTML = `
+        <div class="comparison-table" style="margin-top: 20px; animation: fadeIn 0.3s;">
+            <h4 style="color: #495057; margin-bottom: 15px;">🔄 Seat Shift Analysis</h4>
+            <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <thead>
+                    <tr style="background: #667eea; color: white;">
+                        <th style="padding: 12px; text-align: left;">Party</th>
+                        <th style="padding: 12px; text-align: center;">${systemNames[currentSystem]} Seats</th>
+                        <th style="padding: 12px; text-align: center;">${systemNames[compareSystem]} Seats</th>
+                        <th style="padding: 12px; text-align: center;">Difference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${generateComparisonRows(primaryResults, shadowResults)}
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #667eea;">
+                <strong style="color: #1565c0;">💡 Key Insight:</strong>
+                <p style="margin: 8px 0 0 0; color: #333; line-height: 1.6;">${generateComparisonInsight(primaryResults, shadowResults, currentSystem, compareSystem)}</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('shadowResultsDisplay').innerHTML = comparisonHTML;
+}
+
 function displayResults(results, system) {
     const resultsSection = document.getElementById('resultsSection');
     const resultsDiv = document.getElementById('results');
@@ -2208,7 +2513,28 @@ function displayResults(results, system) {
                 <p style="margin-top: 8px; color: #333; line-height: 1.6;">
                     <strong>Loosemore-Hanby Index:</strong> ${results.disproportionality.toFixed(2)}%<br>
                     <strong>Gallagher Index (LSq):</strong> ${results.gallagher.toFixed(2)}%
-                </p>
+                </p>`;
+            
+            // Add Gallagher grade visual meter
+            if (results.gallagher !== undefined) {
+                const gradeInfo = getGallagherGrade(results.gallagher, system);
+                html += `
+                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <div style="margin-bottom: 8px;">
+                        <strong>Fairness Grade:</strong>
+                        <span style="font-size: 2em; font-weight: bold; color: ${gradeInfo.color}; margin-left: 10px;">
+                            ${gradeInfo.grade}
+                        </span>
+                        <span style="color: #666; margin-left: 8px;">(${gradeInfo.label})</span>
+                    </div>
+                    <div style="background: #f0f0f0; border-radius: 10px; height: 20px; overflow: hidden;">
+                        <div style="background: ${gradeInfo.color}; height: 100%; width: ${Math.min(100, results.gallagher * 5)}%; transition: width 0.3s;"></div>
+                    </div>
+                    ${gradeInfo.note ? `<p style="margin-top: 8px; font-size: 0.9em; color: #666; font-style: italic;">💡 ${gradeInfo.note}</p>` : ''}
+                </div>`;
+            }
+            
+            html += `
                 <p style="margin-top: 8px; color: #333; line-height: 1.6;"><strong>${dispRating}:</strong> This means ${results.disproportionality.toFixed(1)}% of the seats in the legislature are held by parties that would not have them if the results were perfectly proportional to the vote share.</p>
                 <p style="margin-top: 5px; font-size: 0.9em; color: #666;">The Gallagher Index penalizes large deviations more heavily and is the academic standard.</p>
                 ${results.allocationMethod ? `<p style="margin-top: 5px; color: #666;"><em>Using ${results.allocationMethod === 'dhondt' ? 'D\'Hondt' : 'Sainte-Laguë'} method for seat allocation</em></p>` : ''}
@@ -2342,7 +2668,28 @@ function displayResults(results, system) {
                 <p style="margin-top: 8px; color: #333; line-height: 1.6;">
                     <strong>Loosemore-Hanby Index:</strong> ${results.disproportionality.toFixed(2)}%<br>
                     <strong>Gallagher Index (LSq):</strong> ${results.gallagher.toFixed(2)}%
-                </p>
+                </p>`;
+            
+            // Add Gallagher grade visual meter
+            if (results.gallagher !== undefined) {
+                const gradeInfo = getGallagherGrade(results.gallagher, system);
+                html += `
+                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <div style="margin-bottom: 8px;">
+                        <strong>Fairness Grade:</strong>
+                        <span style="font-size: 2em; font-weight: bold; color: ${gradeInfo.color}; margin-left: 10px;">
+                            ${gradeInfo.grade}
+                        </span>
+                        <span style="color: #666; margin-left: 8px;">(${gradeInfo.label})</span>
+                    </div>
+                    <div style="background: #f0f0f0; border-radius: 10px; height: 20px; overflow: hidden;">
+                        <div style="background: ${gradeInfo.color}; height: 100%; width: ${Math.min(100, results.gallagher * 5)}%; transition: width 0.3s;"></div>
+                    </div>
+                    ${gradeInfo.note ? `<p style="margin-top: 8px; font-size: 0.9em; color: #666; font-style: italic;">💡 ${gradeInfo.note}</p>` : ''}
+                </div>`;
+            }
+            
+            html += `
                 <p style="margin-top: 8px; color: #333; line-height: 1.6;"><strong>${dispRating}:</strong> ${results.disproportionality.toFixed(1)}% of seats deviate from perfect proportionality.</p>
                 <p style="margin-top: 5px; font-size: 0.9em; color: #666;">The Gallagher Index penalizes large deviations more heavily and is the academic standard.</p>
                 ${results.allocationMethod ? `<p style="margin-top: 5px; color: #666;"><em>Using ${results.allocationMethod === 'dhondt' ? 'D\'Hondt' : 'Sainte-Laguë'} method for list seats</em></p>` : ''}
@@ -2623,6 +2970,40 @@ function displayResults(results, system) {
     
     if (results.note) {
         html += `<p style="margin-top: 15px; color: #666; font-style: italic;">${results.note}</p>`;
+    }
+    
+    // Add Shadow Result Comparison UI
+    const compatibleSystems = getCompatibleSystems(system);
+    if (compatibleSystems.length > 0) {
+        const systemFullNames = {
+            'fptp': 'First-Past-the-Post',
+            'irv': 'Instant-Runoff Voting',
+            'party-list': 'Party-List Proportional Representation',
+            'mmp': 'Mixed-Member Proportional',
+            'parallel': 'Parallel Voting',
+            'stv': 'Single Transferable Vote'
+        };
+        
+        html += `
+        <div class="comparison-section" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e9ecef;">
+            <h3 style="color: #495057; margin: 0 0 10px 0;">📊 Compare to Alternative System</h3>
+            <p style="color: #666; margin-bottom: 15px;">See how these same votes would produce different results under another electoral system.</p>
+            
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <select id="shadowSystemSelect" style="padding: 10px 15px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; min-width: 250px;">
+                    <option value="">-- Select System to Compare --</option>
+                    ${compatibleSystems.map(s => 
+                        `<option value="${s}">${systemFullNames[s]}</option>`
+                    ).join('')}
+                </select>
+                
+                <button onclick="showShadowResult()" class="btn-calculate" style="padding: 10px 20px;">
+                    Compare Results
+                </button>
+            </div>
+            
+            <div id="shadowResultsDisplay" style="margin-top: 15px;"></div>
+        </div>`;
     }
     
     resultsDiv.innerHTML = html;
