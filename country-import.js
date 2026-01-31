@@ -156,12 +156,19 @@ window.importCountryParties = function(country) {
         return;
     }
     
-    // Clear existing parties
+    // If switching countries, clear existing parties with confirmation
     if (parties.length > 0) {
-        if (!confirm(`This will replace your current ${parties.length} parties with parties from ${country}. Continue?`)) {
+        const confirmMsg = currentImportedCountry && currentImportedCountry !== country
+            ? `This will replace your current ${currentImportedCountry} parties with parties from ${country}. Continue?`
+            : `This will replace your current ${parties.length} parties with parties from ${country}. Continue?`;
+        
+        if (!confirm(confirmMsg)) {
             return;
         }
     }
+    
+    // Set current imported country
+    currentImportedCountry = country;
     
     parties = [];
     candidates = [];
@@ -177,8 +184,10 @@ window.importCountryParties = function(country) {
     
     // Update all UI elements
     updatePartiesList();  // This updates the parties display
+    updateCountryIndicator(); // Show which country is imported
     updateCandidatePartySelect();
     updateVotingInputs();
+    saveState(); // Save the imported country to localStorage
     
     // Collapse the import panel after import
     const panel = document.getElementById('countryImportPanel');

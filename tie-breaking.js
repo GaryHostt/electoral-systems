@@ -81,11 +81,13 @@ function createTieNotification(tieInfo, systemName) {
                 ${entities}
             </p>
             <p style="margin: 0; color: #856404;">
-                <strong>Resolution Method:</strong> Random lot drawing (simulated coin toss)
+                <strong>Resolution Method:</strong> Secure random draw (cryptographic lot drawing)
                 <br>
                 <strong>Winner:</strong> ${tieInfo.winner.name}
             </p>
             <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #666;">
+                🎲 <strong>Tie-Breaking:</strong> Winner chosen by secure random draw due to absolute tie between ${entities}.
+                <br>
                 ℹ️ In real ${systemName} elections, ties are typically resolved by:
                 drawing lots, coin toss, or using secondary criteria (age, alphabetical order, etc.)
             </p>

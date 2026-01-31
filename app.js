@@ -3,15 +3,22 @@ let parties = [];
 let candidates = [];
 let votes = {};
 let rankings = {}; // Store ranking preferences for IRV/STV
+let currentImportedCountry = null; // Track which country is currently imported
 
 // Configuration
+// Helper to get custom seat count with validation (DRY principle)
+function getCustomSeatCount() {
+    const seatsInput = document.getElementById('totalLegislatureSeats');
+    if (!seatsInput) return 100;
+    
+    const customSeats = parseInt(seatsInput.value);
+    return isNaN(customSeats) || customSeats < 2 ? 100 : Math.min(customSeats, 1000);
+}
+
 function getSeatsCount() {
     const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
     if (raceType === 'single') return 1;
-    
-    // Get custom value from input, default to 100 if empty/invalid
-    const customSeats = parseInt(document.getElementById('totalLegislatureSeats')?.value);
-    return isNaN(customSeats) || customSeats < 2 ? 100 : Math.min(customSeats, 1000);
+    return getCustomSeatCount();
 }
 
 // Apply parliament preset from dropdown
@@ -23,8 +30,69 @@ function applyParliamentPreset() {
         seatsInput.value = select.value;
         // Reset dropdown to placeholder
         select.value = '';
+        
+        // Re-render the race type labels with new seat count
+        const currentSystem = document.getElementById('electoralSystem').value;
+        if (currentSystem) {
+            configureRaceTypeForSystem(currentSystem);
+        }
+        
         // Trigger any dependent updates
         updateVotingInputs();
+    }
+}
+
+// Update seats/members label based on selected system
+function updateSeatsLabel() {
+    const system = document.getElementById('electoralSystem').value;
+    const label = document.querySelector('label[for="totalLegislatureSeats"]');
+    if (label) {
+        label.textContent = system === 'stv' ? 'Members:' : 'Seats:';
+    }
+}
+
+// Update parliament presets dropdown based on selected system
+function updateParliamentPresets() {
+    const system = document.getElementById('electoralSystem').value;
+    const select = document.getElementById('parliamentPresets');
+    
+    if (!select) return;
+    
+    // Clear existing options
+    select.innerHTML = '<option value="">-- Real-World Presets --</option>';
+    
+    if (system === 'stv') {
+        // STV-specific presets
+        const stvPresets = [
+            { value: '5', label: '🇲🇹 Malta (5)' },
+            { value: '3', label: '🇮🇪 Ireland rural (3)' },
+            { value: '5', label: '🇮🇪 Ireland urban (5)' },
+            { value: '6', label: '🇦🇺 Australia half (6)' },
+            { value: '12', label: '🇦🇺 Australia full (12)' }
+        ];
+        stvPresets.forEach(preset => {
+            const option = document.createElement('option');
+            option.value = preset.value;
+            option.textContent = preset.label;
+            select.appendChild(option);
+        });
+    } else {
+        // Default presets for other systems
+        const defaultPresets = [
+            { value: '349', label: '🇸🇪 Sweden (349)' },
+            { value: '598', label: '🇩🇪 Germany (598)' },
+            { value: '435', label: '🇺🇸 US House (435)' },
+            { value: '650', label: '🇬🇧 UK Commons (650)' },
+            { value: '465', label: '🇯🇵 Japan (465)' },
+            { value: '120', label: '🇳🇿 New Zealand (120)' },
+            { value: '160', label: '🇮🇪 Ireland Dáil (160)' }
+        ];
+        defaultPresets.forEach(preset => {
+            const option = document.createElement('option');
+            option.value = preset.value;
+            option.textContent = preset.label;
+            select.appendChild(option);
+        });
     }
 }
 
@@ -70,7 +138,7 @@ const SYSTEM_RULES = {
         needsPartyVote: false,
         needsCandidates: true,
         isRanking: false,
-        raceScopes: ['single', 'legislative'],
+        raceScopes: ['single'],  // Legislative mode disabled until district-by-district entry UI is implemented
         description: 'Simple plurality voting where highest vote wins'
     },
     'irv': {
@@ -81,7 +149,7 @@ const SYSTEM_RULES = {
         needsPartyVote: false,
         needsCandidates: true,
         isRanking: true,
-        raceScopes: ['single'],  // IRV is inherently single-winner only
+        raceScopes: ['single'],  // Legislative mode disabled until district-by-district entry UI is implemented
         description: 'Ranked choice with instant runoff elimination'
     },
     'party-list': {
@@ -244,6 +312,7 @@ function saveState() {
         const state = {
             parties: parties,
             candidates: candidates,
+            importedCountry: currentImportedCountry,
             timestamp: new Date().toISOString()
         };
         localStorage.setItem('electoralSimulatorState', JSON.stringify(state));
@@ -260,14 +329,28 @@ function loadState() {
             const state = JSON.parse(saved);
             parties = state.parties || [];
             candidates = state.candidates || [];
+            currentImportedCountry = state.importedCountry || null;
             updatePartiesList();
             updateCandidateList();
+            updateCountryIndicator();
             return true;
         }
     } catch (e) {
         console.error('Error loading state:', e);
     }
     return false;
+}
+
+// Reset simulator - clear all data and refresh page
+function resetSimulator() {
+    if (confirm('This will reset all data and refresh the page. Continue?')) {
+        // Clear localStorage
+        localStorage.removeItem('electoralSimulatorState');
+        localStorage.removeItem('lastElectionResults');
+        
+        // Refresh page
+        window.location.reload();
+    }
 }
 
 // Initialize - wrap in DOMContentLoaded to ensure DOM is ready
@@ -361,6 +444,12 @@ function onSystemChange() {
     // Configure race type options based on system
     configureRaceTypeForSystem(system);
     
+    // Update seats/members label based on system
+    updateSeatsLabel();
+    
+    // Update parliament presets dropdown based on system
+    updateParliamentPresets();
+    
     // Configure advanced features visibility based on system
     configureAdvancedFeatures(system);
     
@@ -421,20 +510,33 @@ function configureRaceTypeForSystem(system) {
     const singleSpan = singleOption.querySelector('span');
     const legislativeSpan = legislativeOption.querySelector('span');
     
-    // Get the current seat count (will be 100 by default, or custom value if set)
-    const seats = getSeatsCount();
+    // Get the current race type and seat count
+    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+    const seats = raceType === 'single' ? 1 : getCustomSeatCount();
     
     // Update span text based on system (keeps radio buttons intact)
     if (system === 'irv') {
         if (singleSpan) singleSpan.textContent = '🏁 Single District';
-        if (legislativeSpan) legislativeSpan.textContent = `🏛️ ${seats} Single-Member Districts`;
+        // For legislative label, always use getCustomSeatCount() regardless of current selection
+        if (legislativeSpan) {
+            const legislativeSeats = getCustomSeatCount();
+            legislativeSpan.textContent = `🏛️ ${legislativeSeats} Single-Member Districts`;
+        }
     } else if (system === 'stv') {
         if (singleSpan) singleSpan.textContent = '🏁 Single Winner (IRV mode)';
-        if (legislativeSpan) legislativeSpan.textContent = `🏛️ Multi-Member District (${seats} seats)`;
+        // For legislative label, always use getCustomSeatCount() regardless of current selection
+        if (legislativeSpan) {
+            const legislativeSeats = getCustomSeatCount();
+            legislativeSpan.textContent = `🏛️ Multi-Member District (${legislativeSeats} members)`;
+        }
     } else {
         // Default labels for other systems
         if (singleSpan) singleSpan.textContent = '🏁 Single Race (1 seat or district)';
-        if (legislativeSpan) legislativeSpan.textContent = `🏛️ Entire Legislature (${seats} seats)`;
+        // For legislative label, always use getCustomSeatCount() regardless of current selection
+        if (legislativeSpan) {
+            const legislativeSeats = getCustomSeatCount();
+            legislativeSpan.textContent = `🏛️ Entire Legislature (${legislativeSeats} seats)`;
+        }
     }
     
     // Reset styles
@@ -559,6 +661,13 @@ function addParty() {
 function removeParty(id) {
     parties = parties.filter(p => p.id !== id);
     candidates = candidates.filter(c => c.partyId !== id);
+    
+    // If all parties removed, clear country indicator
+    if (parties.length === 0) {
+        currentImportedCountry = null;
+        updateCountryIndicator();
+    }
+    
     updatePartiesList();
     updateCandidatesList();
     updateCandidatePartySelect();
@@ -582,6 +691,50 @@ function updatePartiesList() {
             <button class="btn-remove" onclick="removeParty(${party.id})">Remove</button>
         </div>
     `).join('');
+}
+
+// Update country import indicator badge
+function updateCountryIndicator() {
+    // Remove existing indicator
+    const existingIndicator = document.getElementById('countryIndicator');
+    if (existingIndicator) existingIndicator.remove();
+    
+    // Add new indicator if country is imported
+    if (currentImportedCountry) {
+        const countryFlags = {
+            'USA': '🇺🇸',
+            'Canada': '🇨🇦',
+            'Taiwan': '🇹🇼',
+            'France': '🇫🇷',
+            'Germany': '🇩🇪',
+            'Chile': '🇨🇱',
+            'Spain': '🇪🇸',
+            'Finland': '🇫🇮',
+            'Austria': '🇦🇹',
+            'Portugal': '🇵🇹',
+            'Poland': '🇵🇱',
+            'Ireland': '🇮🇪',
+            'Estonia': '🇪🇪',
+            'Latvia': '🇱🇻',
+            'Lithuania': '🇱🇹',
+            'Italy': '🇮🇹',
+            'Sweden': '🇸🇪'
+        };
+        
+        const indicator = document.createElement('div');
+        indicator.id = 'countryIndicator';
+        indicator.style.cssText = 'background: #e6f7ff; border: 2px solid #1890ff; border-radius: 8px; padding: 8px 12px; margin: 15px 0; display: block; font-weight: 600; color: #0050b3;';
+        indicator.innerHTML = `${countryFlags[currentImportedCountry] || '🌍'} Imported from: ${currentImportedCountry}`;
+        
+        // Insert into the parties section directly after the h2
+        const partiesSection = document.getElementById('partiesSection');
+        if (partiesSection) {
+            const h2 = partiesSection.querySelector('h2');
+            if (h2) {
+                h2.insertAdjacentElement('afterend', indicator);
+            }
+        }
+    }
 }
 
 function updateCandidatePartySelect() {
@@ -2185,6 +2338,38 @@ function translateRankedToPartyVotes(ballots) {
     return partyTotals;
 }
 
+// Convert FPTP candidate votes to synthetic IRV ballots
+function convertFPTPtoIRVballots(candidateVotes) {
+    const ballots = [];
+    
+    // For each candidate's vote count, create that many ballots with only that candidate
+    Object.keys(candidateVotes).forEach(candidateId => {
+        const votes = candidateVotes[candidateId] || 0;
+        if (votes > 0) {
+            ballots.push({
+                preferences: [parseInt(candidateId)],
+                count: votes
+            });
+        }
+    });
+    
+    return ballots;
+}
+
+// Convert IRV ranked ballots to FPTP candidate votes (first preferences only)
+function convertIRVtoFPTP(ballots) {
+    const candidateVotes = {};
+    
+    ballots.forEach(ballot => {
+        if (ballot.preferences && ballot.preferences.length > 0) {
+            const firstChoice = ballot.preferences[0];
+            candidateVotes[firstChoice] = (candidateVotes[firstChoice] || 0) + (ballot.count || 1);
+        }
+    });
+    
+    return candidateVotes;
+}
+
 // Calculate shadow result for cross-system comparison
 function calculateShadowResult(currentSystem, compareToSystem, votes) {
     // Validate compatibility
@@ -2203,6 +2388,35 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
     
     // Data translation for hybrid comparisons
     let translatedVotes = votes;
+    
+    // FPTP → IRV: Create synthetic ballots from candidate votes
+    if (currentSystem === 'fptp' && compareToSystem === 'irv') {
+        translatedVotes = {
+            ...votes,
+            ballots: convertFPTPtoIRVballots(votes.candidates)
+        };
+    }
+    
+    // IRV → FPTP: Extract first preferences from ballots
+    if (currentSystem === 'irv' && compareToSystem === 'fptp') {
+        const candidateVotes = convertIRVtoFPTP(votes.ballots);
+        
+        // Calculate totalVoters from ballots
+        let totalVoters = 0;
+        if (votes.ballots) {
+            votes.ballots.forEach(ballot => {
+                totalVoters += ballot.count || 0;
+            });
+        }
+        
+        translatedVotes = {
+            ...votes,
+            candidates: candidateVotes,
+            totalVoters: totalVoters
+        };
+    }
+    
+    // STV → Party-List/MMP: Translate ranked to party votes
     if (currentSystem === 'stv' && ['mmp', 'party-list'].includes(compareToSystem)) {
         translatedVotes = translateRankedToPartyVotes(votes.ballots);
     }
@@ -2224,8 +2438,8 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
 // Get compatible systems for shadow comparison
 function getCompatibleSystems(currentSystem) {
     const compatibility = {
-        'fptp': [],  // Remove IRV - insufficient data for ranked comparison
-        'irv': [],   // Remove FPTP - IRV results can't translate back
+        'fptp': ['irv'],       // Re-enabled with synthetic ballot translation
+        'irv': ['fptp'],       // Re-enabled with first-preference extraction
         'party-list': ['mmp', 'parallel'],
         'mmp': ['party-list', 'parallel'],
         'parallel': ['party-list', 'mmp'],
@@ -2245,15 +2459,21 @@ function generateComparisonRows(primaryResults, shadowResults) {
     // Create a map of parties
     const partyMap = new Map();
     
+    // Handle single-winner systems (IRV/FPTP) vs multi-winner systems
+    const isSingleWinner = primaryResults.type === 'candidate' || shadowResults.type === 'candidate';
+    
     primaryParties.forEach(p => {
-        partyMap.set(p.name, { primary: p.seats || 0, shadow: 0, color: p.color });
+        // For single-winner systems, use winner flag or votes; for multi-winner, use seats
+        const value = isSingleWinner ? (p.winner ? 1 : 0) : (p.seats || 0);
+        partyMap.set(p.name, { primary: value, shadow: 0, color: p.color });
     });
     
     shadowParties.forEach(p => {
+        const value = isSingleWinner ? (p.winner ? 1 : 0) : (p.seats || 0);
         if (partyMap.has(p.name)) {
-            partyMap.get(p.name).shadow = p.seats || 0;
+            partyMap.get(p.name).shadow = value;
         } else {
-            partyMap.set(p.name, { primary: 0, shadow: p.seats || 0, color: p.color });
+            partyMap.set(p.name, { primary: 0, shadow: value, color: p.color });
         }
     });
     
@@ -2261,7 +2481,12 @@ function generateComparisonRows(primaryResults, shadowResults) {
     partyMap.forEach((data, partyName) => {
         const diff = data.shadow - data.primary;
         const diffSign = diff > 0 ? '+' : '';
-        const diffColor = diff > 0 ? '#2ecc71' : (diff < 0 ? '#e74c3c' : '#666');
+        let diffClass = diff > 0 ? 'diff-positive' : (diff < 0 ? 'diff-negative' : 'diff-neutral');
+        let diffText = diff > 0 ? `+${diff}` : (diff < 0 ? diff : '—');
+        
+        // For single-winner systems, show "Winner" instead of seat count
+        const primaryDisplay = isSingleWinner ? (data.primary === 1 ? 'Winner' : '—') : data.primary;
+        const shadowDisplay = isSingleWinner ? (data.shadow === 1 ? 'Winner' : '—') : data.shadow;
         
         html += `
             <tr style="border-bottom: 1px solid #ddd;">
@@ -2269,10 +2494,10 @@ function generateComparisonRows(primaryResults, shadowResults) {
                     <span style="display: inline-block; width: 12px; height: 12px; background: ${data.color}; border-radius: 2px; margin-right: 8px;"></span>
                     ${partyName}
                 </td>
-                <td style="padding: 10px; text-align: center;">${data.primary}</td>
-                <td style="padding: 10px; text-align: center;">${data.shadow}</td>
-                <td style="padding: 10px; text-align: center; font-weight: bold; color: ${diffColor};">
-                    ${diff !== 0 ? diffSign + diff : '—'}
+                <td style="padding: 10px; text-align: center;">${primaryDisplay}</td>
+                <td style="padding: 10px; text-align: center;">${shadowDisplay}</td>
+                <td style="padding: 10px; text-align: center;" class="${diffClass}">
+                    ${diffText}
                 </td>
             </tr>
         `;
@@ -2318,7 +2543,32 @@ function generateComparisonInsight(primaryResults, shadowResults, currentSystem,
     
     const halfShift = totalShift / 2; // Each seat shift is counted twice
     
-    let insight = `Under ${currentName}, the seat allocation differs from ${compareName} by ${halfShift} seat${halfShift !== 1 ? 's' : ''}. `;
+    let insight = '';
+    
+    // Gallagher Index comparison (if available)
+    if (primaryResults.gallagher !== undefined && shadowResults.gallagher !== undefined) {
+        const gDiff = (shadowResults.gallagher - primaryResults.gallagher).toFixed(2);
+        insight += `<p style="font-weight: 600; color: #2d3748; margin-bottom: 10px;">📊 Gallagher Index Shift: ${gDiff > 0 ? '+' : ''}${gDiff}</p>`;
+        
+        if (Math.abs(gDiff) < 0.5) {
+            insight += `<p style="margin-bottom: 10px;">Both systems produced remarkably similar levels of proportionality for this specific vote distribution.</p>`;
+        } else if (parseFloat(gDiff) < 0) {
+            insight += `<p style="margin-bottom: 10px;">Switching from ${currentName} to ${compareName} improved proportionality by ${Math.abs(gDiff)} points, reducing the distortion between votes and seats.</p>`;
+        } else {
+            insight += `<p style="margin-bottom: 10px;">Switching from ${currentName} to ${compareName} increased disproportionality by ${gDiff} points, likely favoring larger parties and creating a more "stable" but less representative majority.</p>`;
+        }
+    }
+    
+    // Seat shift analysis
+    insight += `Under ${currentName}, the seat allocation differs from ${compareName} by ${halfShift} seat${halfShift !== 1 ? 's' : ''}. `;
+    
+    // Add max shift if available
+    if (partyMap.size > 0) {
+        const maxShift = Math.max(...Array.from(partyMap.values()).map(d => Math.abs(d.shadow - d.primary)));
+        if (maxShift > 0) {
+            insight += `The largest seat shift was ${maxShift} seats, demonstrating how electoral systems can significantly impact representation. `;
+        }
+    }
     
     // Add system-specific insights
     if (currentSystem === 'mmp' && compareSystem === 'parallel') {
@@ -2331,6 +2581,16 @@ function generateComparisonInsight(primaryResults, shadowResults, currentSystem,
         insight += 'IRV eliminates the "spoiler effect" by considering voters\' full ranking preferences.';
     } else if (currentSystem === 'irv' && compareSystem === 'fptp') {
         insight += 'FPTP only considers first preferences, which can lead to different outcomes when there are multiple candidates.';
+    }
+    
+    // Add educational note for FPTP ↔ IRV comparisons
+    if ((currentSystem === 'fptp' && compareSystem === 'irv') || 
+        (currentSystem === 'irv' && compareSystem === 'fptp')) {
+        insight += `
+        <p style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-left: 3px solid #2196f3;">
+            <strong>📘 Note:</strong> This comparison uses ${currentSystem === 'fptp' ? 'synthetic ranked ballots (each voter ranks only their chosen candidate)' : 'first-preference votes only'} 
+            to enable cross-system comparison. In reality, voters might rank differently if given the option.
+        </p>`;
     }
     
     return insight;
@@ -2347,6 +2607,16 @@ function showShadowResult() {
     const currentSystem = window.lastCalculationSystem;
     const votes = window.lastCalculationVotes;
     const primaryResults = window.lastCalculationResults;
+    
+    // DEBUG: Log to verify data exists
+    console.log('Shadow Result Debug:', {
+        currentSystem,
+        compareSystem,
+        hasVotes: !!votes,
+        hasPrimaryResults: !!primaryResults,
+        votesStructure: votes ? Object.keys(votes) : null,
+        primaryResultsStructure: primaryResults ? Object.keys(primaryResults) : null
+    });
     
     if (!currentSystem || !votes || !primaryResults) {
         alert('Please calculate results first');
@@ -2369,11 +2639,13 @@ function showShadowResult() {
         'stv': 'STV'
     };
     
-    // Build comparison table
+    // Build comparison table with research-grade styling
     const comparisonHTML = `
-        <div class="comparison-table" style="margin-top: 20px; animation: fadeIn 0.3s;">
-            <h4 style="color: #495057; margin-bottom: 15px;">🔄 Seat Shift Analysis</h4>
-            <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="comparison-table-wrapper">
+            <div class="shadow-header">
+                🔬 Counterfactual Analysis: ${SYSTEM_RULES[compareSystem].name}
+            </div>
+            <table class="comparison-table" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <thead>
                     <tr style="background: #667eea; color: white;">
                         <th style="padding: 12px; text-align: left;">Party</th>
@@ -2387,9 +2659,9 @@ function showShadowResult() {
                 </tbody>
             </table>
             
-            <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="margin-top: 15px; padding: 15px; background: #f7fafc; border-radius: 8px;">
                 <strong style="color: #1565c0;">💡 Key Insight:</strong>
-                <p style="margin: 8px 0 0 0; color: #333; line-height: 1.6;">${generateComparisonInsight(primaryResults, shadowResults, currentSystem, compareSystem)}</p>
+                <div style="margin: 8px 0 0 0; color: #333; line-height: 1.6;">${generateComparisonInsight(primaryResults, shadowResults, currentSystem, compareSystem)}</div>
             </div>
         </div>
     `;
@@ -2641,8 +2913,7 @@ function displayResults(results, system) {
                         </div>
                     </div>
                     <div class="result-bar">
-                        <div class="result-bar-fill" style="width: ${seatPercentage}%; color: #000;">
-                            ${r.seats} seats
+                        <div class="result-bar-fill" style="width: ${seatPercentage}%;">
                         </div>
                     </div>
                 </div>
@@ -2819,8 +3090,7 @@ function displayResults(results, system) {
                         </div>
                     </div>
                     <div class="result-bar">
-                        <div class="result-bar-fill" style="width: ${seatPercentage}%; color: #000;">
-                            ${r.seats} seats
+                        <div class="result-bar-fill" style="width: ${seatPercentage}%;">
                         </div>
                     </div>
                 </div>
