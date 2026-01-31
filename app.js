@@ -7,7 +7,25 @@ let rankings = {}; // Store ranking preferences for IRV/STV
 // Configuration
 function getSeatsCount() {
     const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
-    return raceType === 'single' ? 1 : 10;
+    if (raceType === 'single') return 1;
+    
+    // Get custom value from input, default to 100 if empty/invalid
+    const customSeats = parseInt(document.getElementById('totalLegislatureSeats')?.value);
+    return isNaN(customSeats) || customSeats < 2 ? 100 : Math.min(customSeats, 1000);
+}
+
+// Apply parliament preset from dropdown
+function applyParliamentPreset() {
+    const select = document.getElementById('parliamentPresets');
+    const seatsInput = document.getElementById('totalLegislatureSeats');
+    
+    if (select.value) {
+        seatsInput.value = select.value;
+        // Reset dropdown to placeholder
+        select.value = '';
+        // Trigger any dependent updates
+        updateVotingInputs();
+    }
 }
 
 // Utility function to format numbers with commas
@@ -392,17 +410,20 @@ function configureRaceTypeForSystem(system) {
     const singleSpan = singleOption.querySelector('span');
     const legislativeSpan = legislativeOption.querySelector('span');
     
+    // Get the current seat count (will be 100 by default, or custom value if set)
+    const seats = getSeatsCount();
+    
     // Update span text based on system (keeps radio buttons intact)
     if (system === 'irv') {
         if (singleSpan) singleSpan.textContent = '🏁 Single District';
-        if (legislativeSpan) legislativeSpan.textContent = '🏛️ 10 Single-Member Districts';
+        if (legislativeSpan) legislativeSpan.textContent = `🏛️ ${seats} Single-Member Districts`;
     } else if (system === 'stv') {
         if (singleSpan) singleSpan.textContent = '🏁 Single Winner (IRV mode)';
-        if (legislativeSpan) legislativeSpan.textContent = '🏛️ Multi-Member District (10 seats)';
+        if (legislativeSpan) legislativeSpan.textContent = `🏛️ Multi-Member District (${seats} seats)`;
     } else {
         // Default labels for other systems
         if (singleSpan) singleSpan.textContent = '🏁 Single Race (1 seat or district)';
-        if (legislativeSpan) legislativeSpan.textContent = '🏛️ Entire Legislature (10 seats)';
+        if (legislativeSpan) legislativeSpan.textContent = `🏛️ Entire Legislature (${seats} seats)`;
     }
     
     // Reset styles
@@ -478,11 +499,14 @@ function configureAdvancedFeatures(system) {
 function updateRaceType() {
     const raceType = document.querySelector('input[name="raceType"]:checked').value;
     const description = document.getElementById('raceTypeDescription');
+    const seatsContainer = document.getElementById('legislatureSeatsContainer');
     
     if (raceType === 'single') {
-        description.textContent = 'Single race: Simulate one electoral district or seat (e.g., one House district).';
+        description.textContent = 'Single race: Simulate one electoral district or seat.';
+        if (seatsContainer) seatsContainer.style.display = 'none';
     } else {
-        description.textContent = 'Entire legislature: Simulate a full parliament or congress with 10 seats distributed proportionally.';
+        description.textContent = 'Entire legislature: Simulate a full parliament with a custom number of seats.';
+        if (seatsContainer) seatsContainer.style.display = 'flex';
     }
     
     // Update voting inputs to reflect the change
@@ -1686,8 +1710,12 @@ function calculateSTV(votes) {
             }
         }
         
-        // Safety check
-        if (roundNumber > 50) break;
+        // Safety check - scale with seat count to handle large legislatures
+        const maxRounds = seats * 2; // Allow 2 rounds per seat
+        if (roundNumber > maxRounds) {
+            console.warn(`STV: Maximum rounds (${maxRounds}) reached for ${seats} seats`);
+            break;
+        }
     }
     
     // Build results
@@ -1796,9 +1824,11 @@ function simulateDistricts(candidateVotes, districtCount) {
 
 function calculateMMP(votes) {
     // Mixed-Member Proportional: Compensatory system with district + list seats
-    const totalSeats = getSeatsCount(); // e.g., 10 seats
-    const districtSeats = Math.floor(totalSeats / 2); // e.g., 5 districts
-    const baseListSeats = totalSeats - districtSeats; // e.g., 5 list seats
+    const totalSeats = getSeatsCount();
+    
+    // Germany Model: 50% Districts, 50% List (base allocation)
+    const districtSeats = Math.floor(totalSeats / 2);
+    const baseListSeats = totalSeats - districtSeats;
     
     // ============================================
     // Step A: District Tier (FPTP)
@@ -1919,15 +1949,18 @@ function calculateMMP(votes) {
         allocationMethod: allocationMethod,
         disproportionality: disproportionality,
         gallagher: gallagher,  // NEW: Gallagher Index
-        note: `Mixed-Member Proportional: ${districtSeats} district seats (FPTP) with compensatory list seats to ensure overall proportionality. Threshold: ${threshold}% OR 1+ district win for eligibility.${overhangNote}`
+        note: `Mixed-Member Proportional (Germany Model): ${districtSeats} district seats (${Math.round(districtSeats/totalSeats*100)}%) with compensatory list seats to ensure overall proportionality. Threshold: ${threshold}% OR 1+ district win for eligibility (Double Gate).${overhangNote}`
     };
 }
 
 function calculateParallel(votes) {
     // Parallel Voting (MMM): Non-compensatory mixed system
-    const totalSeats = getSeatsCount(); // e.g., 10 seats
-    const districtSeats = Math.floor(totalSeats / 2); // e.g., 5 districts
-    const listSeats = totalSeats - districtSeats; // e.g., 5 list seats
+    const totalSeats = getSeatsCount();
+    
+    // Japan Model: ~62% Districts, ~38% List
+    // This reflects real-world Parallel systems where district seats dominate
+    const districtSeats = Math.floor(totalSeats * 0.62);
+    const listSeats = totalSeats - districtSeats;
     
     // ============================================
     // SILO 1: District Tier (FPTP)
@@ -2030,7 +2063,7 @@ function calculateParallel(votes) {
         disproportionality: disproportionality,
         gallagher: gallagher,  // NEW: Gallagher Index
         paradox: paradox,  // NEW: Paradox detection
-        note: `Parallel voting: ${districtSeats} district seats (FPTP) + ${listSeats} list seats (PR) calculated independently (non-compensatory)`
+        note: `Parallel voting (Japan Model): ${districtSeats} district seats (${Math.round(districtSeats/totalSeats*100)}%) + ${listSeats} list seats (${Math.round(listSeats/totalSeats*100)}%) calculated independently (non-compensatory)`
     };
 }
 
@@ -2534,6 +2567,24 @@ function displayResults(results, system) {
                 </div>`;
             }
             
+            // Add educational note for small legislatures (Rounding Error Effect)
+            const totalSeats = results.totalSeats || results.seats || getSeatsCount();
+            if (totalSeats < 50) {
+                html += `
+                <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    <strong>📚 Educational Note: The "Rounding Error Effect"</strong>
+                    <p style="margin: 8px 0 0 0; color: #856404; line-height: 1.6;">
+                        Small legislatures (< 50 seats) show higher disproportionality even with PR systems. 
+                        With only ${totalSeats} seats, each seat represents ${(100/totalSeats).toFixed(1)}% of representation, 
+                        making perfect proportionality mathematically impossible. For example, a party with 12% of votes 
+                        cannot receive exactly 12% of ${totalSeats} seats (${(totalSeats * 0.12).toFixed(1)} seats), 
+                        so it must be rounded to ${Math.round(totalSeats * 0.12)} seats 
+                        (${(Math.round(totalSeats * 0.12) / totalSeats * 100).toFixed(1)}%), 
+                        creating a ${Math.abs(12 - (Math.round(totalSeats * 0.12) / totalSeats * 100)).toFixed(1)}% allocation error.
+                    </p>
+                </div>`;
+            }
+            
             html += `
                 <p style="margin-top: 8px; color: #333; line-height: 1.6;"><strong>${dispRating}:</strong> This means ${results.disproportionality.toFixed(1)}% of the seats in the legislature are held by parties that would not have them if the results were perfectly proportional to the vote share.</p>
                 <p style="margin-top: 5px; font-size: 0.9em; color: #666;">The Gallagher Index penalizes large deviations more heavily and is the academic standard.</p>
@@ -2686,6 +2737,24 @@ function displayResults(results, system) {
                         <div style="background: ${gradeInfo.color}; height: 100%; width: ${Math.min(100, results.gallagher * 5)}%; transition: width 0.3s;"></div>
                     </div>
                     ${gradeInfo.note ? `<p style="margin-top: 8px; font-size: 0.9em; color: #666; font-style: italic;">💡 ${gradeInfo.note}</p>` : ''}
+                </div>`;
+            }
+            
+            // Add educational note for small legislatures (Rounding Error Effect)
+            const totalSeatsMixed = results.totalSeats || results.seats || getSeatsCount();
+            if (totalSeatsMixed < 50) {
+                html += `
+                <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    <strong>📚 Educational Note: The "Rounding Error Effect"</strong>
+                    <p style="margin: 8px 0 0 0; color: #856404; line-height: 1.6;">
+                        Small legislatures (< 50 seats) show higher disproportionality even with PR systems. 
+                        With only ${totalSeatsMixed} seats, each seat represents ${(100/totalSeatsMixed).toFixed(1)}% of representation, 
+                        making perfect proportionality mathematically impossible. For example, a party with 12% of votes 
+                        cannot receive exactly 12% of ${totalSeatsMixed} seats (${(totalSeatsMixed * 0.12).toFixed(1)} seats), 
+                        so it must be rounded to ${Math.round(totalSeatsMixed * 0.12)} seats 
+                        (${(Math.round(totalSeatsMixed * 0.12) / totalSeatsMixed * 100).toFixed(1)}%), 
+                        creating a ${Math.abs(12 - (Math.round(totalSeatsMixed * 0.12) / totalSeatsMixed * 100)).toFixed(1)}% allocation error.
+                    </p>
                 </div>`;
             }
             
