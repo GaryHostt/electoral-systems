@@ -353,6 +353,139 @@ function resetSimulator() {
     }
 }
 
+// Get election data from localStorage (for learn-more AI analysis)
+function getLastElectionDataLearn() {
+    try {
+        const data = localStorage.getItem('lastElectionResults');
+        return data ? JSON.parse(data) : null;
+    } catch (e) {
+        console.error('Error reading election data:', e);
+        return null;
+    }
+}
+
+async function getAIAnalysisLearn() {
+    const btn = document.getElementById('aiAnalysisBtnLearn');
+    const responseDiv = document.getElementById('aiResponseLearn');
+    
+    // Get election data
+    const electionData = getLastElectionDataLearn();
+    
+    if (!electionData) {
+        responseDiv.innerHTML = '<p style="color: #e74c3c;"><strong>⚠️ No election data found.</strong> Please run an election simulation first.</p>';
+        responseDiv.style.display = 'block';
+        return;
+    }
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Analyzing...';
+    
+    // Build the prompt
+    const prompt = buildAnalysisPromptLearn(electionData);
+    
+    try {
+        // Call Mistral API
+        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer nnVBj4Z7f9Iib41hpG2JFZ9KpHdaL6Bv'
+            },
+            body: JSON.stringify({
+                model: 'mistral-small-latest',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'Assume the role of a political science expert specializing in comparative electoral systems and voting theory.'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                max_tokens: 300,
+                temperature: 0.7
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const analysis = data.choices[0].message.content;
+        
+        // Display response
+        responseDiv.innerHTML = `
+            <h3 style="color: #667eea; margin-bottom: 15px;">🎓 Expert Analysis</h3>
+            <div style="line-height: 1.8;">${analysis}</div>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 0.9em;">
+                <em>Analysis provided by Mistral AI</em>
+            </div>
+        `;
+        responseDiv.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error calling Mistral API:', error);
+        
+        // Check if it's an API key issue
+        if (error.message.includes('401') || error.message.includes('403')) {
+            responseDiv.innerHTML = `
+                <p style="color: #e74c3c;"><strong>⚠️ API Key Required</strong></p>
+                <p>To use this feature, you need to:</p>
+                <ol style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                    <li>Sign up for a Mistral AI account at <a href="https://console.mistral.ai/" target="_blank">console.mistral.ai</a></li>
+                    <li>Get your API key from the dashboard</li>
+                    <li>Open the code in a text editor</li>
+                    <li>Find the line with the API key and replace it with your actual API key</li>
+                </ol>
+            `;
+        } else {
+            responseDiv.innerHTML = `
+                <p style="color: #e74c3c;"><strong>⚠️ Error:</strong> ${error.message}</p>
+                <p>Please check your internet connection and API key.</p>
+            `;
+        }
+        responseDiv.style.display = 'block';
+    } finally {
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = '<span>🔍</span> Get AI Analysis of Last Election';
+    }
+}
+
+function buildAnalysisPromptLearn(data) {
+    const { system, results, parameters } = data;
+    
+    let prompt = `Analyze the following hypothetical election results, generated using the ${system} system `;
+    
+    if (parameters?.seats) {
+        prompt += `(Total Seats: ${parameters.seats}`;
+    }
+    
+    // Add vote totals
+    if (results?.results) {
+        prompt += `; Results: `;
+        const resultsSummary = results.results.slice(0, 5).map(r => {
+            if (r.votes !== undefined) {
+                return `${r.party || r.name}: ${r.votes} votes`;
+            } else if (r.seats !== undefined) {
+                const voteShare = r.voteShare || r.vote_share || 0;
+                return `${r.party}: ${voteShare.toFixed(1)}% votes, ${r.seats} seats`;
+            }
+            return `${r.party || r.name}`;
+        }).join('; ');
+        prompt += resultsSummary;
+    }
+    
+    prompt += `).
+
+In under 150 words, identify the primary systemic flaw demonstrated by these results, citing the relevant voting principle (e.g., Loosemore-Hanby Index/Arrow's Theorem), and briefly explain the systemic change (e.g., switch to RCV, adjust threshold, adopt MMP) that would have produced a more proportional or representative outcome for this specific scenario.`;
+    
+    return prompt;
+}
+
 // Initialize - wrap in DOMContentLoaded to ensure DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     // Load saved state if available

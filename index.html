@@ -406,6 +406,22 @@
     <script src="country-import.js"></script>
     <script src="app.js"></script>
     
+    <!-- AI Analysis Section (moved from learn-more.html) -->
+    <div class="card" style="margin: 40px auto; max-width: 800px;">
+        <h2>🤖 Ask AI for Election Analysis</h2>
+        <p>Get expert analysis of your simulated election results using Mistral AI. The AI will analyze the systemic flaws, relevant voting principles, and suggest improvements.</p>
+        
+        <div class="warning-box" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <strong>⚠️ Note:</strong> This feature requires a Mistral AI API key. You'll need to add your API key to the code to use this feature.
+        </div>
+        
+        <button id="aiAnalysisBtnLearn" class="btn-calculate" onclick="getAIAnalysisLearn()" style="margin-top: 20px;">
+            <span>🔍</span> Get AI Analysis of Last Election
+        </button>
+        
+        <div id="aiResponseLearn" class="ai-response" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; display: none;"></div>
+    </div>
+    
     <!-- Reset Simulator Button -->
     <div style="text-align: center; margin: 40px 0 20px 0;">
         <button onclick="resetSimulator()" 
