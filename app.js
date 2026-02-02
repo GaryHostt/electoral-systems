@@ -8,7 +8,9 @@ let electionState = {
     importedCountry: null, // Track which country is currently imported
     system: null,
     raceType: 'single',
-    totalSeats: 100,
+    totalSeats: 100,          // Keep for party-list, IRV, STV, FPTP
+    districtSeats: 0,         // NEW: For MMP/MMM district tier
+    baseListSeats: 0,         // NEW: For MMP/MMM list tier
     threshold: 5,
     allocationMethod: 'dhondt',
     levelingEnabled: false
@@ -87,7 +89,9 @@ function importElectionPreset(presetKey) {
         parties: preset.parties,
         candidates: preset.candidates || [],
         system: preset.system,
-        totalSeats: preset.totalSeats,
+        totalSeats: preset.totalSeats || 100,           // For non-mixed systems
+        districtSeats: preset.districtSeats || 0,       // NEW: For MMP/MMM
+        baseListSeats: preset.baseListSeats || 0,       // NEW: For MMP/MMM
         threshold: preset.threshold || 0,
         allocationMethod: preset.allocationMethod || 'dhondt',
         levelingEnabled: preset.levelingEnabled || false,
@@ -121,9 +125,22 @@ function importElectionPreset(presetKey) {
     updatePartiesList();
     updateCandidatesList();
     
-    // Update parliament size inputs
-    const seatsInput = document.getElementById('totalLegislatureSeats');
-    if (seatsInput) seatsInput.value = preset.totalSeats;
+    // Update parliament size inputs based on system type
+    if (preset.system === 'mmp' || preset.system === 'parallel') {
+        const districtInput = document.getElementById('districtSeatsInput');
+        const listInput = document.getElementById('listSeatsInput');
+        if (districtInput) districtInput.value = preset.districtSeats;
+        if (listInput) listInput.value = preset.baseListSeats;
+        
+        // CRITICAL: Also update electionState directly (input.value changes don't trigger events)
+        electionState.districtSeats = preset.districtSeats;
+        electionState.baseListSeats = preset.baseListSeats;
+        
+        updateTotalSeatsDisplay();
+    } else {
+        const seatsInput = document.getElementById('totalLegislatureSeats');
+        if (seatsInput) seatsInput.value = preset.totalSeats;
+    }
     
     // Update threshold (if visible)
     const thresholdInput = document.getElementById('electoralThreshold');
@@ -225,18 +242,65 @@ function getSeatsCount() {
     return getCustomSeatCount();
 }
 
+// Update total seats display for discrete tier systems
+function updateTotalSeatsDisplay() {
+    const total = electionState.districtSeats + electionState.baseListSeats;
+    const displayElement = document.getElementById('totalSeatsDisplay');
+    if (displayElement) {
+        displayElement.textContent = total;
+    }
+    
+    // CRITICAL: Also update electionState.totalSeats for backward compatibility
+    // This ensures other parts of the code (charts, exports) that still reference
+    // totalSeats will have the correct base value
+    electionState.totalSeats = total;
+}
+
 // Apply parliament preset from dropdown
 function applyParliamentPreset() {
-    const select = document.getElementById('parliamentPresets');
-    const seatsInput = document.getElementById('totalLegislatureSeats');
+    const regularSelect = document.getElementById('parliamentPresets');
+    const mixedSelect = document.getElementById('parliamentPresetsMixed');
+    const currentSystem = document.getElementById('electoralSystem').value;
     
-    if (select.value) {
-        seatsInput.value = select.value;
-        // Reset dropdown to placeholder
-        select.value = '';
+    // Handle mixed system presets (MMP/MMM)
+    if ((currentSystem === 'mmp' || currentSystem === 'parallel') && mixedSelect && mixedSelect.value) {
+        const presetConfig = {
+            'germany': { district: 299, list: 299 },
+            'japan': { district: 289, list: 176 },
+            'new_zealand': { district: 72, list: 48 },
+            'taiwan': { district: 79, list: 34 }
+        };
+        
+        const config = presetConfig[mixedSelect.value];
+        if (config) {
+            const districtInput = document.getElementById('districtSeatsInput');
+            const listInput = document.getElementById('listSeatsInput');
+            
+            if (districtInput) districtInput.value = config.district;
+            if (listInput) listInput.value = config.list;
+            
+            // CRITICAL: Also update electionState
+            electionState.districtSeats = config.district;
+            electionState.baseListSeats = config.list;
+            
+            updateTotalSeatsDisplay();
+        }
+        
+        // Reset dropdown
+        mixedSelect.value = '';
+    }
+    // Handle regular single-seat presets
+    else if (regularSelect && regularSelect.value) {
+        const seatsInput = document.getElementById('totalLegislatureSeats');
+        if (seatsInput) {
+            seatsInput.value = regularSelect.value;
+            electionState.totalSeats = parseInt(regularSelect.value);
+        }
+        
+        // Reset dropdown
+        regularSelect.value = '';
         
         // Re-render the race type labels with new seat count
-        const currentSystem = document.getElementById('electoralSystem').value;
         if (currentSystem) {
             configureRaceTypeForSystem(currentSystem);
         }
@@ -792,6 +856,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Add event listeners for discrete tier seat inputs (MMP/MMM)
+    const districtSeatsInput = document.getElementById('districtSeatsInput');
+    const listSeatsInput = document.getElementById('listSeatsInput');
+    
+    if (districtSeatsInput) {
+        districtSeatsInput.addEventListener('change', (e) => {
+            electionState.districtSeats = parseInt(e.target.value) || 0;
+            updateTotalSeatsDisplay();
+        });
+    }
+    
+    if (listSeatsInput) {
+        listSeatsInput.addEventListener('change', (e) => {
+            electionState.baseListSeats = parseInt(e.target.value) || 0;
+            updateTotalSeatsDisplay();
+        });
+    }
+    
     // Setup color picker
     setupColorPicker();
     
@@ -848,6 +930,31 @@ function onSystemChange() {
         document.getElementById('votingSection').style.display = 'none';
         document.getElementById('systemDescription').innerHTML = '<p style="color: #999; font-style: italic;">Select an electoral system to begin</p>';
         return;
+    }
+    
+    // Toggle between single and discrete seat inputs
+    const singleSeatsInput = document.getElementById('singleSeatsInput');
+    const discreteTierInputs = document.getElementById('discreteTierSeatsInputs');
+    
+    // Show discrete tier inputs for MMP and Parallel only
+    if (system === 'mmp' || system === 'parallel') {
+        if (singleSeatsInput) singleSeatsInput.style.display = 'none';
+        if (discreteTierInputs) discreteTierInputs.style.display = 'flex';
+    } else {
+        if (singleSeatsInput) singleSeatsInput.style.display = 'flex';
+        if (discreteTierInputs) discreteTierInputs.style.display = 'none';
+    }
+    
+    // Toggle parliament presets dropdown based on system type
+    const regularPresets = document.getElementById('parliamentPresets');
+    const mixedPresets = document.getElementById('parliamentPresetsMixed');
+    
+    if (system === 'mmp' || system === 'parallel') {
+        if (regularPresets) regularPresets.style.display = 'none';
+        if (mixedPresets) mixedPresets.style.display = 'inline-block';
+    } else {
+        if (regularPresets) regularPresets.style.display = 'inline-block';
+        if (mixedPresets) mixedPresets.style.display = 'none';
     }
     
     // Get system rules from centralized configuration
@@ -1009,7 +1116,7 @@ function configureRaceTypeForSystem(system) {
         // For legislative label, always use getCustomSeatCount() regardless of current selection
         if (legislativeSpan) {
             const legislativeSeats = getCustomSeatCount();
-            legislativeSpan.textContent = `🏛️ Multi-Member District (${legislativeSeats} members)`;
+            legislativeSpan.textContent = `🏛️ Multi-Member District`;
         }
     } else {
         // Default labels for other systems
@@ -1017,7 +1124,7 @@ function configureRaceTypeForSystem(system) {
         // For legislative label, always use getCustomSeatCount() regardless of current selection
         if (legislativeSpan) {
             const legislativeSeats = getCustomSeatCount();
-            legislativeSpan.textContent = `🏛️ Entire Legislature (${legislativeSeats} seats)`;
+            legislativeSpan.textContent = `🏛️ Entire Legislature`;
         }
     }
     
@@ -1757,6 +1864,12 @@ function adaptUIStateToCalculationParams() {
     const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
     const totalSeats = getSeatsCount();
     
+    // Get discrete tier seats for MMP/MMM systems
+    const districtSeatsInput = document.getElementById('districtSeatsInput');
+    const listSeatsInput = document.getElementById('listSeatsInput');
+    const districtSeats = districtSeatsInput ? (parseInt(districtSeatsInput.value) || 0) : (electionState.districtSeats || 0);
+    const baseListSeats = listSeatsInput ? (parseInt(listSeatsInput.value) || 0) : (electionState.baseListSeats || 0);
+    
     // Get threshold and allocation method (for PR systems)
     const threshold = parseFloat(document.getElementById('electoralThreshold')?.value) || 0;
     const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
@@ -1775,6 +1888,8 @@ function adaptUIStateToCalculationParams() {
         votes: votes,
         raceType: raceType,
         totalSeats: totalSeats,
+        districtSeats: districtSeats,      // NEW: For MMP/MMM
+        baseListSeats: baseListSeats,      // NEW: For MMP/MMM
         threshold: threshold,
         allocationMethod: allocationMethod,
         levelingEnabled: levelingEnabled,
@@ -1865,14 +1980,16 @@ function calculateResults() {
                 return;
             }
             
-            if (!params.totalSeats || params.totalSeats < 1) {
-                console.error('MMP Calculation Error: Invalid seat count', params.totalSeats);
-                alert('Please select a valid number of seats for the legislature.');
+            if (!params.districtSeats || !params.baseListSeats || (params.districtSeats + params.baseListSeats) < 1) {
+                console.error('MMP Calculation Error: Invalid seat counts', { districtSeats: params.districtSeats, baseListSeats: params.baseListSeats });
+                alert('Please set valid numbers for District Seats and List Seats.');
                 return;
             }
             
             console.log('MMP Calculation Debug:', {
-                totalSeats: params.totalSeats,
+                districtSeats: params.districtSeats,
+                baseListSeats: params.baseListSeats,
+                totalSeats: params.districtSeats + params.baseListSeats,
                 threshold: params.threshold,
                 levelingEnabled: params.levelingEnabled,
                 partiesCount: Object.keys(params.votes.parties).length,
@@ -1880,7 +1997,7 @@ function calculateResults() {
             });
             
             try {
-                results = calculateMMP(params.votes, params.totalSeats, params.threshold, params.levelingEnabled);
+                results = calculateMMP(params.votes, params.districtSeats, params.baseListSeats, params.threshold, params.allocationMethod, params.levelingEnabled);
                 
                 if (!results) {
                     console.error('MMP calculation returned null');
@@ -1894,7 +2011,40 @@ function calculateResults() {
             }
             break;
         case 'parallel':
-            results = calculateParallel(params.votes, params.totalSeats, params.threshold, params.allocationMethod);
+            // Validate Parallel input data
+            if (!params.votes || !params.votes.parties || !params.votes.candidates) {
+                console.error('Parallel Calculation Error: Missing required vote data', {
+                    hasVotes: !!params.votes,
+                    hasParties: !!(params.votes && params.votes.parties),
+                    hasCandidates: !!(params.votes && params.votes.candidates)
+                });
+                alert('Parallel voting (MMM) requires both party votes and candidate votes. Please add parties and candidates.');
+                return;
+            }
+            
+            if (!params.districtSeats || !params.baseListSeats || (params.districtSeats + params.baseListSeats) < 1) {
+                console.error('Parallel Calculation Error: Invalid seat counts', { districtSeats: params.districtSeats, baseListSeats: params.baseListSeats });
+                alert('Please set valid numbers for District Seats and List Seats.');
+                return;
+            }
+            
+            console.log('Parallel Calculation Debug:', {
+                districtSeats: params.districtSeats,
+                baseListSeats: params.baseListSeats,
+                totalSeats: params.districtSeats + params.baseListSeats,
+                threshold: params.threshold,
+                allocationMethod: params.allocationMethod,
+                partiesCount: Object.keys(params.votes.parties).length,
+                candidatesCount: Object.keys(params.votes.candidates).length
+            });
+            
+            try {
+                results = calculateParallel(params.votes, params.districtSeats, params.baseListSeats, params.threshold, params.allocationMethod);
+            } catch (error) {
+                console.error('Parallel calculation encountered an error:', error.message);
+                alert('Parallel/MMM calculation failed: ' + error.message);
+                return;
+            }
             break;
     }
     
@@ -3533,13 +3683,9 @@ function calculateIterativeLeveling(districtWins, targets, partyVotes, baseParli
     };
 }
 
-function calculateMMP(votes, totalSeats, threshold, levelingEnabled, forcedDistrictWins = null) {
+function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins = null) {
     // Pure function - no DOM access
     // Mixed-Member Proportional: Compensatory system with district + list seats
-    
-    // Germany Model: 50% Districts, 50% List (base allocation)
-    const districtSeats = Math.floor(totalSeats / 2);
-    const baseListSeats = totalSeats - districtSeats;
     
     // ============================================
     // Step A: District Tier (FPTP)
@@ -3551,7 +3697,7 @@ function calculateMMP(votes, totalSeats, threshold, levelingEnabled, forcedDistr
     // Step B: Calculate Proportional Target Seats
     // ============================================
     const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
-    const allocationMethod = 'dhondt'; // Default for MMP (can be made configurable later)
+    // allocationMethod now comes from parameter
     
     // Filter eligible parties (meet threshold OR won a district - Double Gate)
     const eligiblePartyVotes = {};
@@ -3567,11 +3713,11 @@ function calculateMMP(votes, totalSeats, threshold, levelingEnabled, forcedDistr
         }
     });
     
-    // REFINEMENT: Use allocateSeats_DHondt/SainteLague for precise target calculation
-    // This ensures targets sum exactly to totalSeats (avoids rounding errors)
+    // Calculate proportional targets based on TOTAL parliament size (district + list)
+    const totalParliamentSeats = districtSeats + baseListSeats;
     const proportionalTargets = allocationMethod === 'sainte-lague'
-        ? allocateSeats_SainteLague(eligiblePartyVotes, totalSeats)
-        : allocateSeats_DHondt(eligiblePartyVotes, totalSeats);
+        ? allocateSeats_SainteLague(eligiblePartyVotes, totalParliamentSeats)
+        : allocateSeats_DHondt(eligiblePartyVotes, totalParliamentSeats);
     
     // Initialize parties not meeting threshold
     parties.forEach(party => {
@@ -3666,14 +3812,14 @@ function calculateMMP(votes, totalSeats, threshold, levelingEnabled, forcedDistr
     const overhangNote = overhangTotal > 0 
         ? levelingEnabled
             ? ` Parliament expanded by ${levelingSeatsAdded} leveling seat(s) from ${baseParliamentSize} to ${finalParliamentSize} to restore proportionality.`
-            : ` Parliament expanded by ${overhangTotal} overhang seat(s) from ${totalSeats} to ${baseParliamentSize}.`
+            : ` Parliament expanded by ${overhangTotal} overhang seat(s) from ${totalParliamentSeats} to ${baseParliamentSize}.`
         : '';
     
     return {
         type: 'mixed',
         results: results,
         totalSeats: actualTotalSeats,
-        plannedSeats: totalSeats,
+        plannedSeats: totalParliamentSeats,
         totalVotes: totalPartyVotes,
         overhangSeats: overhangTotal,
         districtSeats: districtSeats,
@@ -3690,18 +3836,16 @@ function calculateMMP(votes, totalSeats, threshold, levelingEnabled, forcedDistr
         levelingSeatsAdded: levelingSeatsAdded,
         levelingEnabled: levelingEnabled,
         partyDistrictWins: partyDistrictWins, // Store for shadow comparison (Issue 6)
-        note: `Mixed-Member Proportional (Germany Model): ${districtSeats} district seats (${Math.round(districtSeats/totalSeats*100)}%) with compensatory list seats to ensure overall proportionality. Threshold: ${threshold}% OR 1+ district win for eligibility (Double Gate).${overhangNote}`
+        note: `Mixed-Member Proportional (Germany Model): ${districtSeats} district seats (${Math.round(districtSeats/totalParliamentSeats*100)}%) with compensatory list seats to ensure overall proportionality. Threshold: ${threshold}% OR 1+ district win for eligibility (Double Gate).${overhangNote}`
     };
 }
 
-function calculateParallel(votes, totalSeats, threshold, allocationMethod, forcedDistricts = null) {
+function calculateParallel(votes, districtSeats, listSeats, threshold, allocationMethod, forcedDistricts = null) {
     // Pure function - no DOM access
     // Parallel Voting (MMM): Non-compensatory mixed system
     
-    // Japan Model: ~62% Districts, ~38% List
-    // This reflects real-world Parallel systems where district seats dominate
-    const districtSeats = Math.floor(totalSeats * 0.62);
-    const listSeats = totalSeats - districtSeats;
+    // Calculate total seats for use in return statement and calculations
+    const totalSeats = districtSeats + listSeats;
     
     // ============================================
     // SILO 1: District Tier (FPTP)
@@ -4283,8 +4427,10 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             const districtWins = translatedVotes._stvDistrictWins || null;
             shadowResults = calculateMMP(
                 translatedVotes, 
-                params.totalSeats || 10, 
-                params.threshold || 5, 
+                params.districtSeats || Math.floor((params.totalSeats || 10) / 2),
+                params.baseListSeats || Math.floor((params.totalSeats || 10) / 2),
+                params.threshold || 5,
+                params.allocationMethod || 'dhondt',
                 params.levelingEnabled || false,
                 districtWins // Pass district wins for Double-Gate
             );
@@ -4299,7 +4445,8 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         shadowResults = calculateParallel(
             translatedVotes,
-            params.totalSeats || 10,
+            params.districtSeats || Math.floor((params.totalSeats || 10) * 0.62),
+            params.baseListSeats || Math.floor((params.totalSeats || 10) * 0.38),
             params.threshold || 5,
             params.allocationMethod || 'dhondt',
             forcedDistricts // Pass district wins to ensure consistency
@@ -4312,8 +4459,10 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         shadowResults = calculateMMP(
             translatedVotes,
-            params.totalSeats || 10,
+            params.districtSeats || Math.floor((params.totalSeats || 10) / 2),
+            params.baseListSeats || Math.floor((params.totalSeats || 10) / 2),
             params.threshold || 5,
+            params.allocationMethod || 'dhondt',
             params.levelingEnabled || false,
             forcedDistricts // Pass district wins to ensure consistency
         );
@@ -4370,8 +4519,10 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         shadowResults = calculateMMP(
             translatedVotes,
-            params.totalSeats || 10,
+            params.districtSeats || Math.floor((params.totalSeats || 10) / 2),
+            params.baseListSeats || Math.floor((params.totalSeats || 10) / 2),
             params.threshold || 5,
+            params.allocationMethod || 'dhondt',
             params.levelingEnabled || false,
             null // No forced district wins - let MMP simulate them
         );
@@ -4406,7 +4557,8 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         shadowResults = calculateParallel(
             translatedVotes,
-            params.totalSeats || 10,
+            params.districtSeats || Math.floor((params.totalSeats || 10) * 0.62),
+            params.baseListSeats || Math.floor((params.totalSeats || 10) * 0.38),
             params.threshold || 5,
             params.allocationMethod || 'dhondt',
             null // No forced districts - let Parallel simulate them
@@ -5827,4 +5979,3 @@ window.togglePresetsPanel = function() {
         }
     }
 };
-

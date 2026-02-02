@@ -34,7 +34,8 @@ const ELECTION_PRESETS = {
         name: "2021 German Federal Election",
         description: "SPD victory, MMP with overhang seats and leveling. Note: The Left Party (4.9% - below 5% threshold) received full proportional representation because they won 3 direct mandates, demonstrating the 'Double Gate' rule.",
         system: "mmp",
-        totalSeats: 598, // Base size (before overhang)
+        districtSeats: 299,      // Statutory district count
+        baseListSeats: 299,      // Statutory list count
         threshold: 5,
         allocationMethod: "sainte-lague",
         levelingEnabled: true,
@@ -77,7 +78,8 @@ const ELECTION_PRESETS = {
         name: "2021 Japanese General Election",
         description: "LDP majoritarian victory under Parallel voting (MMM)",
         system: "parallel",
-        totalSeats: 465,
+        districtSeats: 289,      // District seats (2024 reform)
+        baseListSeats: 176,      // List seats (2024 reform)
         threshold: 0, 
         allocationMethod: "dhondt",
         parties: [
@@ -149,7 +151,8 @@ const ELECTION_PRESETS = {
         name: "2023 New Zealand General Election",
         description: "Clear compensatory MMP with 5% threshold. Features two-seat overhang from Te Pāti Māori.",
         system: "mmp",
-        totalSeats: 120,
+        districtSeats: 72,       // Electorate seats
+        baseListSeats: 48,       // List seats
         threshold: 5,
         allocationMethod: "sainte-lague",
         levelingEnabled: false,
@@ -192,7 +195,8 @@ const ELECTION_PRESETS = {
         name: "2024 Taiwan Legislative Election",
         description: "Non-compensatory parallel system (73 districts + 34 party-list). TPP emerged as third force with no districts.",
         system: "parallel",
-        totalSeats: 113,
+        districtSeats: 79,       // 73 regional + 6 indigenous
+        baseListSeats: 34,       // Party-list tier
         threshold: 5,
         allocationMethod: "dhondt",
         parties: [

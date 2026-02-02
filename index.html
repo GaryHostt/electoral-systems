@@ -265,74 +265,6 @@ FPTP election simulations (like UK, Canada, US) are on our roadmap.
                     <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #856404;">Automatically generates realistic vote totals for all candidates/parties</p>
                 </div>
                 
-                <!-- Advanced Features (Python Backend) -->
-                <div id="advancedFeatures" style="display: none; background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
-                    <h4 style="margin: 0 0 10px 0; color: #1976d2;">🐍 Advanced Features (Python Backend)</h4>
-                    
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-                        <button onclick="showBallotGenerator()" class="btn-secondary" style="background: linear-gradient(135deg, #2196f3 0%, #21cbf3 100%);">
-                            🎲 Generate Realistic Ballots
-                        </button>
-                        <button onclick="showStrategicSimulator()" class="btn-secondary" style="background: linear-gradient(135deg, #9c27b0 0%, #e91e63 100%);">
-                            🎯 Simulate Strategic Voting
-                        </button>
-                        <button onclick="showBatchSimulator()" class="btn-secondary" style="background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);">
-                            ⚡ Batch Simulation (100k voters)
-                        </button>
-                        <button onclick="saveCurrentScenario()" class="btn-secondary" style="background: linear-gradient(135deg, #4caf50 0%, #8bc34a 100%);">
-                            💾 Save & Share Scenario
-                        </button>
-                    </div>
-                    
-                    <!-- Ballot Generator Modal Content -->
-                    <div id="ballotGeneratorPanel" style="display: none; background: white; padding: 15px; border-radius: 8px; margin-top: 10px;">
-                        <h5 style="margin-top: 0;">Generate Realistic Voter Ballots</h5>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div>
-                                <label>Number of Voters:</label>
-                                <input type="number" id="genNumVoters" value="10000" min="100" max="1000000" style="width: 100%; padding: 8px; margin-top: 5px;">
-                            </div>
-                            <div>
-                                <label>Ideological Distribution:</label>
-                                <select id="genDistribution" style="width: 100%; padding: 8px; margin-top: 5px;">
-                                    <option value="normal">Normal (Bell Curve)</option>
-                                    <option value="polarized">Polarized (Two Extremes)</option>
-                                    <option value="left">Left-Skewed</option>
-                                    <option value="right">Right-Skewed</option>
-                                    <option value="uniform">Uniform</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button onclick="generateRealisticBallots()" style="width: 100%; margin-top: 10px; padding: 10px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                            Generate Ballots
-                        </button>
-                    </div>
-                    
-                    <!-- Strategic Voting Panel -->
-                    <div id="strategicVotingPanel" style="display: none; background: white; padding: 15px; border-radius: 8px; margin-top: 10px;">
-                        <h5 style="margin-top: 0;">Strategic Voting Simulation</h5>
-                        <p style="color: #666; font-size: 0.9em;">See how voters might vote tactically to avoid "wasted votes"</p>
-                        <button onclick="runStrategicSimulation()" style="width: 100%; padding: 10px; background: #9c27b0; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                            Run Strategic Simulation
-                        </button>
-                        <div id="strategicResults" style="margin-top: 10px;"></div>
-                    </div>
-                    
-                    <!-- Batch Simulation Panel -->
-                    <div id="batchSimPanel" style="display: none; background: white; padding: 15px; border-radius: 8px; margin-top: 10px;">
-                        <h5 style="margin-top: 0;">Batch System Comparison</h5>
-                        <p style="color: #666; font-size: 0.9em;">Run large-scale simulation across multiple systems simultaneously</p>
-                        <div style="margin: 10px 0;">
-                            <label><input type="checkbox" value="fptp" checked> FPTP</label>
-                            <label style="margin-left: 15px;"><input type="checkbox" value="irv" checked> IRV</label>
-                            <label style="margin-left: 15px;"><input type="checkbox" value="stv" checked> STV</label>
-                        </div>
-                        <button onclick="runBatchSimulation()" style="width: 100%; padding: 10px; background: #ff9800; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                            Run Batch Simulation (100,000 voters)
-                        </button>
-                        <div id="batchResults" style="margin-top: 10px;"></div>
-                    </div>
-                </div>
                 
                 <!-- Race Type Selection -->
                 <div class="race-type-selector">
@@ -346,13 +278,34 @@ FPTP election simulations (like UK, Canada, US) are on our roadmap.
                         </label>
                         <label class="radio-option" id="legislativeRaceOption">
                             <input type="radio" name="raceType" id="legislativeRaceRadio" value="legislative" onchange="updateRaceType()">
-                            <span>🏛️ Entire Legislature (10 seats)</span>
+                            <span>🏛️ Entire Legislature</span>
                         </label>
                         
                         <div id="legislatureSeatsContainer" style="display: none; align-items: center; gap: 15px; margin-left: 20px; flex-wrap: wrap; width: 100%;">
-                            <label for="totalLegislatureSeats" style="font-weight: 600; color: #667eea;">Seats:</label>
-                            <input type="number" id="totalLegislatureSeats" value="100" min="2" max="1000" 
-                                   style="width: 80px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                            <!-- Single seats input for party-list, IRV, STV, FPTP -->
+                            <div id="singleSeatsInput" style="display: flex; align-items: center; gap: 10px;">
+                                <label for="totalLegislatureSeats" style="font-weight: 600; color: #667eea;">Seats:</label>
+                                <input type="number" id="totalLegislatureSeats" value="100" min="2" max="1000" 
+                                       style="width: 80px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                            </div>
+                            
+                            <!-- Discrete tier inputs for MMP/MMM -->
+                            <div id="discreteTierSeatsInputs" style="display: none; flex-wrap: wrap; gap: 15px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <label for="districtSeatsInput" style="font-weight: 600; color: #667eea;">District Seats:</label>
+                                    <input type="number" id="districtSeatsInput" value="299" min="0" max="1000" 
+                                           style="width: 80px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <label for="listSeatsInput" style="font-weight: 600; color: #667eea;">List Seats (Base):</label>
+                                    <input type="number" id="listSeatsInput" value="299" min="0" max="1000" 
+                                           style="width: 80px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                                </div>
+                                <div id="calculatedTotalSeats" style="margin-left: 10px; padding: 8px 12px; background: #f0f4ff; border-radius: 6px; font-weight: 600; color: #667eea;">
+                                    Base Total: <span id="totalSeatsDisplay">598</span>
+                                    <span style="font-size: 0.85em; color: #888; margin-left: 5px;">(+overhang if MMP)</span>
+                                </div>
+                            </div>
                             
                             <select id="parliamentPresets" onchange="applyParliamentPreset()" 
                                     style="padding: 8px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 14px; min-width: 180px;">
@@ -364,6 +317,16 @@ FPTP election simulations (like UK, Canada, US) are on our roadmap.
                                 <option value="465">🇯🇵 Japan (465)</option>
                                 <option value="120">🇳🇿 New Zealand (120)</option>
                                 <option value="160">🇮🇪 Ireland Dáil (160)</option>
+                            </select>
+                            
+                            <!-- MMP/MMM discrete tier presets -->
+                            <select id="parliamentPresetsMixed" onchange="applyParliamentPreset()" 
+                                    style="display: none; padding: 8px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 14px; min-width: 180px;">
+                                <option value="">-- Mixed System Presets --</option>
+                                <option value="germany">🇩🇪 Germany (299+299)</option>
+                                <option value="japan">🇯🇵 Japan (289+176)</option>
+                                <option value="new_zealand">🇳🇿 New Zealand (72+48)</option>
+                                <option value="taiwan">🇹🇼 Taiwan (79+34)</option>
                             </select>
                         </div>
                     </div>
