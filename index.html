@@ -46,45 +46,98 @@
                     <p style="margin-bottom: 15px; color: #666;">Load real-world election data to see actual results or run counterfactual analyses by switching electoral systems:</p>
                     
                     <div class="country-grid">
-                        <button onclick="importElectionPreset('sweden_2022')" class="country-btn">
-                            <span class="country-flag">🇸🇪</span>
-                            <span class="country-name">Sweden 2022</span>
-                            <span class="country-count">Party-List • 349 seats</span>
+                        <!-- Germany (newest first) -->
+                        <button onclick="importElectionPreset('germany_2025')" class="country-btn">
+                            <span class="country-flag">🇩🇪</span>
+                            <span class="country-name">Germany 2025</span>
+                            <span class="country-count">MMP • 598 seats • 5% threshold • Sainte-Laguë</span>
                         </button>
                         <button onclick="importElectionPreset('germany_2021')" class="country-btn">
                             <span class="country-flag">🇩🇪</span>
                             <span class="country-name">Germany 2021</span>
-                            <span class="country-count">MMP • 598 seats</span>
+                            <span class="country-count">MMP • 598 seats • 5% threshold • Sainte-Laguë</span>
+                        </button>
+                        
+                        <!-- Japan (newest first) -->
+                        <button onclick="importElectionPreset('japan_2024')" class="country-btn">
+                            <span class="country-flag">🇯🇵</span>
+                            <span class="country-name">Japan 2024</span>
+                            <span class="country-count">Parallel • 465 seats • No threshold • D'Hondt</span>
                         </button>
                         <button onclick="importElectionPreset('japan_2021')" class="country-btn">
                             <span class="country-flag">🇯🇵</span>
                             <span class="country-name">Japan 2021</span>
-                            <span class="country-count">Parallel • 465 seats</span>
+                            <span class="country-count">Parallel • 465 seats • No threshold • D'Hondt</span>
+                        </button>
+                        
+                        <!-- Taiwan (newest first) -->
+                        <button onclick="importElectionPreset('taiwan_2024')" class="country-btn">
+                            <span class="country-flag">🇹🇼</span>
+                            <span class="country-name">Taiwan 2024</span>
+                            <span class="country-count">Parallel • 113 seats • 5% threshold • D'Hondt</span>
+                        </button>
+                        <button onclick="importElectionPreset('taiwan_2020')" class="country-btn">
+                            <span class="country-flag">🇹🇼</span>
+                            <span class="country-name">Taiwan 2020</span>
+                            <span class="country-count">Parallel • 113 seats • 5% threshold • D'Hondt</span>
+                        </button>
+                        
+                        <!-- New Zealand (newest first) -->
+                        <button onclick="importElectionPreset('new_zealand_2023')" class="country-btn">
+                            <span class="country-flag">🇳🇿</span>
+                            <span class="country-name">New Zealand 2023</span>
+                            <span class="country-count">MMP • 120 seats • 5% threshold • Sainte-Laguë</span>
+                        </button>
+                        <button onclick="importElectionPreset('new_zealand_2020')" class="country-btn">
+                            <span class="country-flag">🇳🇿</span>
+                            <span class="country-name">New Zealand 2020</span>
+                            <span class="country-count">MMP • 120 seats • 5% threshold • Sainte-Laguë</span>
+                        </button>
+                        
+                        <!-- Netherlands (newest first) -->
+                        <button onclick="importElectionPreset('netherlands_2023')" class="country-btn">
+                            <span class="country-flag">🇳🇱</span>
+                            <span class="country-name">Netherlands 2023</span>
+                            <span class="country-count">Party-List • 150 seats • 0.67% threshold • D'Hondt</span>
+                        </button>
+                        <button onclick="importElectionPreset('netherlands_2021')" class="country-btn">
+                            <span class="country-flag">🇳🇱</span>
+                            <span class="country-name">Netherlands 2021</span>
+                            <span class="country-count">Party-List • 150 seats • 0.67% threshold • D'Hondt</span>
+                        </button>
+                        
+                        <!-- Sweden (newest first) -->
+                        <button onclick="importElectionPreset('sweden_2022')" class="country-btn">
+                            <span class="country-flag">🇸🇪</span>
+                            <span class="country-name">Sweden 2022</span>
+                            <span class="country-count">Party-List • 349 seats • 4% threshold • Sainte-Laguë</span>
+                        </button>
+                        <button onclick="importElectionPreset('sweden_2018')" class="country-btn">
+                            <span class="country-flag">🇸🇪</span>
+                            <span class="country-name">Sweden 2018</span>
+                            <span class="country-count">Party-List • 349 seats • 4% threshold • Sainte-Laguë</span>
+                        </button>
+                        
+                        <!-- Single elections (by year, newest first) -->
+                        <button onclick="importElectionPreset('alaska_2022')" class="country-btn">
+                            <span class="country-flag">🇺🇸</span>
+                            <span class="country-name">Alaska 2022</span>
+                            <span class="country-count">IRV • U.S. House</span>
+                        </button>
+                        <button onclick="importElectionPreset('israel_2022')" class="country-btn">
+                            <span class="country-flag">🇮🇱</span>
+                            <span class="country-name">Israel 2022</span>
+                            <span class="country-count">Party-List • 120 seats • 3.25% threshold • D'Hondt</span>
+                        </button>
+                        <button onclick="importElectionPreset('israel_2021')" class="country-btn">
+                            <span class="country-flag">🇮🇱</span>
+                            <span class="country-name">Israel 2021</span>
+                            <span class="country-count">Party-List • 120 seats • 3.25% threshold • D'Hondt</span>
                         </button>
                         <button onclick="importElectionPreset('ireland_pres_2011')" class="country-btn">
                             <span class="country-flag">🇮🇪</span>
                             <span class="country-name">Ireland 2011</span>
                             <span class="country-count">IRV • Presidential</span>
-                        </button>
-                        <button onclick="importElectionPreset('new_zealand_2023')" class="country-btn">
-                            <span class="country-flag">🇳🇿</span>
-                            <span class="country-name">New Zealand 2023</span>
-                            <span class="country-count">MMP • 120 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('taiwan_2024')" class="country-btn">
-                            <span class="country-flag">🇹🇼</span>
-                            <span class="country-name">Taiwan 2024</span>
-                            <span class="country-count">Parallel • 113 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('israel_2022')" class="country-btn">
-                            <span class="country-flag">🇮🇱</span>
-                            <span class="country-name">Israel 2022</span>
-                            <span class="country-count">Party-List • 120 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('netherlands_2023')" class="country-btn">
-                            <span class="country-flag">🇳🇱</span>
-                            <span class="country-name">Netherlands 2023</span>
-                            <span class="country-count">Party-List • 150 seats</span>
                         </button>
                     </div>
                     
