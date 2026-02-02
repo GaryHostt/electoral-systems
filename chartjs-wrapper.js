@@ -112,8 +112,14 @@ window.createPieChart = function(canvasId, data, title) {
                                         const value = data.datasets[0].data[i];
                                         const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
                                         const percentage = ((value / total) * 100).toFixed(1);
+                                        
+                                        // Determine unit based on chart title
+                                        const chartTitle = chart.options.plugins.title.text || '';
+                                        const isVoteChart = chartTitle.includes('Vote') || chartTitle.includes('vote');
+                                        const unit = isVoteChart ? 'vote' : 'seat';
+                                        
                                         return {
-                                            text: `${label}: ${percentage}% (${value} seat${value !== 1 ? 's' : ''})`,
+                                            text: `${label}: ${percentage}% (${value.toLocaleString()} ${unit}${value !== 1 ? 's' : ''})`,
                                             fillStyle: data.datasets[0].backgroundColor[i],
                                             hidden: false,
                                             index: i

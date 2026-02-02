@@ -760,11 +760,14 @@ function onSystemChange() {
         updateSectionNumbers(2, null, 3);
     } else if (rules.needsCandidates && rules.needsPartyVote) {
         // Both parties and candidates (e.g., MMP, Parallel)
+        // Hide candidates section for MMP/Parallel since they're auto-generated
         partiesSection.style.display = 'block';
-        candidatesSection.style.display = 'block';
+        candidatesSection.style.display = system === 'mmp' || system === 'parallel' ? 'none' : 'block';
         votingSection.style.display = 'block';
-        updateSectionNumbers(2, 3, 4);
-        updateCandidatePartySelect(); // Populate the dropdown
+        updateSectionNumbers(2, system === 'mmp' || system === 'parallel' ? null : 3, system === 'mmp' || system === 'parallel' ? 3 : 4);
+        if (system !== 'mmp' && system !== 'parallel') {
+            updateCandidatePartySelect(); // Populate the dropdown
+        }
     } else if (rules.needsCandidates && !rules.needsPartyVote) {
         // Candidates only - parties just for grouping/colors (e.g., FPTP, IRV, STV)
         partiesSection.style.display = 'block';
@@ -2670,6 +2673,41 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
             weight: 1.0
         }));
         
+        // Calculate disproportionality using FINAL ROUND vote totals (after all transfers)
+        // This is critical for accurate comparisons - we use where votes ended up, not where they started
+        // IMPORTANT: Handle SCALE_FACTOR correctly to avoid mixing scaled/unscaled values
+
+        const voteShares = {};
+        const seatShares = {};
+        const partySeats = {}; // Count seats per party
+
+        // Count seats per party from elected candidates
+        results.forEach(r => {
+            if (r.elected) {
+                const partyName = r.party;
+                partySeats[partyName] = (partySeats[partyName] || 0) + 1;
+            }
+        });
+
+        // Calculate effective votes (total votes minus exhausted)
+        // CRITICAL: Both totalVotes and exhaustedVotes are already descaled at lines 2603-2604
+        const effectiveVotes = totalVotes - exhaustedVotes;
+
+        // Calculate vote shares from FINAL running tally (not first preferences)
+        parties.forEach(party => {
+            // CRITICAL: runningTally contains scaled integers, must divide by SCALE_FACTOR
+            const finalVotesScaled = runningTally[party.id] || 0;
+            const finalVotes = finalVotesScaled / SCALE_FACTOR;
+            const partyId = party.id.toString();
+            
+            // Calculate as percentage of effective votes (excluding exhausted)
+            voteShares[partyId] = effectiveVotes > 0 ? (finalVotes / effectiveVotes * 100) : 0;
+            seatShares[partyId] = seats > 0 ? ((partySeats[party.name] || 0) / seats * 100) : 0;
+        });
+
+        const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
+        const gallagher = calculateGallagher(voteShares, seatShares);
+        
         return {
             type: 'multi-winner',
             results: results,
@@ -2682,6 +2720,9 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
             rounds: roundsData,
             ballots: resultBallots,
             otherNotes: [], // Will be populated in displayResults
+            disproportionality: disproportionality,  // NEW
+            gallagher: gallagher,  // NEW
+            finalVoteShares: voteShares,  // NEW - for comparison logic
             note: `Single Transferable Vote (Party-Based) with Gregory Method surplus transfer using integer scaling for precision (Quota: ${quota.toFixed(2)} votes)` +
                   (exhaustedVotes > 0 ? `. ${formatNumber(exhaustedVotes)} ballots (${exhaustedPercentage.toFixed(1)}%) exhausted with no remaining valid preferences.` : '')
         };
@@ -3688,6 +3729,7 @@ function getGallagherGrade(score, systemType) {
 function translateSTVtoPartyVotes(ballots, candidates) {
     const partyVotes = {};
     const candidateVotes = {};
+    let exhaustedBallots = 0;  // NEW
 
     ballots.forEach(ballot => {
         if (ballot.preferences && ballot.preferences.length > 0) {
@@ -3700,10 +3742,17 @@ function translateSTVtoPartyVotes(ballots, candidates) {
                 // Aggregate for MMP district tier
                 candidateVotes[candidate.id] = (candidateVotes[candidate.id] || 0) + ballot.count;
             }
+        } else {
+            // Track empty/exhausted ballots
+            exhaustedBallots += ballot.count || 0;  // NEW
         }
     });
 
-    return { parties: partyVotes, candidates: candidateVotes };
+    return { 
+        parties: partyVotes, 
+        candidates: candidateVotes,
+        exhaustedBallots: exhaustedBallots  // NEW - for comparison adjustments
+    };
 }
 
 // Flatten ranked ballots to party votes (Data Transformer for STV → MMP/PR comparisons)
@@ -3949,6 +3998,24 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             // Store district wins for Double-Gate logic in shadow MMP calculation
             translatedVotes._stvDistrictWins = stvDistrictWins;
             console.log('STV Comparison Debug: Mapped STV seats to district wins for Double-Gate', stvDistrictWins);
+            
+            // NEW: Adjust total voters to account for exhausted ballots in STV
+            // This creates a meaningful difference: MMP counts all votes, STV loses some to exhaustion
+            if (primaryResults && primaryResults.exhaustedVotes > 0) {
+                const originalTotalVoters = primaryResults.totalVotes || 0;
+                const exhaustedVotes = primaryResults.exhaustedVotes || 0;
+                
+                // Shadow MMP calculation should use effective votes (total - exhausted)
+                // This simulates: "What if those exhausted voters had voted for a party list instead?"
+                translatedVotes.totalVoters = originalTotalVoters - exhaustedVotes;
+                translatedVotes._exhaustedInfo = {
+                    count: exhaustedVotes,
+                    percentage: primaryResults.exhaustedPercentage || 0,
+                    note: "STV exhausted ballots would have counted in Party-List/MMP"
+                };
+                
+                console.log(`STV Comparison: ${exhaustedVotes} exhausted votes reduce effective turnout for shadow calculation`);
+            }
         }
     }
     
@@ -4182,6 +4249,28 @@ function generateComparisonInsight(primaryResults, shadowResults, currentSystem,
         }
     }
     
+    // Add STV-specific insight about exhausted ballots
+    if (currentSystem === 'stv' && (compareSystem === 'mmp' || compareSystem === 'party-list')) {
+        const primaryResults = window.lastCalculationResults;
+        if (primaryResults.exhaustedVotes && primaryResults.exhaustedVotes > 0) {
+            const exhaustedPct = primaryResults.exhaustedPercentage || 0;
+            insight += `<p style="margin-top: 15px; padding: 12px; background: #fff3cd; border-left: 3px solid #ffc107; border-radius: 4px;">
+                <strong>🔍 Key Difference:</strong> In STV, ${formatNumber(primaryResults.exhaustedVotes)} ballots (${exhaustedPct.toFixed(1)}%) were exhausted 
+                when all their ranked preferences were eliminated. In ${compareName}, these voters would have their votes count toward their first-choice party, 
+                potentially changing the final seat distribution. This is why ranked-choice systems can produce different outcomes than party-list systems 
+                even with similar voter preferences.
+            </p>`;
+        }
+    }
+    
+    // Add insight about final round vs first choice
+    if (currentSystem === 'stv') {
+        insight += `<p style="margin-top: 10px; font-size: 0.95em; color: #666;">
+            <strong>Note:</strong> STV's seat distribution reflects the final round tallies after vote transfers, 
+            while the comparison system uses only first preferences. This difference captures the unique effect of ranked voting.
+        </p>`;
+    }
+    
     // Add system-specific insights
     if (currentSystem === 'mmp' && compareSystem === 'parallel') {
         insight += 'MMP\'s compensatory mechanism makes it more proportional than Parallel Voting.';
@@ -4380,6 +4469,7 @@ function displayResults(results, system) {
     // Prepare data for pie charts
     let votesChartData = [];
     let seatsChartData = [];
+    let candidateVotesChartData = [];  // NEW: Add function-scope declaration for MMP/Parallel
     
     if (results.type === 'candidate') {
         // For candidate-based results, check if we should skip vote chart for ranking systems
@@ -4607,29 +4697,18 @@ function displayResults(results, system) {
         // Store comparison data for later use
         results._comparisonData = comparisonData;
         
-        if (results.candidateVotes) {
-            html += '<h3 style="margin-top: 20px;">Top Candidates</h3>';
-            results.candidateVotes.slice(0, 5).forEach(c => {
-                html += `
-                    <div class="result-item" style="border-left-color: ${c.color}">
-                        <div class="result-info">
-                            <div class="result-name">${c.name}</div>
-                            <div class="result-stats">${c.party} • ${formatNumber(c.votes)} personal votes</div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
+        // Top Candidates section removed - candidates are auto-generated for party-list systems
     } else if (results.type === 'mixed') {
         // Add charts section with two-row layout (Option B)
         html += '<div class="charts-container" style="flex-direction: column; gap: 20px;">';
-        // Top row: votesChart and comparisonChart side by side
+        // Top row: Party votesChart and comparisonChart
         html += '<div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px;">';
         html += '<canvas id="votesChart" width="400" height="400"></canvas>';
         html += '<canvas id="comparisonChart" width="600" height="400"></canvas>';
         html += '</div>';
-        // Bottom row: seatsChart centered
-        html += '<div style="display: flex; justify-content: center; align-items: center;">';
+        // Bottom row: candidateVotesChart and seatsChart
+        html += '<div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px;">';
+        html += '<canvas id="candidateVotesChart" width="400" height="400"></canvas>';
         html += '<canvas id="seatsChart" width="400" height="400"></canvas>';
         html += '</div>';
         html += '</div>';
@@ -4787,6 +4866,29 @@ function displayResults(results, system) {
                 });
             }
         });
+        
+        // Sort votesChartData by vote count (highest to lowest) for MMP/Parallel
+        votesChartData.sort((a, b) => b.value - a.value);
+        
+        // NEW: Collect candidate vote data for the 4th chart
+        // candidateVotesChartData already declared at function scope
+        const candidateVotes = window.lastCalculationVotes.candidates || {};
+        
+        candidates.forEach(candidate => {
+            const party = parties.find(p => p.id === candidate.partyId);
+            const votes = candidateVotes[candidate.id] || 0;
+            
+            if (votes > 0) {
+                candidateVotesChartData.push({
+                    label: candidate.name,
+                    value: votes,
+                    color: party ? party.color : '#999'
+                });
+            }
+        });
+        
+        // Sort candidateVotesChartData by vote count (highest to lowest)
+        candidateVotesChartData.sort((a, b) => b.value - a.value);
         
         // Store comparison data for later use
         results._comparisonData = comparisonData;
@@ -5211,8 +5313,9 @@ function displayResults(results, system) {
     }
     
     // Add Shadow Result Comparison UI
+    // Skip comparison section for STV (per user request)
     const compatibleSystems = getCompatibleSystems(system);
-    if (compatibleSystems.length > 0) {
+    if (compatibleSystems.length > 0 && system !== 'stv') {
         const systemFullNames = {
             'fptp': 'First-Past-the-Post',
             'irv': 'Instant-Runoff Voting',
@@ -5305,7 +5408,8 @@ function displayResults(results, system) {
             
             // For non-ranking systems, show vote distribution chart
             if (!isRankingSystem && votesChartData.length > 0) {
-                const votesTitle = results.type === 'approval' ? 'Vote Distribution (Approvals)' : 'Vote Distribution';
+                const votesTitle = results.type === 'approval' ? 'Vote Distribution (Approvals)' 
+                    : (results.type === 'mixed' ? 'Party Vote Distribution' : 'Vote Distribution');
                 window.createPieChart('votesChart', votesChartData, votesTitle);
             }
             
@@ -5316,6 +5420,11 @@ function displayResults(results, system) {
                 // For mixed systems, also create seat distribution pie chart
                 if (results.type === 'mixed' && seatsChartData.length > 0) {
                     window.createPieChart('seatsChart', seatsChartData, 'Seat Distribution');
+                }
+                
+                // Create candidate votes chart for MMP/Parallel systems
+                if (results.type === 'mixed' && candidateVotesChartData && candidateVotesChartData.length > 0) {
+                    window.createPieChart('candidateVotesChart', candidateVotesChartData, 'Candidate Vote Distribution');
                 }
             } else if (seatsChartData.length > 0) {
                 let seatsTitle = 'Seat Distribution';

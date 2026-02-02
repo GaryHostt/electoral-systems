@@ -660,6 +660,282 @@
         </p>
     </div>
 
+    <!-- How This App is Implemented Section -->
+    <div class="table-section" style="margin-top: 50px; border-top: 3px solid #667eea; padding-top: 40px;">
+        <h2>💻 How This App is Implemented</h2>
+        <p style="line-height: 1.6; font-size: 1.05em;">
+            This electoral systems simulator is built as a research-grade tool using vanilla JavaScript, 
+            designed to provide accurate, deterministic results for academic and educational use. 
+            Here's how the technical architecture enables cross-system comparisons and maintains precision.
+        </p>
+        
+        <div class="info-box" style="background: #e8f5e9; border-left: 4px solid #4caf50; margin-top: 20px;">
+            <strong>🎯 Design Philosophy:</strong> No random number generation. No synthetic shortcuts. 
+            Every calculation follows the exact procedures used in real-world elections, ensuring that 
+            the same input always produces the same output—critical for research validity.
+        </div>
+
+        <!-- Subsection 1: Architecture Overview -->
+        <h3 style="margin-top: 30px; color: #667eea;">📐 Architecture Overview</h3>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="margin: 0 0 15px 0; color: #333;">Core Components</h4>
+            <ul style="line-height: 2; margin-left: 20px;">
+                <li><strong>app.js</strong> - Main application logic, UI management, and electoral system calculations</li>
+                <li><strong>calculations.js</strong> - Shared mathematical functions (Droop Quota, disproportionality indices)</li>
+                <li><strong>round-by-round.js</strong> - Visualization for ranked-choice elimination rounds</li>
+                <li><strong>chartjs-wrapper.js</strong> - Chart rendering using Chart.js library</li>
+                <li><strong>Backend (Python)</strong> - Advanced calculations for strategic voting and multi-district scenarios</li>
+            </ul>
+        </div>
+
+        <!-- Subsection 2: Comparing Across Systems -->
+        <h3 style="margin-top: 40px; color: #667eea;">🔄 Comparing Across Systems: The Data Translation Challenge</h3>
+
+        <p style="line-height: 1.6;">
+            One of the most powerful features of this simulator is the ability to ask: 
+            <em>"What if we ran the exact same election under a different system?"</em> 
+            But this creates a technical challenge: how do you translate ranked ballots (used in STV/IRV) 
+            into party-list votes (used in MMP/Party-List), or vice versa?
+        </p>
+
+        <div class="warning-box" style="margin: 20px 0;">
+            <strong>⚠️ The Core Challenge:</strong> Different electoral systems use fundamentally different data structures. 
+            STV uses ranked preferences with vote transfers, while MMP uses simple party totals. 
+            Direct comparison requires careful data transformation to preserve the essence of voter intent.
+        </div>
+
+        <!-- STV to MMP/Party-List Subsection -->
+        <h4 style="margin-top: 30px; color: #5568d3;">Comparing STV to MMP and Party-List</h4>
+
+        <p style="line-height: 1.6;">
+            This is the most complex comparison because STV's unique characteristics 
+            (ranked voting, vote transfers, exhausted ballots) must be translated into 
+            simple party totals for MMP/Party-List calculations.
+        </p>
+
+        <div style="background: #fff; border: 2px solid #667eea; border-radius: 8px; padding: 25px; margin: 25px 0;">
+            <h5 style="margin: 0 0 15px 0; color: #667eea;">The Problem: Loss of Nuance</h5>
+            
+            <p style="margin-bottom: 20px; line-height: 1.6;">
+                If we simply extract first preferences from STV ballots, we lose what makes STV unique: 
+                the vote transfers and exhausted ballots. This would make the comparison meaningless 
+                because both systems would be working from identical input data.
+            </p>
+            
+            <!-- Flowchart: Current Flow (Problematic) -->
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                <h6 style="margin: 0 0 10px 0; color: #d97706;">❌ Naive Approach (Shows Zero Difference)</h6>
+                <pre style="background: #fff; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 0.9em;"><code>STV Ranked Ballots
+    ↓
+Extract First Preferences Only
+    ↓
+Flat Party Vote Totals: Party A 40%, Party B 35%, Party C 25%
+    ↓
+MMP Calculation (using same totals)
+    ↓
+Result: IDENTICAL seat counts → 0 difference!</code></pre>
+                <p style="margin: 10px 0 0 0; font-size: 0.95em; color: #92400e;">
+                    <strong>Problem:</strong> The ranked transfers that make STV unique are stripped away 
+                    before the comparison even begins, making both systems mathematically identical.
+                </p>
+            </div>
+            
+            <!-- Flowchart: Correct Flow -->
+            <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                <h6 style="margin: 0 0 10px 0; color: #047857;">✅ Our Implementation (Shows Real Difference)</h6>
+                <pre style="background: #fff; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 0.9em;"><code>STV Ranked Ballots
+    ↓
+[Branch 1: For STV Calculation]
+    → Run full STV algorithm with transfers
+    → Track final round tallies: Party A 38%, Party B 36%, Party C 26%
+    → Track exhausted ballots: 5% lost
+    → Calculate disproportionality from FINAL tallies
+    ↓
+[Branch 2: For MMP Comparison]
+    → Extract first preferences: Party A 40%, Party B 35%, Party C 25%
+    → Adjust for exhausted votes (reduce effective turnout)
+    → Run MMP calculation
+    ↓
+Comparison: Shows REAL difference based on final round vs first choice!</code></pre>
+                <p style="margin: 10px 0 0 0; font-size: 0.95em; color: #065f46;">
+                    <strong>Solution:</strong> STV uses final round tallies for its metrics, while MMP uses 
+                    first preferences. This captures the actual effect of vote transfers and ballot exhaustion.
+                </p>
+            </div>
+        </div>
+
+        <h5 style="margin-top: 25px; color: #5568d3;">Technical Implementation Details</h5>
+
+        <div style="background: #f0f4ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h6 style="margin: 0 0 10px 0; color: #4338ca;">Key Functions</h6>
+            
+            <dl style="line-height: 1.8; margin-top: 15px;">
+                <dt style="font-family: 'Courier New', monospace; background: #fff; padding: 8px; border-radius: 4px; display: inline-block; margin-top: 10px;">
+                    <strong>translateSTVtoPartyVotes(ballots, candidates)</strong>
+                </dt>
+                <dd style="margin: 8px 0 0 20px; line-height: 1.6;">
+                    Extracts first preferences from ranked ballots to create party vote totals for MMP/Party-List. 
+                    Also tracks exhausted ballots (empty preferences).
+                </dd>
+                
+                <dt style="font-family: 'Courier New', monospace; background: #fff; padding: 8px; border-radius: 4px; display: inline-block; margin-top: 15px;">
+                    <strong>calculateShadowResult(currentSystem, compareToSystem, votes)</strong>
+                </dt>
+                <dd style="margin: 8px 0 0 20px; line-height: 1.6;">
+                    Main comparison orchestrator. Handles data translation between systems, including:
+                    <ul style="margin-top: 8px;">
+                        <li>STV → MMP/Party-List: Uses first preferences but adjusts for exhausted ballots</li>
+                        <li>MMP → Party-List: Isolates list tier only</li>
+                        <li>FPTP ↔ IRV: Synthesizes ranked ballots or extracts first choices</li>
+                    </ul>
+                </dd>
+                
+                <dt style="font-family: 'Courier New', monospace; background: #fff; padding: 8px; border-radius: 4px; display: inline-block; margin-top: 15px;">
+                    <strong>calculateLoosemoreHanby(voteShares, seatShares)</strong>
+                </dt>
+                <dd style="margin: 8px 0 0 20px; line-height: 1.6;">
+                    Calculates disproportionality index. For STV, vote shares come from the <strong>final round tallies</strong> 
+                    (after all transfers), not first preferences. This is critical for accurate comparisons.
+                </dd>
+            </dl>
+        </div>
+
+        <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107; margin: 20px 0;">
+            <strong>🔍 Why This Creates a Meaningful Difference:</strong>
+            <p style="margin: 10px 0 0 0; line-height: 1.6;">
+                In STV, if 5% of ballots are exhausted (all preferences eliminated), those voters 
+                effectively "lose their voice" in the final result. In MMP/Party-List, those same voters 
+                would have their first-choice vote count toward their party. This difference—combined with 
+                the effect of vote transfers—creates distinct seat allocations and disproportionality metrics.
+            </p>
+        </div>
+
+        <!-- Other Cross-System Comparisons -->
+        <h4 style="margin-top: 30px; color: #5568d3;">Other Cross-System Comparisons</h4>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #667eea; color: white;">
+                        <th style="padding: 12px; text-align: left;">Comparison</th>
+                        <th style="padding: 12px; text-align: left;">Translation Method</th>
+                        <th style="padding: 12px; text-align: left;">Key Challenge</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: white;">
+                        <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>FPTP → IRV</strong></td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">Create synthetic ballots where each voter ranks only their chosen candidate</td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">Assumes voters wouldn't rank other candidates if given the option</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>IRV → FPTP</strong></td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">Extract first preferences from ranked ballots</td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">Discards voter's ranking information</td>
+                    </tr>
+                    <tr style="background: white;">
+                        <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>MMP ↔ Party-List</strong></td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">Isolate list tier votes for Party-List; simulate districts for MMP</td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">District seat allocation affects MMP but not Party-List</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>MMP ↔ Parallel</strong></td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">Use same district winners for both</td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">MMP compensates for district wins; Parallel doesn't</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Precision in STV Section -->
+        <h3 style="margin-top: 40px; color: #667eea;">🎯 Precision in STV: The Integer Scaling Approach</h3>
+
+        <p style="line-height: 1.6;">
+            STV calculations involve fractional vote transfers (e.g., a ballot might be worth 0.37128 votes after 
+            being partially transferred). JavaScript's floating-point arithmetic can introduce tiny rounding errors 
+            that accumulate over multiple rounds, potentially changing election outcomes.
+        </p>
+
+        <div style="background: #fff; border: 2px solid #667eea; border-radius: 8px; padding: 25px; margin: 25px 0;">
+            <h4 style="margin: 0 0 15px 0; color: #667eea;">Our Solution: Integer Scaling</h4>
+            
+            <p style="line-height: 1.6; margin-bottom: 15px;">
+                Instead of working with decimal values, we multiply all vote counts by 100,000 (the SCALE_FACTOR) 
+                at the start of the STV calculation. This converts fractional votes into large integers, which 
+                JavaScript can handle with perfect precision.
+            </p>
+            
+            <div style="background: #f0f4ff; padding: 15px; border-radius: 4px; margin: 15px 0;">
+                <code style="font-size: 0.95em; line-height: 1.8;">
+                    <strong>Example:</strong><br>
+                    Without scaling: 0.37128 votes (prone to rounding errors)<br>
+                    With scaling: 37,128 integer units (perfectly precise)
+                </code>
+            </div>
+            
+            <p style="line-height: 1.6; margin-top: 15px;">
+                All arithmetic (transfers, eliminations, quota calculations) happens with these scaled integers. 
+                Only at the very end do we divide by 100,000 to present human-readable results. This ensures 
+                that vote conservation is maintained—no votes are lost to rounding errors.
+            </p>
+            
+            <div class="info-box" style="background: #e8f5e9; border-left: 4px solid #4caf50; margin-top: 15px;">
+                <strong>✅ Result:</strong> Deterministic, reproducible calculations that match real-world 
+                election procedures. The same input always produces the same output, down to the exact vote count.
+            </div>
+        </div>
+
+        <!-- Chart Rendering Section -->
+        <h3 style="margin-top: 40px; color: #667eea;">📊 Chart Rendering and Visualization</h3>
+
+        <p style="line-height: 1.6;">
+            Results are visualized using <strong>Chart.js</strong>, a flexible JavaScript charting library. 
+            The simulator generates:
+        </p>
+
+        <ul style="line-height: 2; margin-left: 30px;">
+            <li><strong>Pie Charts</strong> - For seat distribution in proportional systems</li>
+            <li><strong>Bar Charts</strong> - For comparing vote shares vs. seat shares</li>
+            <li><strong>Round-by-Round Tables</strong> - For IRV/STV elimination visualization</li>
+            <li><strong>Comparison Tables</strong> - For counterfactual analysis across systems</li>
+        </ul>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="margin: 0 0 15px 0;">Dynamic Data Generation</h4>
+            <p style="line-height: 1.6;">
+                Chart data is generated dynamically from election results. For STV specifically:
+            </p>
+            <ul style="line-height: 1.8; margin: 10px 0 0 20px;">
+                <li>Candidates are grouped by party for the pie chart</li>
+                <li>Legend labels include both percentage and seat count</li>
+                <li>A separate "Party Seat Distribution" section shows aggregate party results</li>
+                <li>The elected candidates list is collapsible (collapsed by default) to focus attention on party-level summaries</li>
+            </ul>
+        </div>
+
+        <div class="warning-box" style="margin: 20px 0;">
+            <strong>🎨 Accessibility Note:</strong> All charts use distinct colors with sufficient contrast, 
+            and results are also presented in tabular format for screen readers and users with color vision deficiency.
+        </div>
+
+        <!-- Open Source Section -->
+        <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border: 2px solid #667eea; border-radius: 12px; padding: 30px; margin: 40px 0;">
+            <h3 style="margin: 0 0 15px 0; color: #667eea;">📂 Open Source & Research Use</h3>
+            <p style="line-height: 1.6; font-size: 1.05em;">
+                This electoral systems simulator is designed for educational and research purposes. 
+                All calculations follow documented real-world procedures, and the code is structured 
+                to be readable and verifiable by political scientists and educators.
+            </p>
+            <p style="line-height: 1.6; margin-top: 15px;">
+                <strong>For Researchers:</strong> The deterministic nature of all calculations means you can 
+                use this tool to generate reproducible results for academic papers, teaching materials, or 
+                policy analysis. If you use this simulator in your research, please cite the specific 
+                algorithms and methods described in this documentation.
+            </p>
+        </div>
+    </div>
+
 </body>
 </html>
 
