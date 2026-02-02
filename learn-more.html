@@ -239,6 +239,71 @@
             font-size: 0.9em;
             color: #856404;
         }
+
+        /* Navigation Sidebar Styles */
+        .content-with-nav {
+            display: flex;
+            gap: 30px;
+            position: relative;
+        }
+
+        .main-article {
+            flex: 1;
+            min-width: 0; /* Allow flex item to shrink */
+        }
+
+        .table-of-contents {
+            position: sticky;
+            top: 20px;
+            width: 250px;
+            height: fit-content;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            order: 2; /* Position on right side */
+        }
+
+        .table-of-contents h3 {
+            color: #667eea;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .table-of-contents ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .table-of-contents li {
+            margin-bottom: 8px;
+        }
+
+        .table-of-contents a {
+            color: #333;
+            text-decoration: none;
+            font-size: 0.9em;
+            line-height: 1.5;
+            display: block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .table-of-contents a:hover {
+            background: #f0f4ff;
+            color: #667eea;
+            transform: translateX(4px);
+        }
+
+        /* Responsive: Hide sidebar on small screens */
+        @media (max-width: 1024px) {
+            .table-of-contents {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -248,7 +313,9 @@
         <h1>🗳️ Learn More About Electoral Systems</h1>
         <p class="subtitle">Explore how different voting systems work around the world</p>
 
-        <div class="video-section">
+        <div class="content-with-nav">
+            <main class="main-article">
+                <div class="video-section" id="video-series">
             <h2>📺 Excellent Video Series by CGP Grey</h2>
             <p style="margin-bottom: 15px;">Watch this comprehensive series explaining electoral systems with clear animations and real-world examples:</p>
             
@@ -272,7 +339,7 @@
             <strong>💡 Did you know?</strong> The same votes can produce vastly different outcomes depending on which electoral system is used. This simulator lets you explore these differences hands-on!
         </div>
 
-        <div class="table-section">
+        <div class="table-section" id="systems-table">
             <h2>🌍 Electoral Systems Around the World</h2>
             <p style="margin-bottom: 20px;">Here's where these systems are actually used in real elections:</p>
             
@@ -430,7 +497,7 @@
         </div>
 
         <!-- Foundations of Comparative Politics Section -->
-        <div class="table-section" style="margin-top: 40px;">
+        <div class="table-section" id="foundations" style="margin-top: 40px;">
             <h2>🏛️ The Foundations of Comparative Politics</h2>
             <p style="line-height: 1.6;">To understand why countries choose different systems, political scientists look at two major frameworks:</p>
             
@@ -492,7 +559,7 @@
         </div>
 
         <!-- Social Choice Theory & Paradoxes Section -->
-        <div class="table-section" style="margin-top: 40px;">
+        <div class="table-section" id="paradoxes" style="margin-top: 40px;">
             <h2>⚖️ Social Choice Theory & Paradoxes</h2>
             <p style="line-height: 1.6;">
                 Mathematics proves that no voting system is perfect. In 1951, Nobel laureate Kenneth Arrow introduced 
@@ -529,7 +596,7 @@
         </div>
 
         <!-- Advanced Comparison: Regional Patterns Section -->
-        <div class="table-section" style="margin-top: 40px;">
+        <div class="table-section" id="regional-patterns" style="margin-top: 40px;">
             <h2>🌍 Advanced Comparison: Regional Patterns</h2>
             <p style="line-height: 1.6;">
                 If you look at a map of the world, electoral systems often follow historical and cultural lines:
@@ -563,7 +630,7 @@
         </div>
 
         <!-- Glossary of Key Terms Section -->
-        <div class="table-section" style="margin-top: 40px; margin-bottom: 60px;">
+        <div class="table-section" id="glossary" style="margin-top: 40px; margin-bottom: 60px;">
             <h2>📖 Glossary of Key Terms</h2>
             <p style="line-height: 1.6;">To navigate the simulator like an expert, keep these definitions in mind:</p>
             
@@ -596,7 +663,7 @@
         </div>
 
     <!-- Quick Comparison Table -->
-    <div class="table-section">
+    <div class="table-section" id="quick-comparison">
         <h2>🔍 Quick Comparison Table</h2>
         <p>Not sure which system to simulate? Here's a quick reference to help you choose:</p>
         
@@ -661,7 +728,7 @@
     </div>
 
     <!-- How This App is Implemented Section -->
-    <div class="table-section" style="margin-top: 50px; border-top: 3px solid #667eea; padding-top: 40px;">
+    <div class="table-section" id="implementation" style="margin-top: 50px; border-top: 3px solid #667eea; padding-top: 40px;">
         <h2>💻 How This App is Implemented</h2>
         <p style="line-height: 1.6; font-size: 1.05em;">
             This electoral systems simulator is built as a research-grade tool using vanilla JavaScript, 
@@ -934,7 +1001,79 @@ Comparison: Shows REAL difference based on final round vs first choice!</code></
                 algorithms and methods described in this documentation.
             </p>
         </div>
+
+        <!-- Aggregate vs Independent Districts Section -->
+        <h3 style="margin-top: 40px; color: #667eea;">⚙️ Implementation Note: Aggregate vs. Independent Districts</h3>
+
+        <div class="warning-box" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; color: #856404;">The Challenge</h4>
+            <p style="line-height: 1.6; margin: 0; color: #856404;">
+                To maintain a fast, browser-based experience without requiring users to manually enter data for 
+                hundreds of individual constituencies (like the 299 in Germany or 650 in the UK), this simulator 
+                uses an <strong>Aggregate Candidate Model</strong> for mixed electoral systems (MMP and MMM).
+            </p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="margin: 0 0 15px 0; color: #333;">How It Works</h4>
+            <p style="line-height: 1.6; margin-bottom: 15px;">
+                Rather than processing independent geographic districts, the engine takes the total nationwide 
+                "Candidate Votes" and partitions them into the required number of seats:
+            </p>
+            <ol style="line-height: 2; margin-left: 30px;">
+                <li><strong>Partitioning:</strong> Total votes for each candidate are divided by the number of 
+                districts (e.g., 1,000,000 candidate votes ÷ 100 districts = 10,000 votes per district)</li>
+                <li><strong>Stochastic Variance:</strong> To prevent unrealistic "clean sweeps" where a party 
+                with 51% wins every seat, the code applies random variance (±20%) to each district's vote count</li>
+                <li><strong>Local Winner Selection:</strong> For each district, the varied totals are compared 
+                and the party with the highest count wins that seat</li>
+                <li><strong>Aggregation:</strong> These simulated wins are summed to create district seat counts, 
+                which serve as the base for MMP top-ups or MMM additions</li>
+            </ol>
+        </div>
+
+        <div style="background: #fff8e1; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffa000;">
+            <h4 style="margin: 0 0 15px 0; color: #f57c00;">⚠️ Simulation Limits</h4>
+            <p style="line-height: 1.6; margin-bottom: 15px;">
+                Using aggregate totals instead of discrete geographic districts alters the simulation in several key ways:
+            </p>
+            <ul style="line-height: 2; margin-left: 30px;">
+                <li><strong>Erasure of Geographic Strongholds:</strong> Regional parties like the SNP (Scotland) 
+                or CSU (Bavaria) win districts because their supporters are geographically concentrated. The aggregate 
+                model spreads votes nationally, making regional parties appear weaker than in reality</li>
+                <li><strong>Uniform Competition:</strong> The variance model assumes every district is a "swing seat." 
+                In reality, most districts are "safe seats" with immovable leads. This overestimates small party competitiveness</li>
+                <li><strong>No Split-Ticket Voting:</strong> Real mixed systems allow voters to pick a local candidate 
+                from Party A and a party list from Party B. The aggregate model cannot simulate this behavior</li>
+                <li><strong>Underestimation of Overhang Seats:</strong> MMP overhang seats occur when a party is 
+                regionally efficient. The aggregate model may show fewer overhang seats than geographic reality would produce</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="background: #e8f5e9; border-left: 4px solid #4caf50; margin: 20px 0; padding: 15px;">
+            <strong>🚀 Future Scalability:</strong> For users seeking high-fidelity research, a 
+            <strong>"Discrete District"</strong> module is planned which will allow import of individual 
+            constituency datasets via CSV to capture true geographic variance.
+        </div>
     </div>
+
+            </main>
+
+            <nav class="table-of-contents">
+                <h3>Contents</h3>
+                <ul>
+                    <li><a href="#video-series">📺 Video Series</a></li>
+                    <li><a href="#systems-table">🌍 Electoral Systems</a></li>
+                    <li><a href="#measuring-fairness">📊 Measuring Fairness</a></li>
+                    <li><a href="#foundations">🏛️ Comparative Politics</a></li>
+                    <li><a href="#paradoxes">⚖️ Social Choice Theory</a></li>
+                    <li><a href="#regional-patterns">🌍 Regional Patterns</a></li>
+                    <li><a href="#glossary">📖 Glossary</a></li>
+                    <li><a href="#quick-comparison">🔍 Quick Comparison</a></li>
+                    <li><a href="#implementation">💻 Implementation</a></li>
+                </ul>
+            </nav>
+        </div>
 
 </body>
 </html>

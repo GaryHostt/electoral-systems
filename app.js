@@ -67,6 +67,148 @@ function updateUI() {
     // Individual functions will handle their own UI updates
 }
 
+// Historical Election Preset Import Functions
+function importElectionPreset(presetKey) {
+    if (!presetKey) return; // Empty selection
+    
+    const preset = ELECTION_PRESETS[presetKey];
+    if (!preset) {
+        console.error(`Preset ${presetKey} not found`);
+        return;
+    }
+    
+    console.log(`Loading preset: ${preset.name}`);
+    
+    // Reset current state
+    resetState();
+    
+    // Inject preset data into state
+    setState({
+        parties: preset.parties,
+        candidates: preset.candidates || [],
+        system: preset.system,
+        totalSeats: preset.totalSeats,
+        threshold: preset.threshold || 0,
+        allocationMethod: preset.allocationMethod || 'dhondt',
+        levelingEnabled: preset.levelingEnabled || false,
+        importedCountry: presetKey // Track preset source
+    });
+    
+    // For ranking systems, pre-configure numBallotTypes BEFORE onSystemChange
+    // (numBallotTypes exists in static HTML, but totalVoters is created dynamically)
+    if (preset.ballots && (preset.system === 'irv' || preset.system === 'stv')) {
+        const numBallotsInput = document.getElementById('numBallotTypes');
+        if (numBallotsInput) {
+            numBallotsInput.value = preset.ballots.length;
+        }
+    }
+    
+    // Sync UI controls
+    document.getElementById('electoralSystem').value = preset.system;
+    onSystemChange(); // Trigger system-specific UI updates
+    
+    // For ranking systems, set totalVoters AFTER onSystemChange creates the input
+    if (preset.ballots && (preset.system === 'irv' || preset.system === 'stv')) {
+        const totalVotersInput = document.getElementById('totalVoters');
+        if (totalVotersInput && preset.totalVoters) {
+            totalVotersInput.value = formatNumber(preset.totalVoters);
+        }
+        // Note: Don't call updateRankingBallots() here - UI already built by onSystemChange
+        // Calling it again would rebuild HTML and clear any values before they can be populated
+    }
+    
+    // Update parties and candidates lists in UI
+    updatePartiesList();
+    updateCandidatesList();
+    
+    // Update parliament size inputs
+    const seatsInput = document.getElementById('totalLegislatureSeats');
+    if (seatsInput) seatsInput.value = preset.totalSeats;
+    
+    // Update threshold (if visible)
+    const thresholdInput = document.getElementById('electoralThreshold');
+    if (thresholdInput) thresholdInput.value = preset.threshold || 0;
+    
+    // Update allocation method (if visible)
+    const allocationSelect = document.getElementById('allocationMethod');
+    if (allocationSelect) allocationSelect.value = preset.allocationMethod || 'dhondt';
+    
+    // Update MMP leveling toggle (if visible)
+    const levelingToggle = document.getElementById('mmpLevelingToggle');
+    if (levelingToggle) levelingToggle.checked = preset.levelingEnabled || false;
+    
+    // Populate voting boxes with preset vote counts
+    setTimeout(() => {
+        // Only populate vote boxes if preset has votes (party-list, MMP, MMM systems)
+        if (preset.votes) {
+            populateVotingBoxes(preset.votes);
+        }
+        
+        // For ranking systems (IRV, STV), populate ranking ballots
+        if (preset.ballots && (preset.system === 'irv' || preset.system === 'stv')) {
+            populateRankingBallots(preset.ballots, preset.totalVoters);
+        }
+        
+        // Show success message AFTER population completes
+        setTimeout(() => {
+            alert(`✅ Loaded: ${preset.name}\n\n${preset.description || ''}\n\nYou can now:\n• Click "Calculate" to see results\n• Change the electoral system to run counterfactual analysis\n• Edit vote counts before calculating`);
+        }, 500); // Wait for ballot population to complete
+    }, 800); // Increased from 500ms to 800ms for more stability
+}
+
+function populateVotingBoxes(voteData) {
+    // Fill Party Vote inputs
+    if (voteData.parties) {
+        Object.entries(voteData.parties).forEach(([id, count]) => {
+            const input = document.getElementById(`party-${id}`);
+            if (input) {
+                input.value = formatNumber(count);
+            }
+        });
+    }
+    
+    // Fill Candidate Vote inputs
+    if (voteData.candidates) {
+        Object.entries(voteData.candidates).forEach(([id, count]) => {
+            const input = document.getElementById(`candidate-${id}`);
+            if (input) {
+                input.value = formatNumber(count);
+            }
+        });
+    }
+}
+
+function populateRankingBallots(ballotData, totalVotersCount) {
+    if (!ballotData || ballotData.length === 0) return;
+    
+    // UI already built by onSystemChange() with correct number of ballots
+    // Just wait for DOM stability, then populate values
+    setTimeout(() => {
+        ballotData.forEach((ballot, index) => {
+            // Set ballot name
+            const nameInput = document.getElementById(`ballot-${index}-name`);
+            if (nameInput && ballot.name) {
+                nameInput.value = ballot.name;
+            }
+            
+            // Set percentage
+            const percentageInput = document.getElementById(`ballot-${index}-percentage`);
+            if (percentageInput) {
+                percentageInput.value = ballot.percentage.toFixed(2);
+            }
+            
+            // Set ranking preferences
+            ballot.preferences.forEach((candidateId, rankIndex) => {
+                const rank = rankIndex + 1;
+                const select = document.getElementById(`ballot-${index}-rank-${rank}`);
+                if (select) {
+                    select.value = candidateId;
+                }
+            });
+        });
+    }, 200); // Shorter delay since no rebuild needed
+}
+
 // Configuration
 // Helper to get custom seat count with validation (DRY principle)
 function getCustomSeatCount() {
@@ -653,6 +795,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup color picker
     setupColorPicker();
     
+    // Show presets section on page load
+    const presetsSection = document.getElementById('presetsSection');
+    if (presetsSection) {
+        presetsSection.style.display = 'block';
+    }
+    
     // Initial state
     onSystemChange();
     
@@ -810,6 +958,9 @@ function onSystemChange() {
     }
     
     updateVotingInputs();
+    
+    // Auto-generate candidates for MMP/MMM if needed
+    autoGenerateMixedSystemCandidates();
 }
 
 function updateSectionNumbers(partiesNum, candidatesNum, votingNum) {
@@ -993,6 +1144,9 @@ function addParty() {
     updatePartiesList();
     updateCandidatePartySelect();
     updateVotingInputs();
+    
+    // Auto-generate candidate for MMP/MMM
+    autoGenerateMixedSystemCandidates();
 }
 
 function removeParty(id) {
@@ -1092,6 +1246,28 @@ function updateCandidatePartySelect() {
     // CRITICAL: Clear existing options first to prevent dropdown from growing
     select.innerHTML = '<option value="">Select Party</option>' + 
         parties.map(party => `<option value="${party.id}">${party.name}</option>`).join('');
+}
+
+function autoGenerateMixedSystemCandidates() {
+    // Auto-generate one candidate per party for MMP/MMM systems
+    const system = document.getElementById('electoralSystem').value;
+    if (system !== 'mmp' && system !== 'parallel') return;
+    
+    // Check which parties need candidates
+    parties.forEach(party => {
+        const hasCandidate = candidates.some(c => c.partyId === party.id);
+        if (!hasCandidate) {
+            const candidateId = Date.now() + Math.random();
+            candidates.push({
+                id: candidateId,
+                name: `${party.name} Candidate`,
+                partyId: party.id
+            });
+        }
+    });
+    
+    // Update UI to show the new candidate vote inputs
+    updateVotingInputs();
 }
 
 function addCandidate() {
@@ -5624,6 +5800,22 @@ window.toggleElectedCandidates = function() {
 window.toggleEliminationRounds = function() {
     const panel = document.getElementById('eliminationRoundsPanel');
     const icon = document.getElementById('eliminationRoundsIcon');
+    
+    if (panel && icon) {
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            icon.textContent = '▼';
+        } else {
+            panel.style.display = 'none';
+            icon.textContent = '▶';
+        }
+    }
+};
+
+// Toggle function for presets panel
+window.togglePresetsPanel = function() {
+    const panel = document.getElementById('presetsPanel');
+    const icon = document.getElementById('presetsToggleIcon');
     
     if (panel && icon) {
         if (panel.style.display === 'none') {

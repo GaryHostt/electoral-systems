@@ -36,6 +36,57 @@
                 <div id="systemDescription" class="system-description"></div>
             </section>
 
+            <!-- Historical Election Presets - Collapsible -->
+            <section class="card" id="presetsSection" style="display: none;">
+                <button onclick="togglePresetsPanel()" class="country-toggle-btn">
+                    <span id="presetsToggleIcon">▶</span> 📜 Simulate Past Election
+                </button>
+                
+                <div id="presetsPanel" class="country-import-panel" style="display: none;">
+                    <p style="margin-bottom: 15px; color: #666;">Load real-world election data to see actual results or run counterfactual analyses by switching electoral systems:</p>
+                    
+                    <div class="country-grid">
+                        <button onclick="importElectionPreset('sweden_2022')" class="country-btn">
+                            <span class="country-flag">🇸🇪</span>
+                            <span class="country-name">Sweden 2022</span>
+                            <span class="country-count">Party-List • 349 seats</span>
+                        </button>
+                        <button onclick="importElectionPreset('germany_2021')" class="country-btn">
+                            <span class="country-flag">🇩🇪</span>
+                            <span class="country-name">Germany 2021</span>
+                            <span class="country-count">MMP • 598 seats</span>
+                        </button>
+                        <button onclick="importElectionPreset('japan_2021')" class="country-btn">
+                            <span class="country-flag">🇯🇵</span>
+                            <span class="country-name">Japan 2021</span>
+                            <span class="country-count">Parallel • 465 seats</span>
+                        </button>
+                        <button onclick="importElectionPreset('ireland_pres_2011')" class="country-btn">
+                            <span class="country-flag">🇮🇪</span>
+                            <span class="country-name">Ireland 2011</span>
+                            <span class="country-count">IRV • Presidential</span>
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                        <p style="margin: 0; color: #856404; font-weight: 500;">🚧 Coming Soon:</p>
+                        <p style="margin: 8px 0 0 0; color: #856404; line-height: 1.5;">
+FPTP election simulations (like UK, Canada, US) are on our roadmap.
+                        </p>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 12px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px;">
+                        <p style="margin: 0; color: #2e7d32; font-weight: 500;">💡 How it works:</p>
+                        <p style="margin: 8px 0 0 0; color: #424242; line-height: 1.5;">
+1. Click an election to load parties and vote counts<br>
+2. Click "Calculate" to see the actual results<br>
+3. Change the electoral system dropdown to run counterfactual analysis<br>
+4. Edit vote counts if you want to explore scenarios
+                        </p>
+                    </div>
+                </div>
+            </section>
+
             <!-- Party Management Section -->
             <section class="card" id="partiesSection" style="display: none;">
                 <h2><span class="section-number">2</span>. Political Parties</h2>
@@ -450,6 +501,7 @@
     <script src="advanced-features.js"></script>
     <script src="ai-analysis-main.js"></script>
     <script src="country-import.js"></script>
+    <script src="presets.js"></script>
     <script src="app.js"></script>
     
     <!-- AI Analysis Section (moved from learn-more.html) -->
