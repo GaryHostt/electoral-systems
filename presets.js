@@ -144,5 +144,124 @@ const ELECTION_PRESETS = {
             { preferences: [5004, 5001, 5002], percentage: 6.39, name: "Mitchell voters" },
             { preferences: [5002], percentage: 2.82, name: "Exhausted ballots" }
         ]
+    },
+    "new_zealand_2023": {
+        name: "2023 New Zealand General Election",
+        description: "Clear compensatory MMP with 5% threshold. Features two-seat overhang from Te Pāti Māori.",
+        system: "mmp",
+        totalSeats: 120,
+        threshold: 5,
+        allocationMethod: "sainte-lague",
+        levelingEnabled: false,
+        parties: [
+            { id: 6001, name: "National Party", color: "#00529F" },
+            { id: 6002, name: "Labour Party", color: "#D82A20" },
+            { id: 6003, name: "Green Party", color: "#098137" },
+            { id: 6004, name: "ACT New Zealand", color: "#FDE401" },
+            { id: 6005, name: "New Zealand First", color: "#000000" },
+            { id: 6006, name: "Te Pāti Māori", color: "#B2001A" }
+        ],
+        candidates: [
+            { id: 6001, name: "National Candidate", partyId: 6001 },
+            { id: 6002, name: "Labour Candidate", partyId: 6002 },
+            { id: 6003, name: "Green Candidate", partyId: 6003 },
+            { id: 6004, name: "ACT Candidate", partyId: 6004 },
+            { id: 6005, name: "NZ First Candidate", partyId: 6005 },
+            { id: 6006, name: "Te Pāti Māori Candidate", partyId: 6006 }
+        ],
+        votes: {
+            parties: {
+                6001: 1085016,  // National
+                6002: 767236,   // Labour
+                6003: 330883,   // Green
+                6004: 246409,   // ACT
+                6005: 173425,   // NZ First
+                6006: 87973     // Te Pāti Māori
+            },
+            candidates: {
+                6001: 1120000,  // National
+                6002: 790000,   // Labour
+                6003: 240000,   // Green
+                6004: 150000,   // ACT
+                6005: 40000,    // NZ First
+                6006: 95000     // Te Pāti Māori
+            }
+        }
+    },
+    "taiwan_2024": {
+        name: "2024 Taiwan Legislative Election",
+        description: "Non-compensatory parallel system (73 districts + 34 party-list). TPP emerged as third force with no districts.",
+        system: "parallel",
+        totalSeats: 113,
+        threshold: 5,
+        allocationMethod: "dhondt",
+        parties: [
+            { id: 7001, name: "Democratic Progressive Party (DPP)", color: "#1B9431" },
+            { id: 7002, name: "Kuomintang (KMT)", color: "#000095" },
+            { id: 7003, name: "Taiwan People's Party (TPP)", color: "#28C7C7" }
+        ],
+        candidates: [
+            { id: 7001, name: "DPP Candidate", partyId: 7001 },
+            { id: 7002, name: "KMT Candidate", partyId: 7002 },
+            { id: 7003, name: "TPP Candidate", partyId: 7003 }
+        ],
+        votes: {
+            parties: {
+                7001: 4981060,  // DPP
+                7002: 4764576,  // KMT
+                7003: 3040334   // TPP
+            },
+            candidates: {
+                7001: 6095276,  // DPP
+                7002: 5401933,  // KMT
+                7003: 403357    // TPP
+            }
+        }
+    },
+    "israel_2022": {
+        name: "2022 Israeli Legislative Election",
+        description: "Single national constituency with 3.25% threshold demonstrating wasted vote effect.",
+        system: "party-list",
+        totalSeats: 120,
+        threshold: 3.25,
+        allocationMethod: "dhondt",
+        parties: [
+            { id: 8001, name: "Likud", color: "#005EB8" },
+            { id: 8002, name: "Yesh Atid", color: "#50C8ED" },
+            { id: 8003, name: "Religious Zionist Party", color: "#FF8000" },
+            { id: 8004, name: "National Unity", color: "#0047AB" },
+            { id: 8005, name: "Shas", color: "#000000" }
+        ],
+        votes: {
+            parties: {
+                8001: 1115336,  // Likud
+                8002: 847435,   // Yesh Atid
+                8003: 516470,   // Religious Zionist
+                8004: 432482,   // National Unity
+                8005: 392964    // Shas
+            }
+        }
+    },
+    "netherlands_2023": {
+        name: "2023 Netherlands General Election",
+        description: "Extremely low threshold (0.67% for one seat) leading to high party fragmentation.",
+        system: "party-list",
+        totalSeats: 150,
+        threshold: 0.67,
+        allocationMethod: "dhondt",
+        parties: [
+            { id: 9001, name: "Party for Freedom (PVV)", color: "#1C4788" },
+            { id: 9002, name: "GroenLinks-PvdA", color: "#B40D1E" },
+            { id: 9003, name: "People's Party for Freedom (VVD)", color: "#FF7F00" },
+            { id: 9004, name: "New Social Contract (NSC)", color: "#00A7E1" }
+        ],
+        votes: {
+            parties: {
+                9001: 2450000,  // PVV
+                9002: 1650000,  // GL/PvdA
+                9003: 1589519,  // VVD
+                9004: 1000000   // NSC
+            }
+        }
     }
 };
