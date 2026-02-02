@@ -113,7 +113,7 @@ window.createPieChart = function(canvasId, data, title) {
                                         const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
                                         const percentage = ((value / total) * 100).toFixed(1);
                                         return {
-                                            text: `${label}: ${percentage}%`,
+                                            text: `${label}: ${percentage}% (${value} seat${value !== 1 ? 's' : ''})`,
                                             fillStyle: data.datasets[0].backgroundColor[i],
                                             hidden: false,
                                             index: i

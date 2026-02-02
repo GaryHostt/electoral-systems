@@ -250,9 +250,19 @@ window.autofillVotes = function() {
     // Fill ranking ballots for IRV/STV systems
     const rankingSystems = ['irv', 'stv'];
     if (rankingSystems.includes(system)) {
-        if (candidates.length === 0) {
-            alert('Please add candidates first for ranking systems');
-            return;
+        const isSTV = system === 'stv';
+        
+        // Validation: STV needs parties, IRV needs candidates
+        if (isSTV) {
+            if (parties.length < 2) {
+                alert('Please add at least 2 parties first for STV ranking');
+                return;
+            }
+        } else {
+            if (candidates.length === 0) {
+                alert('Please add candidates first for IRV ranking');
+                return;
+            }
         }
         
         // Ensure numBallotTypes is set to 3
@@ -262,18 +272,25 @@ window.autofillVotes = function() {
         }
         
         // Generate "Core Strength" pattern: creates Condorcet cycle
-        // Group candidates by party
-        const candidatesByParty = {};
-        candidates.forEach(candidate => {
-            if (!candidatesByParty[candidate.partyId]) {
-                candidatesByParty[candidate.partyId] = [];
-            }
-            candidatesByParty[candidate.partyId].push(candidate);
-        });
+        let partyIds;
+        let candidatesByParty = {};
         
-        const partyIds = Object.keys(candidatesByParty);
+        if (isSTV) {
+            // For STV: use party IDs directly
+            partyIds = parties.map(p => p.id);
+        } else {
+            // For IRV: group candidates by party
+            candidates.forEach(candidate => {
+                if (!candidatesByParty[candidate.partyId]) {
+                    candidatesByParty[candidate.partyId] = [];
+                }
+                candidatesByParty[candidate.partyId].push(candidate);
+            });
+            partyIds = Object.keys(candidatesByParty);
+        }
+        
         if (partyIds.length < 2) {
-            alert('Please add candidates from at least 2 different parties for ranking systems');
+            alert(`Please add ${isSTV ? 'at least 2 parties' : 'candidates from at least 2 different parties'} for ranking systems`);
             return;
         }
         
@@ -281,13 +298,15 @@ window.autofillVotes = function() {
         const percentages = [40, 35, 25];
         const ballotNames = ['Ballot Type 1', 'Ballot Type 2', 'Ballot Type 3'];
         
-        // First, call updateRankingBallots() to ensure UI is ready
-        if (typeof updateRankingBallots === 'function') {
-            updateRankingBallots();
+        // Use custom event pattern instead of setTimeout
+        const container = document.getElementById('rankingBallotsContainer');
+        if (!container) {
+            alert('Ranking ballots container not found');
+            return;
         }
         
-        // Wait a moment for DOM to update, then populate values
-        setTimeout(() => {
+        // Listen for ballotsRendered event
+        const handleBallotsRendered = () => {
             for (let i = 0; i < 3; i++) {
                 // Set ballot name
                 const nameInput = document.getElementById(`ballot-${i}-name`);
@@ -309,33 +328,65 @@ window.autofillVotes = function() {
                 const secondaryPartyIndex = (i + 1) % partyIds.length;
                 const tertiaryPartyIndex = (i + 2) % partyIds.length;
                 
-                const primaryParty = partyIds[primaryPartyIndex];
-                const secondaryParty = partyIds[secondaryPartyIndex];
-                const tertiaryParty = partyIds[tertiaryPartyIndex];
-                
-                // Set 1st choice: first candidate from primary party
-                const firstChoiceSelect = document.getElementById(`ballot-${i}-rank-1`);
-                if (firstChoiceSelect && candidatesByParty[primaryParty].length > 0) {
-                    firstChoiceSelect.value = candidatesByParty[primaryParty][0].id;
-                    // Trigger change event to update UI
-                    firstChoiceSelect.dispatchEvent(new Event('change'));
-                }
-                
-                // Set 2nd choice: first candidate from secondary party
-                if (candidates.length >= 2) {
-                    const secondChoiceSelect = document.getElementById(`ballot-${i}-rank-2`);
-                    if (secondChoiceSelect && candidatesByParty[secondaryParty].length > 0) {
-                        secondChoiceSelect.value = candidatesByParty[secondaryParty][0].id;
-                        secondChoiceSelect.dispatchEvent(new Event('change'));
+                if (isSTV) {
+                    // STV: Set party IDs directly
+                    const primaryPartyId = partyIds[primaryPartyIndex];
+                    const secondaryPartyId = partyIds[secondaryPartyIndex];
+                    const tertiaryPartyId = partyIds[tertiaryPartyIndex];
+                    
+                    // Set 1st choice: primary party
+                    const firstChoiceSelect = document.getElementById(`ballot-${i}-rank-1`);
+                    if (firstChoiceSelect) {
+                        firstChoiceSelect.value = primaryPartyId;
+                        firstChoiceSelect.dispatchEvent(new Event('change'));
                     }
-                }
-                
-                // Set 3rd choice: first candidate from tertiary party (if exists)
-                if (candidates.length >= 3 && partyIds.length >= 3) {
-                    const thirdChoiceSelect = document.getElementById(`ballot-${i}-rank-3`);
-                    if (thirdChoiceSelect && candidatesByParty[tertiaryParty].length > 0) {
-                        thirdChoiceSelect.value = candidatesByParty[tertiaryParty][0].id;
-                        thirdChoiceSelect.dispatchEvent(new Event('change'));
+                    
+                    // Set 2nd choice: secondary party
+                    if (partyIds.length >= 2) {
+                        const secondChoiceSelect = document.getElementById(`ballot-${i}-rank-2`);
+                        if (secondChoiceSelect) {
+                            secondChoiceSelect.value = secondaryPartyId;
+                            secondChoiceSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                    
+                    // Set 3rd choice: tertiary party (if exists)
+                    if (partyIds.length >= 3) {
+                        const thirdChoiceSelect = document.getElementById(`ballot-${i}-rank-3`);
+                        if (thirdChoiceSelect) {
+                            thirdChoiceSelect.value = tertiaryPartyId;
+                            thirdChoiceSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                } else {
+                    // IRV: Set candidate IDs (existing logic)
+                    const primaryParty = partyIds[primaryPartyIndex];
+                    const secondaryParty = partyIds[secondaryPartyIndex];
+                    const tertiaryParty = partyIds[tertiaryPartyIndex];
+                    
+                    // Set 1st choice: first candidate from primary party
+                    const firstChoiceSelect = document.getElementById(`ballot-${i}-rank-1`);
+                    if (firstChoiceSelect && candidatesByParty[primaryParty].length > 0) {
+                        firstChoiceSelect.value = candidatesByParty[primaryParty][0].id;
+                        firstChoiceSelect.dispatchEvent(new Event('change'));
+                    }
+                    
+                    // Set 2nd choice: first candidate from secondary party
+                    if (candidates.length >= 2) {
+                        const secondChoiceSelect = document.getElementById(`ballot-${i}-rank-2`);
+                        if (secondChoiceSelect && candidatesByParty[secondaryParty].length > 0) {
+                            secondChoiceSelect.value = candidatesByParty[secondaryParty][0].id;
+                            secondChoiceSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                    
+                    // Set 3rd choice: first candidate from tertiary party (if exists)
+                    if (candidates.length >= 3 && partyIds.length >= 3) {
+                        const thirdChoiceSelect = document.getElementById(`ballot-${i}-rank-3`);
+                        if (thirdChoiceSelect && candidatesByParty[tertiaryParty].length > 0) {
+                            thirdChoiceSelect.value = candidatesByParty[tertiaryParty][0].id;
+                            thirdChoiceSelect.dispatchEvent(new Event('change'));
+                        }
                     }
                 }
             }
@@ -346,7 +397,18 @@ window.autofillVotes = function() {
             }
             
             alert('✅ Ranking ballots auto-filled with "Core Strength" pattern (creates Condorcet cycle)!');
-        }, 100);
+            
+            // Remove event listener after handling
+            container.removeEventListener('ballotsRendered', handleBallotsRendered);
+        };
+        
+        // Add event listener
+        container.addEventListener('ballotsRendered', handleBallotsRendered, { once: true });
+        
+        // Trigger rendering
+        if (typeof updateRankingBallots === 'function') {
+            updateRankingBallots();
+        }
         
         return; // Don't show the generic alert for ranking systems
     }

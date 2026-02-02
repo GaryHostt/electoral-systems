@@ -340,6 +340,15 @@
                                 select ballots for transfer, the Gregory Method ensures the same input always produces 
                                 the same output—critical for research validity.
                             </p>
+                            <p style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
+                                <strong>📝 Note on Our Implementation:</strong> The STV system in this simulator is implemented as a 
+                                <strong>"Party-Block STV"</strong> or <strong>"Open-List STV"</strong> hybrid rather than pure candidate-based STV. 
+                                Users rank parties instead of individual candidates, and the system automatically generates candidates 
+                                as parties are elected based on their vote share. This approach reflects how many people perceive voting: 
+                                they want their party to get the right number of seats, and they want the best candidates in those seats. 
+                                In real-world elections, parties typically field multiple candidates anyway, so this hybrid model captures 
+                                the essential proportional transfer mechanism while simplifying the ballot input process.
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -513,7 +522,7 @@
                 <div style="background: #e0e7ff; border-left: 4px solid #6366f1; padding: 15px; border-radius: 4px;">
                     <h4 style="margin: 0 0 8px 0; color: #4f46e5;">🔄 Monotonicity Failure</h4>
                     <p style="margin: 0; line-height: 1.6; color: #3730a3;">
-                        A rare paradox in IRV where giving a candidate a higher ranking can actually cause them to lose.
+                        A rare paradox in IRV where giving a candidate a higher ranking can actually cause them to lose. In multi-winner STV, this is called the <strong>Referendum Paradox</strong> or <strong>No-Show Paradox</strong>, where voters can paradoxically help their preferred candidate by not voting at all.
                     </p>
                 </div>
             </div>
