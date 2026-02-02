@@ -3845,19 +3845,69 @@ function translateRankedToPartyVotes(ballots) {
 // Convert FPTP candidate votes to synthetic IRV ballots
 function convertFPTPtoIRVballots(candidateVotes) {
     const ballots = [];
+    let totalVotesGenerated = 0; // EDGE CASE: Track total to ensure vote preservation
     
-    // For each candidate's vote count, create that many ballots with only that candidate
+    // Build party index for proximity logic
+    const partyList = parties.map(p => p.id); // Represents ideological spectrum
+    
     Object.keys(candidateVotes).forEach(candidateId => {
         const votes = candidateVotes[candidateId] || 0;
-        if (votes > 0) {
+        if (votes === 0) return;
+        
+        const candidate = candidates.find(c => c.id == candidateId);
+        if (!candidate) return;
+        
+        const partyIdx = partyList.indexOf(candidate.partyId);
+        
+        // Find neighboring parties (proximity logic)
+        const prevPartyId = partyIdx > 0 ? partyList[partyIdx - 1] : null;
+        const nextPartyId = partyIdx < partyList.length - 1 ? partyList[partyIdx + 1] : null;
+        
+        // Pattern 1: "Loyalist" voters (70%) - rank candidate 1st, then neighbors
+        const loyalistCount = Math.round(votes * 0.7);
+        if (loyalistCount > 0) {
+            ballots.push({
+                preferences: generateProximityPath(candidateId, prevPartyId, nextPartyId),
+                count: loyalistCount
+            });
+            totalVotesGenerated += loyalistCount;
+        }
+        
+        // Pattern 2: "Pluralist" voters (30%) - rank ONLY their candidate (simulates exhaustion)
+        const pluralistCount = votes - loyalistCount;
+        if (pluralistCount > 0) {
             ballots.push({
                 preferences: [parseInt(candidateId)],
-                count: votes
+                count: pluralistCount
             });
+            totalVotesGenerated += pluralistCount;
         }
     });
     
+    // EDGE CASE: Verify vote count preservation
+    const originalTotal = Object.values(candidateVotes).reduce((sum, v) => sum + v, 0);
+    if (Math.abs(totalVotesGenerated - originalTotal) > 1) {
+        console.warn(`FPTP → IRV: Vote count mismatch - Original: ${originalTotal}, Generated: ${totalVotesGenerated}`);
+    }
+    
     return ballots;
+}
+
+// Helper function to generate proximity-based preference paths
+function generateProximityPath(candId, prevPartyId, nextPartyId) {
+    const path = [parseInt(candId)];
+    
+    // Add neighbor candidates if they exist
+    if (prevPartyId) {
+        const neighbor = candidates.find(c => c.partyId == prevPartyId);
+        if (neighbor) path.push(neighbor.id);
+    }
+    if (nextPartyId) {
+        const neighbor = candidates.find(c => c.partyId == nextPartyId);
+        if (neighbor) path.push(neighbor.id);
+    }
+    
+    return path;
 }
 
 // Convert IRV ranked ballots to FPTP candidate votes (first preferences only)
@@ -3884,8 +3934,8 @@ function convertIRVtoFPTP(ballots) {
 function calculateShadowResult(currentSystem, compareToSystem, votes) {
     // Validate compatibility
     const compatibility = {
-        'fptp': ['irv'],
-        'irv': ['fptp'],
+        'fptp': [],      // Temporarily disabled - upcoming feature
+        'irv': ['fptp'], // Keep IRV → FPTP (simpler: first preference extraction)
         'party-list': ['mmp', 'parallel'],
         'mmp': ['party-list', 'parallel'],
         'parallel': ['party-list', 'mmp'],
@@ -4101,6 +4151,90 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             params.threshold || 5,
             params.allocationMethod || 'dhondt'
         );
+    } else if (currentSystem === 'mmp' && compareToSystem === 'party-list') {
+        // MMP → Party-List: Use only party votes (ignore district seats)
+        const params = window.lastCalculationParams || {};
+        
+        shadowResults = calculatePartyListPR(
+            translatedVotes, // Already has votes.parties from MMP
+            params.totalSeats || 10,
+            params.threshold || 5,
+            params.allocationMethod || 'dhondt'
+        );
+    } else if (currentSystem === 'party-list' && compareToSystem === 'mmp') {
+        // Party-List → MMP: Synthesize candidate votes from party votes
+        // Assign all party votes to party's first candidate to simulate districts
+        const params = window.lastCalculationParams || {};
+        const syntheticCandidateVotes = {};
+        
+        parties.forEach(party => {
+            const partyVotes = translatedVotes.parties[party.id] || 0;
+            if (partyVotes > 0) {
+                // EDGE CASE: Find or create a candidate for this party
+                let partyCandidate = candidates.find(c => c.partyId === party.id);
+                
+                if (!partyCandidate) {
+                    // Fallback: Create a "ghost candidate" if party has no candidates
+                    console.warn(`Party-List → MMP: Creating ghost candidate for party ${party.name}`);
+                    const ghostId = Date.now() + Math.random(); // Unique ID
+                    partyCandidate = {
+                        id: ghostId,
+                        name: `${party.name} Representative`,
+                        partyId: party.id
+                    };
+                    candidates.push(partyCandidate); // Add to candidates array
+                }
+                
+                syntheticCandidateVotes[partyCandidate.id] = partyVotes;
+            }
+        });
+        
+        // Add synthetic candidates to translated votes
+        translatedVotes.candidates = syntheticCandidateVotes;
+        
+        shadowResults = calculateMMP(
+            translatedVotes,
+            params.totalSeats || 10,
+            params.threshold || 5,
+            params.levelingEnabled || false,
+            null // No forced district wins - let MMP simulate them
+        );
+    } else if (currentSystem === 'party-list' && compareToSystem === 'parallel') {
+        // Party-List → Parallel: Synthesize candidate votes from party votes
+        const params = window.lastCalculationParams || {};
+        const syntheticCandidateVotes = {};
+        
+        parties.forEach(party => {
+            const partyVotes = translatedVotes.parties[party.id] || 0;
+            if (partyVotes > 0) {
+                // EDGE CASE: Find or create a candidate for this party
+                let partyCandidate = candidates.find(c => c.partyId === party.id);
+                
+                if (!partyCandidate) {
+                    // Fallback: Create a "ghost candidate" if party has no candidates
+                    console.warn(`Party-List → Parallel: Creating ghost candidate for party ${party.name}`);
+                    const ghostId = Date.now() + Math.random(); // Unique ID
+                    partyCandidate = {
+                        id: ghostId,
+                        name: `${party.name} Representative`,
+                        partyId: party.id
+                    };
+                    candidates.push(partyCandidate); // Add to candidates array
+                }
+                
+                syntheticCandidateVotes[partyCandidate.id] = partyVotes;
+            }
+        });
+        
+        translatedVotes.candidates = syntheticCandidateVotes;
+        
+        shadowResults = calculateParallel(
+            translatedVotes,
+            params.totalSeats || 10,
+            params.threshold || 5,
+            params.allocationMethod || 'dhondt',
+            null // No forced districts - let Parallel simulate them
+        );
     } else {
         // For other systems, use standard calculator call
         shadowResults = calculators[compareToSystem](translatedVotes);
@@ -4117,8 +4251,8 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
 // Get compatible systems for shadow comparison
 function getCompatibleSystems(currentSystem) {
     const compatibility = {
-        'fptp': ['irv'],       // Re-enabled with synthetic ballot translation
-        'irv': ['fptp'],       // Re-enabled with first-preference extraction
+        'fptp': [],      // Temporarily disabled - upcoming feature
+        'irv': ['fptp'], // Keep IRV → FPTP (simpler: first preference extraction)
         'party-list': ['mmp', 'parallel'],
         'mmp': ['party-list', 'parallel'],
         'parallel': ['party-list', 'mmp'],
@@ -5315,7 +5449,8 @@ function displayResults(results, system) {
     // Add Shadow Result Comparison UI
     // Skip comparison section for STV (per user request)
     const compatibleSystems = getCompatibleSystems(system);
-    if (compatibleSystems.length > 0 && system !== 'stv') {
+    // Show comparison section if there are compatible systems OR if FPTP (to show upcoming feature note)
+    if ((compatibleSystems.length > 0 && system !== 'stv') || system === 'fptp') {
         const systemFullNames = {
             'fptp': 'First-Past-the-Post',
             'irv': 'Instant-Runoff Voting',
@@ -5329,7 +5464,23 @@ function displayResults(results, system) {
         <div class="comparison-section" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e9ecef;">
             <h3 style="color: #495057; margin: 0 0 10px 0;">📊 Compare to Alternative System</h3>
             <p style="color: #666; margin-bottom: 15px;">See how these same votes would produce different results under another electoral system.</p>
-            
+        `;
+        
+        // Show "upcoming feature" note for FPTP only
+        if (system === 'fptp') {
+            html += `
+            <div style="padding: 15px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">
+                <p style="margin: 0; color: #1565c0; font-weight: 500;">
+                    🚧 Upcoming Feature
+                </p>
+                <p style="margin: 8px 0 0 0; color: #424242; line-height: 1.5;">
+                    FPTP to IRV comparison is currently under development and will be available in a future update.
+                </p>
+            </div>
+            `;
+        } else {
+            // Show normal dropdown for other systems (including IRV)
+            html += `
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <select id="shadowSystemSelect" style="padding: 10px 15px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; min-width: 250px;">
                     <option value="">-- Select System to Compare --</option>
@@ -5344,7 +5495,10 @@ function displayResults(results, system) {
             </div>
             
             <div id="shadowResultsDisplay" style="margin-top: 15px;"></div>
-        </div>`;
+            `;
+        }
+        
+        html += `</div>`;
     }
     
     resultsDiv.innerHTML = html;
