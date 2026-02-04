@@ -2330,6 +2330,11 @@ function calculateFPTP_Legislative(partyVotes, partySeats, totalSeats) {
     
     filteredResults.sort((a, b) => b.seats - a.seats);
     
+    // Calculate Loosemore-Hanby Index (disproportionality measure)
+    const loosemoreHanby = filteredResults.reduce((sum, r) => 
+        sum + Math.abs(r.seatPercentage - r.votePercentage), 0
+    ) / 2;
+    
     // Calculate Gallagher Index (disproportionality measure)
     const gallagherIndex = Math.sqrt(
         filteredResults.reduce((sum, r) => sum + Math.pow(r.seatPercentage - r.votePercentage, 2), 0) / 2
@@ -2341,7 +2346,9 @@ function calculateFPTP_Legislative(partyVotes, partySeats, totalSeats) {
         totalVotes: totalVotes,
         totalSeats: totalSeatsWon,
         expectedSeats: totalSeats,  // Add expected for validation
-        gallagherIndex: gallagherIndex.toFixed(2),
+        disproportionality: loosemoreHanby,  // Loosemore-Hanby Index
+        gallagher: gallagherIndex,  // Gallagher Index (changed from gallagherIndex for consistency)
+        gallagherIndex: gallagherIndex.toFixed(2),  // Keep for backward compatibility
         note: `FPTP Legislative Analysis: ${totalSeatsWon} seats distributed across ${parties.length} parties. Gallagher Index: ${gallagherIndex.toFixed(2)} (measures disproportionality - 0 is perfect proportionality, >20 is very disproportional).`
     };
 }
@@ -4494,7 +4501,7 @@ function convertIRVtoFPTP(ballots) {
 function calculateShadowResult(currentSystem, compareToSystem, votes) {
     // Validate compatibility
     const compatibility = {
-        'fptp': [],      // Temporarily disabled - upcoming feature
+        'fptp': ['mmp', 'parallel'],  // Enable FPTP to MMP and MMM/Parallel comparison
         'irv': ['fptp'], // Keep IRV → FPTP (simpler: first preference extraction)
         'party-list': ['mmp', 'parallel'],
         'mmp': ['party-list', 'parallel'],
@@ -4565,6 +4572,66 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             totalVoters: totalVoters,
             candidateVotes: candidateVotes
         });
+    }
+    
+    // FPTP → MMP: Use FPTP party votes as MMP party votes, actual seats as district wins
+    if (currentSystem === 'fptp' && compareToSystem === 'mmp') {
+        console.log('FPTP → MMP: Translating FPTP legislative data to MMP format');
+        
+        // FPTP legislative mode already has party votes - use them directly
+        translatedVotes = {
+            parties: votes.parties,  // Party votes from FPTP legislative
+            candidates: {}  // MMP will simulate districts, not needed for shadow comparison
+        };
+        
+        // Get actual FPTP seat distribution to use as forced district wins
+        // This shows how MMP would compensate for FPTP's disproportional district results
+        const primaryResults = window.lastCalculationResults;
+        if (primaryResults && primaryResults.type === 'fptp-legislative' && primaryResults.parties) {
+            const fptpDistrictWins = {};
+            primaryResults.parties.forEach(party => {
+                const partyObj = parties.find(p => p.name === party.name);
+                if (partyObj) {
+                    fptpDistrictWins[partyObj.id] = party.seats || 0;
+                }
+            });
+            
+            translatedVotes._fptpDistrictWins = fptpDistrictWins;
+            
+            console.log('FPTP → MMP: District wins mapped from FPTP results', fptpDistrictWins);
+        }
+        
+        shadowDisclaimer = "Note: FPTP seat distribution treated as district wins. MMP calculation shows how list seats would compensate for disproportionality.";
+    }
+    
+    // FPTP → Parallel: Use FPTP party votes as Parallel party votes, actual seats as district wins
+    if (currentSystem === 'fptp' && compareToSystem === 'parallel') {
+        console.log('FPTP → Parallel: Translating FPTP legislative data to Parallel format');
+        
+        // FPTP legislative mode already has party votes - use them directly
+        translatedVotes = {
+            parties: votes.parties,  // Party votes from FPTP legislative
+            candidates: {}  // Parallel will simulate districts, not needed for shadow comparison
+        };
+        
+        // Get actual FPTP seat distribution to use as forced district wins
+        // This shows how Parallel's independent list tier would work with FPTP's district results
+        const primaryResults = window.lastCalculationResults;
+        if (primaryResults && primaryResults.type === 'fptp-legislative' && primaryResults.parties) {
+            const fptpDistrictWins = {};
+            primaryResults.parties.forEach(party => {
+                const partyObj = parties.find(p => p.name === party.name);
+                if (partyObj) {
+                    fptpDistrictWins[partyObj.id] = party.seats || 0;
+                }
+            });
+            
+            translatedVotes._fptpDistrictWins = fptpDistrictWins;
+            
+            console.log('FPTP → Parallel: District wins mapped from FPTP results', fptpDistrictWins);
+        }
+        
+        shadowDisclaimer = "Note: FPTP seat distribution treated as district wins. Parallel/MMM calculation shows independent list tier allocation (non-compensatory).";
     }
     
     // STV → Party-List/MMP: Translate ranked to party votes
@@ -4706,6 +4773,62 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             params.levelingEnabled || false,
             forcedDistricts // Pass district wins to ensure consistency
         );
+    } else if (currentSystem === 'fptp' && compareToSystem === 'mmp') {
+        // FPTP → MMP: Use FPTP total seats as district count
+        const params = window.lastCalculationParams || {};
+        const fptpSeats = params.totalSeats || 650;  // Default to UK size if not available
+        
+        // Use FPTP seats as district tier, add proportional list tier
+        // Use 1:1 ratio (same number of list seats as districts) for fair comparison
+        const districtSeats = fptpSeats;
+        const baseListSeats = fptpSeats;  // Equal tier sizes for proportional compensation
+        
+        const forcedDistricts = translatedVotes._fptpDistrictWins || null;
+        
+        shadowResults = calculateMMP(
+            translatedVotes,
+            districtSeats,
+            baseListSeats,
+            params.threshold || 5,
+            params.allocationMethod || 'dhondt',
+            false,  // No leveling for shadow comparison
+            forcedDistricts  // Use FPTP's actual seat distribution as district wins
+        );
+        
+        console.log('FPTP → MMP Shadow calculation:', {
+            districtSeats,
+            baseListSeats,
+            forcedDistricts,
+            shadowResultsSeats: shadowResults?.totalSeats
+        });
+    } else if (currentSystem === 'fptp' && compareToSystem === 'parallel') {
+        // FPTP → Parallel: Use FPTP total seats as district count
+        const params = window.lastCalculationParams || {};
+        const fptpSeats = params.totalSeats || 650;  // Default to UK size if not available
+        
+        // For Parallel, use similar tier split to MMP but list tier is independent (non-compensatory)
+        // Common Parallel ratios: 60/40 or 62/38 (district/list)
+        const districtSeats = fptpSeats;
+        const listSeats = Math.round(fptpSeats * 0.6);  // 60% of district seats as list tier
+        
+        const forcedDistricts = translatedVotes._fptpDistrictWins || null;
+        
+        shadowResults = calculateParallel(
+            translatedVotes,
+            districtSeats,
+            listSeats,
+            params.threshold || 5,
+            params.allocationMethod || 'dhondt',
+            forcedDistricts  // Use FPTP's actual seat distribution as district wins
+        );
+        
+        console.log('FPTP → Parallel Shadow calculation:', {
+            districtSeats,
+            listSeats,
+            totalSeats: districtSeats + listSeats,
+            forcedDistricts,
+            shadowResultsSeats: shadowResults?.totalSeats
+        });
     } else if (currentSystem === 'parallel' && compareToSystem === 'party-list') {
         // Parallel → Party-List: Use party votes only (ignore districts)
         const params = window.lastCalculationParams || {};
@@ -4819,7 +4942,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
 // Get compatible systems for shadow comparison
 function getCompatibleSystems(currentSystem) {
     const compatibility = {
-        'fptp': [],      // Temporarily disabled - upcoming feature
+        'fptp': ['mmp', 'parallel'],  // Enable FPTP to MMP and MMM/Parallel comparison
         'irv': ['fptp'], // Keep IRV → FPTP (simpler: first preference extraction)
         'party-list': ['mmp', 'parallel'],
         'mmp': ['party-list', 'parallel'],
@@ -4834,8 +4957,9 @@ function generateComparisonRows(primaryResults, shadowResults) {
     let html = '';
     
     // Get party results from both systems
-    const primaryParties = primaryResults.results || [];
-    const shadowParties = shadowResults.results || [];
+    // FPTP legislative uses .parties, other systems use .results
+    const primaryParties = primaryResults.parties || primaryResults.results || [];
+    const shadowParties = shadowResults.parties || shadowResults.results || [];
     
     // Create a map of parties
     const partyMap = new Map();
@@ -4902,8 +5026,9 @@ function generateComparisonInsight(primaryResults, shadowResults, currentSystem,
     const compareName = systemNames[compareSystem] || compareSystem;
     
     // Calculate total seat shifts
-    const primaryParties = primaryResults.results || [];
-    const shadowParties = shadowResults.results || [];
+    // FPTP legislative uses .parties, other systems use .results
+    const primaryParties = primaryResults.parties || primaryResults.results || [];
+    const shadowParties = shadowResults.parties || shadowResults.results || [];
     
     let totalShift = 0;
     const partyMap = new Map();
@@ -4929,14 +5054,17 @@ function generateComparisonInsight(primaryResults, shadowResults, currentSystem,
     // Gallagher Index comparison (if available)
     if (primaryResults.gallagher !== undefined && shadowResults.gallagher !== undefined) {
         const gDiff = (shadowResults.gallagher - primaryResults.gallagher).toFixed(2);
-        insight += `<p style="font-weight: 600; color: #2d3748; margin-bottom: 10px;">📊 Gallagher Index Shift: ${gDiff > 0 ? '+' : ''}${gDiff}</p>`;
+        const isImprovement = parseFloat(gDiff) < 0;
+        
+        // Skip detailed metrics here since we now have dedicated metrics section above
+        // Just provide high-level interpretation
         
         if (Math.abs(gDiff) < 0.5) {
             insight += `<p style="margin-bottom: 10px;">Both systems produced remarkably similar levels of proportionality for this specific vote distribution.</p>`;
-        } else if (parseFloat(gDiff) < 0) {
-            insight += `<p style="margin-bottom: 10px;">Switching from ${currentName} to ${compareName} improved proportionality by ${Math.abs(gDiff)} points, reducing the distortion between votes and seats.</p>`;
+        } else if (isImprovement) {
+            insight += `<p style="margin-bottom: 10px;">Switching from ${currentName} to ${compareName} significantly improves proportionality, reducing representation gaps and giving smaller parties fairer seat allocations.</p>`;
         } else {
-            insight += `<p style="margin-bottom: 10px;">Switching from ${currentName} to ${compareName} increased disproportionality by ${gDiff} points, likely favoring larger parties and creating a more "stable" but less representative majority.</p>`;
+            insight += `<p style="margin-bottom: 10px;">Switching from ${currentName} to ${compareName} increases disproportionality, which may strengthen governing majorities but reduces proportional representation.</p>`;
         }
     }
     
@@ -4997,6 +5125,120 @@ function generateComparisonInsight(primaryResults, shadowResults, currentSystem,
     }
     
     return insight;
+}
+
+// Generate metrics display for a single system
+function generateMetricsDisplay(results) {
+    // Handle different result structures (FPTP legislative uses .parties)
+    const hasDisproportionality = results.disproportionality !== undefined;
+    const hasGallagher = results.gallagher !== undefined;
+    
+    if (!hasDisproportionality || !hasGallagher) {
+        return '<p style="color: #718096; font-style: italic;">Metrics not available for this system</p>';
+    }
+    
+    const lhIndex = results.disproportionality;
+    const gallagherIndex = results.gallagher;
+    
+    // Get fairness grade based on Gallagher Index
+    const gradeInfo = getGallagherGrade(gallagherIndex, results.type);
+    
+    return `
+        <div style="margin-bottom: 10px;">
+            <strong style="color: #2d3748;">Loosemore-Hanby Index:</strong> 
+            <span style="font-size: 1.1em; color: #4a5568;">${lhIndex.toFixed(2)}%</span>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <strong style="color: #2d3748;">Gallagher Index (LSq):</strong> 
+            <span style="font-size: 1.1em; color: #4a5568;">${gallagherIndex.toFixed(2)}%</span>
+        </div>
+        <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 4px; border-left: 4px solid ${gradeInfo.color};">
+            <strong style="color: ${gradeInfo.color};">Fairness Grade: ${gradeInfo.grade}</strong>
+            <span style="color: #718096;"> (${gradeInfo.label})</span>
+            <div style="margin-top: 5px; font-size: 0.9em; color: #4a5568;">
+                ${getProportionalityDescription(gallagherIndex)}
+            </div>
+        </div>
+    `;
+}
+
+function getProportionalityDescription(gallagherIndex) {
+    if (gallagherIndex < 3) {
+        return `Highly Proportional: ${gallagherIndex.toFixed(1)}% of seats deviate from perfect proportionality.`;
+    } else if (gallagherIndex < 5) {
+        return `Very Proportional: ${gallagherIndex.toFixed(1)}% deviation from perfect proportionality.`;
+    } else if (gallagherIndex < 8) {
+        return `Moderately Proportional: ${gallagherIndex.toFixed(1)}% deviation from ideal representation.`;
+    } else if (gallagherIndex < 12) {
+        return `Low Proportionality: ${gallagherIndex.toFixed(1)}% deviation indicates significant distortion.`;
+    } else if (gallagherIndex < 18) {
+        return `Poor Proportionality: ${gallagherIndex.toFixed(1)}% deviation shows major representation gaps.`;
+    } else {
+        return `Highly Disproportional: ${gallagherIndex.toFixed(1)}% deviation indicates severe representation distortion.`;
+    }
+}
+
+function generateMetricsComparison(primaryResults, shadowResults, currentSystem, compareSystem) {
+    const systemNames = {
+        'fptp': 'FPTP',
+        'irv': 'IRV',
+        'party-list': 'Party-List PR',
+        'mmp': 'MMP',
+        'parallel': 'Parallel',
+        'stv': 'STV'
+    };
+    
+    // Check if metrics are available
+    if (!primaryResults.disproportionality || !shadowResults.disproportionality ||
+        !primaryResults.gallagher || !shadowResults.gallagher) {
+        return '';
+    }
+    
+    const lhDiff = shadowResults.disproportionality - primaryResults.disproportionality;
+    const gallagherDiff = shadowResults.gallagher - primaryResults.gallagher;
+    
+    // Determine if it's an improvement (negative diff) or regression (positive diff)
+    const lhImprovement = lhDiff < 0;
+    const gallagherImprovement = gallagherDiff < 0;
+    
+    const lhIcon = lhImprovement ? '📈 Improvement' : '📉 Regression';
+    const gallagherIcon = gallagherImprovement ? '📈 Improvement' : '📉 Regression';
+    
+    const lhColor = lhImprovement ? '#2ecc71' : '#e74c3c';
+    const gallagherColor = gallagherImprovement ? '#2ecc71' : '#e74c3c';
+    
+    const lhSign = lhDiff > 0 ? '+' : '';
+    const gallagherSign = gallagherDiff > 0 ? '+' : '';
+    
+    return `
+        <div style="padding: 15px; background: #edf2f7; border-radius: 6px; border-top: 2px solid #cbd5e0;">
+            <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 0.95em;">Impact Analysis</h4>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="padding: 12px; background: white; border-radius: 4px; border-left: 3px solid ${lhColor};">
+                    <div style="font-weight: 600; color: ${lhColor}; margin-bottom: 5px;">${lhIcon}</div>
+                    <div style="color: #2d3748;">Loosemore-Hanby: <strong style="color: ${lhColor};">${lhSign}${Math.abs(lhDiff).toFixed(2)}%</strong></div>
+                    <div style="margin-top: 5px; font-size: 0.85em; color: #718096;">
+                        ${Math.abs(lhDiff).toFixed(2)}% ${lhImprovement ? 'reduction' : 'increase'} in disproportionality
+                    </div>
+                </div>
+                
+                <div style="padding: 12px; background: white; border-radius: 4px; border-left: 3px solid ${gallagherColor};">
+                    <div style="font-weight: 600; color: ${gallagherColor}; margin-bottom: 5px;">${gallagherIcon}</div>
+                    <div style="color: #2d3748;">Gallagher Index: <strong style="color: ${gallagherColor};">${gallagherSign}${Math.abs(gallagherDiff).toFixed(2)}%</strong></div>
+                    <div style="margin-top: 5px; font-size: 0.85em; color: #718096;">
+                        ${Math.abs(gallagherDiff).toFixed(2)}% ${gallagherImprovement ? 'improvement' : 'worsening'} (academic standard)
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 4px;">
+                <em style="color: #4a5568; font-size: 0.9em;">
+                    💡 The Gallagher Index penalizes large deviations more heavily and is the academic standard for measuring proportionality.
+                </em>
+            </div>
+        </div>
+    `;
 }
 
 // Show shadow result comparison
@@ -5073,6 +5315,27 @@ function showShadowResult() {
                     ${generateComparisonRows(primaryResults, shadowResults)}
                 </tbody>
             </table>
+            
+            <div style="margin-top: 20px; padding: 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h3 style="margin: 0 0 15px 0; color: #2d3748; font-size: 1.1em;">📊 Disproportionality Metrics</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                    <!-- Primary System Metrics -->
+                    <div style="padding: 15px; background: #f7fafc; border-radius: 6px;">
+                        <h4 style="margin: 0 0 10px 0; color: #4a5568; font-size: 0.95em;">${systemNames[currentSystem]}</h4>
+                        ${generateMetricsDisplay(primaryResults)}
+                    </div>
+                    
+                    <!-- Shadow System Metrics -->
+                    <div style="padding: 15px; background: #f7fafc; border-radius: 6px;">
+                        <h4 style="margin: 0 0 10px 0; color: #4a5568; font-size: 0.95em;">${systemNames[compareSystem]}</h4>
+                        ${generateMetricsDisplay(shadowResults)}
+                    </div>
+                </div>
+                
+                <!-- Improvement/Regression Indicators -->
+                ${generateMetricsComparison(primaryResults, shadowResults, currentSystem, compareSystem)}
+            </div>
             
             <div style="margin-top: 15px; padding: 15px; background: #f7fafc; border-radius: 8px;">
                 <strong style="color: #1565c0;">💡 Key Insight:</strong>
@@ -6055,8 +6318,8 @@ function displayResults(results, system) {
     // Add Shadow Result Comparison UI
     // Skip comparison section for STV (per user request)
     const compatibleSystems = getCompatibleSystems(system);
-    // Show comparison section if there are compatible systems OR if FPTP (to show upcoming feature note)
-    if ((compatibleSystems.length > 0 && system !== 'stv') || system === 'fptp') {
+    // Show comparison section if there are compatible systems
+    if (compatibleSystems.length > 0 && system !== 'stv') {
         const systemFullNames = {
             'fptp': 'First-Past-the-Post',
             'irv': 'Instant-Runoff Voting',
@@ -6072,37 +6335,23 @@ function displayResults(results, system) {
             <p style="color: #666; margin-bottom: 15px;">See how these same votes would produce different results under another electoral system.</p>
         `;
         
-        // Show "upcoming feature" note for FPTP only
-        if (system === 'fptp') {
-            html += `
-            <div style="padding: 15px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">
-                <p style="margin: 0; color: #1565c0; font-weight: 500;">
-                    🚧 Upcoming Feature
-                </p>
-                <p style="margin: 8px 0 0 0; color: #424242; line-height: 1.5;">
-                    FPTP to IRV comparison is currently under development and will be available in a future update.
-                </p>
-            </div>
-            `;
-        } else {
-            // Show normal dropdown for other systems (including IRV)
-            html += `
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <select id="shadowSystemSelect" style="padding: 10px 15px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; min-width: 250px;">
-                    <option value="">-- Select System to Compare --</option>
-                    ${compatibleSystems.map(s => 
-                        `<option value="${s}">${systemFullNames[s]}</option>`
-                    ).join('')}
-                </select>
-                
-                <button onclick="showShadowResult()" class="btn-calculate" style="padding: 10px 20px;">
-                    Compare Results
-                </button>
-            </div>
+        // Show normal dropdown for all systems that have compatible options
+        html += `
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <select id="shadowSystemSelect" style="padding: 10px 15px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; min-width: 250px;">
+                <option value="">-- Select System to Compare --</option>
+                ${compatibleSystems.map(s => 
+                    `<option value="${s}">${systemFullNames[s]}</option>`
+                ).join('')}
+            </select>
             
-            <div id="shadowResultsDisplay" style="margin-top: 15px;"></div>
-            `;
-        }
+            <button onclick="showShadowResult()" class="btn-calculate" style="padding: 10px 20px;">
+                Compare Results
+            </button>
+        </div>
+        
+        <div id="shadowResultsDisplay" style="margin-top: 15px;"></div>
+        `;
         
         html += `</div>`;
     }
@@ -6201,9 +6450,9 @@ function displayResults(results, system) {
                 }));
                 
                 const comparisonData = results.parties.map(p => ({
-                    party: p.name,
-                    voteShare: p.votePercentage,
-                    seatShare: p.seatPercentage,
+                    label: p.name,        // Changed from 'party' to 'label'
+                    votePct: p.votePercentage,   // Changed from 'voteShare' to 'votePct'
+                    seatPct: p.seatPercentage,   // Changed from 'seatShare' to 'seatPct'
                     color: p.color
                 }));
                 
