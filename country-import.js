@@ -247,6 +247,75 @@ window.autofillVotes = function() {
         });
     }
     
+    // Handle FPTP legislative mode
+    const raceType = document.querySelector('input[name="raceType"]:checked')?.value;
+    if (system === 'fptp' && raceType === 'legislative') {
+        // Get total seats from legislature input
+        const totalSeatsInput = document.getElementById('totalLegislatureSeats');
+        const totalSeats = totalSeatsInput ? parseInt(totalSeatsInput.value) || 100 : 100;
+        
+        // Fill aggregate party votes
+        const partyVotes = [];
+        parties.forEach(party => {
+            const randomFactor = 0.3 + Math.random() * variation;
+            const votes = Math.floor(baseVotes * randomFactor * 20); // Higher base for aggregate
+            const input = document.getElementById(`party-${party.id}`);
+            if (input) {
+                input.value = formatNum(votes);
+            }
+            partyVotes.push({ id: party.id, votes: votes });
+        });
+        
+        // Calculate total votes for proportional distribution
+        const totalVotes = partyVotes.reduce((sum, p) => sum + p.votes, 0);
+        
+        // Allocate seats roughly proportionally with FPTP winner's bonus
+        let seatsAllocated = 0;
+        const seatAllocations = [];
+        
+        // Sort parties by votes (descending)
+        partyVotes.sort((a, b) => b.votes - a.votes);
+        
+        // Give winner's bonus to top party (FPTP characteristic)
+        const winnerBonus = 1.3; // 30% bonus for largest party
+        
+        partyVotes.forEach((party, index) => {
+            let voteShare = party.votes / totalVotes;
+            if (index === 0) {
+                voteShare *= winnerBonus; // Apply winner's bonus
+            }
+            
+            // Calculate seats (leave last party for remainder)
+            if (index < partyVotes.length - 1) {
+                let seats = Math.round(voteShare * totalSeats);
+                // Ensure at least 0 seats
+                seats = Math.max(0, seats);
+                seatAllocations.push({ id: party.id, seats: seats });
+                seatsAllocated += seats;
+            }
+        });
+        
+        // Assign remaining seats to last party
+        const remainingSeats = totalSeats - seatsAllocated;
+        seatAllocations.push({ 
+            id: partyVotes[partyVotes.length - 1].id, 
+            seats: Math.max(0, remainingSeats) 
+        });
+        
+        // Fill seat inputs
+        seatAllocations.forEach(allocation => {
+            const seatsInput = document.getElementById(`fptp-seats-${allocation.id}`);
+            if (seatsInput) {
+                seatsInput.value = allocation.seats;
+            }
+        });
+        
+        // Update seat validator
+        if (typeof validateFPTPSeatsTotal === 'function') {
+            validateFPTPSeatsTotal();
+        }
+    }
+    
     // Fill ranking ballots for IRV/STV systems
     const rankingSystems = ['irv', 'stv'];
     if (rankingSystems.includes(system)) {

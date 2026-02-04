@@ -1,5 +1,52 @@
 // Historical Election Presets for Counterfactual Analysis
 const ELECTION_PRESETS = {
+    "uk_2017": {
+        name: "2017 United Kingdom General Election",
+        description: "Theresa May's snap election backfired. Conservatives lost majority, forming minority government with DUP support. Demonstrates FPTP disproportionality: Conservatives got 42.4% votes but 48.8% seats; UKIP got 1.8% votes but 0 seats.",
+        system: "fptp",
+        raceType: "legislative",  // Force legislative mode for FPTP
+        totalSeats: 650,
+        threshold: 0,  // FPTP has no threshold
+        allocationMethod: "plurality",  // For display purposes
+        parties: [
+            { id: 9001, name: "Conservative Party", color: "#0087DC" },
+            { id: 9002, name: "Labour Party", color: "#E4003B" },
+            { id: 9003, name: "Scottish National Party", color: "#FDF38E" },
+            { id: 9004, name: "Liberal Democrats", color: "#FAA61A" },
+            { id: 9005, name: "Democratic Unionist Party", color: "#D46A4C" },
+            { id: 9006, name: "Sinn Féin", color: "#326760" },
+            { id: 9007, name: "Plaid Cymru", color: "#005B54" },
+            { id: 9008, name: "Green Party", color: "#6AB023" },
+            { id: 9009, name: "UKIP", color: "#70147A" },
+            { id: 9010, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                9001: 13636684,  // Conservative Party
+                9002: 12877918,  // Labour Party
+                9003: 977569,    // SNP
+                9004: 2371861,   // Liberal Democrats
+                9005: 292316,    // DUP
+                9006: 238915,    // Sinn Féin
+                9007: 164466,    // Plaid Cymru
+                9008: 525665,    // Green Party
+                9009: 594068,    // UKIP
+                9010: 524722     // Others
+            }
+        },
+        seats: {
+            9001: 317,  // Conservative Party
+            9002: 262,  // Labour Party
+            9003: 35,   // SNP
+            9004: 12,   // Liberal Democrats
+            9005: 10,   // DUP
+            9006: 7,    // Sinn Féin
+            9007: 4,    // Plaid Cymru
+            9008: 1,    // Green Party
+            9009: 0,    // UKIP
+            9010: 2     // Others
+        }
+    },
     "sweden_2022": {
         name: "2022 Swedish General Election",
         description: "Right-wing coalition victory using Sainte-Lague method",

@@ -111,6 +111,15 @@ function importElectionPreset(presetKey) {
     document.getElementById('electoralSystem').value = preset.system;
     onSystemChange(); // Trigger system-specific UI updates
     
+    // For FPTP legislative mode presets, set the race type radio button
+    if (preset.system === 'fptp' && preset.raceType === 'legislative') {
+        const legislativeRadio = document.getElementById('legislativeRaceRadio');
+        if (legislativeRadio) {
+            legislativeRadio.checked = true;
+            updateRaceType(); // Trigger race type change to hide candidates section
+        }
+    }
+    
     // For ranking systems, set totalVoters AFTER onSystemChange creates the input
     if (preset.ballots && (preset.system === 'irv' || preset.system === 'stv')) {
         const totalVotersInput = document.getElementById('totalVoters');
@@ -158,7 +167,7 @@ function importElectionPreset(presetKey) {
     setTimeout(() => {
         // Only populate vote boxes if preset has votes (party-list, MMP, MMM systems)
         if (preset.votes) {
-            populateVotingBoxes(preset.votes);
+            populateVotingBoxes(preset.votes, preset);
         }
         
         // For ranking systems (IRV, STV), populate ranking ballots
@@ -173,7 +182,7 @@ function importElectionPreset(presetKey) {
     }, 800); // Increased from 500ms to 800ms for more stability
 }
 
-function populateVotingBoxes(voteData) {
+function populateVotingBoxes(voteData, preset) {
     // Fill Party Vote inputs
     if (voteData.parties) {
         Object.entries(voteData.parties).forEach(([id, count]) => {
@@ -192,6 +201,22 @@ function populateVotingBoxes(voteData) {
                 input.value = formatNumber(count);
             }
         });
+    }
+    
+    // For FPTP legislative mode, also populate seats won
+    if (preset && preset.system === 'fptp' && preset.raceType === 'legislative' && preset.seats) {
+        setTimeout(() => {
+            Object.entries(preset.seats).forEach(([partyId, seatCount]) => {
+                const seatsInput = document.getElementById(`fptp-seats-${partyId}`);
+                if (seatsInput) {
+                    seatsInput.value = seatCount;
+                }
+            });
+            // Update seat validator
+            if (typeof validateFPTPSeatsTotal === 'function') {
+                validateFPTPSeatsTotal();
+            }
+        }, 100);
     }
 }
 
@@ -412,7 +437,7 @@ const SYSTEM_RULES = {
         needsPartyVote: false,
         needsCandidates: true,
         isRanking: false,
-        raceScopes: ['single'],  // Legislative mode disabled until district-by-district entry UI is implemented
+        raceScopes: ['single', 'legislative'],  // Legislative mode now enabled for aggregate entry
         description: 'Simple plurality voting where highest vote wins'
     },
     'irv': {
@@ -1026,10 +1051,22 @@ function onSystemChange() {
     } else if (rules.needsCandidates && !rules.needsPartyVote) {
         // Candidates only - parties just for grouping/colors (e.g., FPTP, IRV, STV)
         partiesSection.style.display = 'block';
-        candidatesSection.style.display = 'block';
+        const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+        
+        // Hide candidates for FPTP in legislative mode
+        if (system === 'fptp' && raceType === 'legislative') {
+            candidatesSection.style.display = 'none';
+            updateSectionNumbers(2, null, 3);
+        } else {
+            candidatesSection.style.display = 'block';
+            updateSectionNumbers(2, 3, 4);
+            updateCandidatePartySelect(); // Populate the dropdown
+        }
         votingSection.style.display = 'block';
-        updateSectionNumbers(2, 3, 4);
-        updateCandidatePartySelect(); // Populate the dropdown
+        
+        if (system !== 'fptp' || raceType === 'single') {
+            updateCandidatePartySelect(); // Populate the dropdown
+        }
     } else {
         // Fallback: show parties section for any system (shouldn't happen, but safety net)
         console.warn('onSystemChange: Unexpected rule combination, showing all sections', rules);
@@ -1208,6 +1245,7 @@ function updateRaceType() {
     const raceType = document.querySelector('input[name="raceType"]:checked').value;
     const description = document.getElementById('raceTypeDescription');
     const seatsContainer = document.getElementById('legislatureSeatsContainer');
+    const system = document.getElementById('electoralSystem').value;
     
     if (raceType === 'single') {
         description.textContent = 'Single race: Simulate one electoral district or seat.';
@@ -1215,6 +1253,18 @@ function updateRaceType() {
     } else {
         description.textContent = 'Entire legislature: Simulate a full parliament with a custom number of seats.';
         if (seatsContainer) seatsContainer.style.display = 'flex';
+    }
+    
+    // Hide Candidates section for FPTP in legislative mode
+    const candidatesSection = document.getElementById('candidatesSection');
+    if (system === 'fptp' && raceType === 'legislative') {
+        candidatesSection.style.display = 'none';
+        // Update section numbers: 2 (Parties), 3 (Voting)
+        updateSectionNumbers(2, null, 3);
+    } else if (system === 'fptp' && raceType === 'single') {
+        candidatesSection.style.display = 'block';
+        // Restore section numbers: 2 (Parties), 3 (Candidates), 4 (Voting)
+        updateSectionNumbers(2, 3, 4);
     }
     
     // Update voting inputs to reflect the change
@@ -1478,6 +1528,81 @@ function updateVotingInputs() {
     
     let html = '';
     
+    // Special case: FPTP Legislative Mode (aggregate entry)
+    const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+
+    if (system === 'fptp' && raceType === 'legislative') {
+        // RISK MITIGATION #1: Clear any persisted candidate vote state when entering legislative mode
+        // This prevents DOM/state sync issues when toggling between modes
+        
+        // Hide candidate section entirely - we're doing aggregate entry
+        html += '<div style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 20px;">';
+        html += '<p style="margin: 0; color: #856404;"><strong>📊 Aggregate Mode:</strong> Enter total votes and seats won across all districts.</p>';
+        html += '<p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">This mode demonstrates disproportionality in FPTP multi-seat elections.</p>';
+        html += '</div>';
+        
+        // Section 1: Aggregate party votes
+        html += '<div class="voting-input-section"><h4>Aggregate Party Votes</h4>';
+        html += '<p style="margin-bottom: 10px; color: #666; font-style: italic;">Total votes received by each party across all districts</p>';
+        
+        parties.forEach(party => {
+            html += `
+                <div class="vote-input-row">
+                    <label>
+                        <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
+                        ${party.name}
+                    </label>
+                    <input type="text" min="0" value="0" id="party-${party.id}" class="number-input" />
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        // Section 2: Actual seats won
+        html += '<div class="voting-input-section"><h4>Seats Won</h4>';
+        html += '<p style="margin-bottom: 10px; color: #666; font-style: italic;">Number of seats actually won by each party</p>';
+        
+        parties.forEach(party => {
+            html += `
+                <div class="vote-input-row">
+                    <label>
+                        <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
+                        ${party.name}
+                    </label>
+                    <input type="number" min="0" value="0" id="fptp-seats-${party.id}" class="number-input" style="width: 100px;" oninput="validateFPTPSeatsTotal()" />
+                </div>
+            `;
+        });
+        
+        // RISK MITIGATION #2: Add running total validator
+        html += '<div id="fptp-seats-validator" style="margin-top: 15px; padding: 10px; border-radius: 8px; background: #f5f5f5;">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: center;">';
+        html += '<span style="font-weight: 600;">Total Seats Allocated:</span>';
+        html += '<span id="fptp-seats-total" style="font-size: 1.2em; font-weight: bold;">0</span>';
+        html += '</div>';
+        html += '<div style="margin-top: 5px; font-size: 0.9em; color: #666;">';
+        html += 'Expected: <span id="fptp-seats-expected">100</span> seats';
+        html += '</div>';
+        html += '</div>';
+        
+        html += '</div>';
+        
+        container.innerHTML = html;
+        
+        // Add event listeners for number formatting
+        document.querySelectorAll('.number-input').forEach(input => {
+            input.addEventListener('blur', formatNumberInput);
+            input.addEventListener('focus', function() {
+                this.value = this.value.replace(/,/g, '');
+            });
+        });
+        
+        // Initialize validator
+        validateFPTPSeatsTotal();
+        
+        return; // Exit early - don't show candidate inputs
+    }
+    
     // Check if this is a ranking system
     const isRankingSystem = system === 'irv' || system === 'stv';
     
@@ -1585,6 +1710,45 @@ function updateVotingInputs() {
             this.value = this.value.replace(/,/g, '');
         });
     });
+}
+
+function validateFPTPSeatsTotal() {
+    // Get expected total from legislature seats input
+    const expectedSeats = parseInt(document.getElementById('totalLegislatureSeats')?.value) || 100;
+    
+    // Calculate actual total from all party seat inputs
+    let actualTotal = 0;
+    parties.forEach(party => {
+        const seatInput = document.getElementById(`fptp-seats-${party.id}`);
+        if (seatInput) {
+            actualTotal += parseInt(seatInput.value) || 0;
+        }
+    });
+    
+    // Update display
+    const totalDisplay = document.getElementById('fptp-seats-total');
+    const expectedDisplay = document.getElementById('fptp-seats-expected');
+    const validator = document.getElementById('fptp-seats-validator');
+    
+    if (totalDisplay) totalDisplay.textContent = actualTotal;
+    if (expectedDisplay) expectedDisplay.textContent = expectedSeats;
+    
+    // Color code based on match
+    if (validator) {
+        if (actualTotal === expectedSeats && actualTotal > 0) {
+            validator.style.background = '#d4edda';
+            validator.style.borderLeft = '4px solid #28a745';
+            totalDisplay.style.color = '#28a745';
+        } else if (actualTotal === 0) {
+            validator.style.background = '#f5f5f5';
+            validator.style.borderLeft = '4px solid #ccc';
+            totalDisplay.style.color = '#666';
+        } else {
+            validator.style.background = '#f8d7da';
+            validator.style.borderLeft = '4px solid #dc3545';
+            totalDisplay.style.color = '#dc3545';
+        }
+    }
 }
 
 function incrementBallotTypes() {
@@ -1918,7 +2082,36 @@ function calculateResults() {
     let results;
     switch(params.system) {
         case 'fptp':
-            results = calculateFPTP(params.votes, params.totalSeats);
+            const raceType = document.querySelector('input[name="raceType"]:checked')?.value || 'single';
+            
+            if (raceType === 'legislative') {
+                // Collect party seats from fptp-seats-{id} inputs
+                const partySeats = {};
+                let totalSeatsEntered = 0;
+                
+                parties.forEach(party => {
+                    const seatsInput = document.getElementById(`fptp-seats-${party.id}`);
+                    const seats = seatsInput ? parseInt(seatsInput.value) || 0 : 0;
+                    partySeats[party.id] = seats;
+                    totalSeatsEntered += seats;
+                });
+                
+                // RISK MITIGATION #2: Validate total seats before calculating
+                if (totalSeatsEntered !== params.totalSeats) {
+                    alert(`Warning: Total seats entered (${totalSeatsEntered}) does not match legislature size (${params.totalSeats}). Please adjust the seat allocations.`);
+                    return;
+                }
+                
+                if (totalSeatsEntered === 0) {
+                    alert('Please enter seat counts for at least one party.');
+                    return;
+                }
+                
+                results = calculateFPTP_Legislative(params.votes.parties, partySeats, params.totalSeats);
+            } else {
+                // Original single-race FPTP
+                results = calculateFPTP(params.votes, params.totalSeats);
+            }
             break;
         case 'irv':
             if (params.totalVoters === 0) {
@@ -2106,6 +2299,53 @@ function calculateFPTP(votes, totalSeats) {
         totalVotes: totalVotes
     };
 }
+
+function calculateFPTP_Legislative(partyVotes, partySeats, totalSeats) {
+    // Calculate vote shares and seat shares
+    const totalVotes = Object.values(partyVotes).reduce((sum, v) => sum + v, 0);
+    const totalSeatsWon = Object.values(partySeats).reduce((sum, v) => sum + v, 0);
+    
+    const results = parties.map(party => {
+        const votes = partyVotes[party.id] || 0;
+        const seats = partySeats[party.id] || 0;
+        const voteShare = totalVotes > 0 ? (votes / totalVotes * 100) : 0;
+        const seatShare = totalSeatsWon > 0 ? (seats / totalSeatsWon * 100) : 0;
+        const bonus = seatShare - voteShare; // Seat bonus/penalty
+        
+        return {
+            name: party.name,
+            party: party.name,
+            color: party.color,
+            votes: votes,
+            seats: seats,
+            votePercentage: voteShare,
+            seatPercentage: seatShare,
+            bonus: bonus
+        };
+    });
+    
+    // RISK MITIGATION #3: Filter out parties with 0 votes AND 0 seats for cleaner charts
+    // But keep parties with 0 in one column but not the other (important for analysis)
+    const filteredResults = results.filter(r => r.votes > 0 || r.seats > 0);
+    
+    filteredResults.sort((a, b) => b.seats - a.seats);
+    
+    // Calculate Gallagher Index (disproportionality measure)
+    const gallagherIndex = Math.sqrt(
+        filteredResults.reduce((sum, r) => sum + Math.pow(r.seatPercentage - r.votePercentage, 2), 0) / 2
+    );
+    
+    return {
+        type: 'fptp-legislative',
+        parties: filteredResults,
+        totalVotes: totalVotes,
+        totalSeats: totalSeatsWon,
+        expectedSeats: totalSeats,  // Add expected for validation
+        gallagherIndex: gallagherIndex.toFixed(2),
+        note: `FPTP Legislative Analysis: ${totalSeatsWon} seats distributed across ${parties.length} parties. Gallagher Index: ${gallagherIndex.toFixed(2)} (measures disproportionality - 0 is perfect proportionality, >20 is very disproportional).`
+    };
+}
+
 
 function calculateTRS(votes) {
     const results = candidates.map(candidate => {
@@ -4993,6 +5233,44 @@ function displayResults(results, system) {
         if (system === 'irv' && results.rounds && results.rounds.length > 0) {
             html += createRoundByRoundDisplay(results.rounds, candidates, 'irv');
         }
+    } else if (results.type === 'fptp-legislative') {
+        html += '<h3>FPTP Legislative Results</h3>';
+        html += `<p>${results.note}</p>`;
+        html += '<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">';
+        html += '<thead><tr>';
+        html += '<th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd;">Party</th>';
+        html += '<th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd;">Votes</th>';
+        html += '<th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd;">Vote %</th>';
+        html += '<th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd;">Seats</th>';
+        html += '<th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd;">Seat %</th>';
+        html += '<th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd;">Bonus/Penalty</th>';
+        html += '</tr></thead><tbody>';
+        
+        results.parties.forEach(party => {
+            const bonusColor = party.bonus > 0 ? '#4caf50' : (party.bonus < 0 ? '#f44336' : '#666');
+            const bonusSign = party.bonus > 0 ? '+' : '';
+            html += '<tr>';
+            html += `<td style="padding: 10px; border-bottom: 1px solid #eee;">
+                       <span style="display: inline-block; width: 12px; height: 12px; background-color: ${party.color}; border-radius: 50%; margin-right: 8px;"></span>
+                       ${party.name}
+                     </td>`;
+            html += `<td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">${party.votes.toLocaleString()}</td>`;
+            html += `<td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">${party.votePercentage.toFixed(2)}%</td>`;
+            html += `<td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">${party.seats}</td>`;
+            html += `<td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee;">${party.seatPercentage.toFixed(2)}%</td>`;
+            html += `<td style="text-align: right; padding: 10px; border-bottom: 1px solid #eee; color: ${bonusColor}; font-weight: 600;">
+                       ${bonusSign}${party.bonus.toFixed(2)}%
+                     </td>`;
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        
+        // Add charts section
+        html += '<div class="charts-container">';
+        html += '<canvas id="votesChart" width="400" height="400"></canvas>';
+        html += '<canvas id="seatsChart" width="400" height="400"></canvas>';
+        html += '<canvas id="comparisonChart" width="600" height="400"></canvas>';
+        html += '</div>';
     } else if (results.type === 'party') {
         // Add charts section
         html += '<div class="charts-container">';
@@ -5908,6 +6186,30 @@ function displayResults(results, system) {
                 if (results.type === 'mixed' && candidateVotesChartData && candidateVotesChartData.length > 0) {
                     window.createPieChart('candidateVotesChart', candidateVotesChartData, 'Candidate Vote Distribution');
                 }
+            } else if (results.type === 'fptp-legislative') {
+                // FPTP Legislative mode: display vote share and seat distribution
+                const voteChartData = results.parties.map(p => ({
+                    label: p.name,
+                    value: p.votePercentage,
+                    color: p.color
+                }));
+                
+                const seatChartData = results.parties.map(p => ({
+                    label: p.name,
+                    value: p.seatPercentage,
+                    color: p.color
+                }));
+                
+                const comparisonData = results.parties.map(p => ({
+                    party: p.name,
+                    voteShare: p.votePercentage,
+                    seatShare: p.seatPercentage,
+                    color: p.color
+                }));
+                
+                window.createPieChart('votesChart', voteChartData, 'Vote Share');
+                window.createPieChart('seatsChart', seatChartData, 'Seat Distribution');
+                window.createComparisonBarChart('comparisonChart', comparisonData, 'Vote Share vs Seat Share');
             } else if (seatsChartData.length > 0) {
                 let seatsTitle = 'Seat Distribution';
                 if (results.type === 'candidate' || results.type === 'approval') {
