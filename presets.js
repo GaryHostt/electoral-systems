@@ -47,6 +47,49 @@ const ELECTION_PRESETS = {
             9010: 2     // Others
         }
     },
+    "canada_2008": {
+        name: "2008 Canadian Federal Election",
+        description: "40th Canadian General Election. Conservative minority government. Green Party won 6.78% but zero seats, highlighting FPTP's disproportionality. Bloc Québécois regional concentration secured 49 seats with just 9.98%.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 308,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 10001, name: "Conservative Party", color: "#1A4782" },
+            { id: 10002, name: "Liberal Party", color: "#D71920" },
+            { id: 10003, name: "New Democratic Party (NDP)", color: "#F37021" },
+            { id: 10004, name: "Bloc Québécois", color: "#87CEEB" },
+            { id: 10005, name: "Green Party", color: "#6AB023" },
+            { id: 10006, name: "Independent / Others", color: "#808080" }
+        ],
+        candidates: [
+            { id: 10001, name: "Conservative Candidate", partyId: 10001 },
+            { id: 10002, name: "Liberal Candidate", partyId: 10002 },
+            { id: 10003, name: "NDP Candidate", partyId: 10003 },
+            { id: 10004, name: "Bloc Candidate", partyId: 10004 },
+            { id: 10005, name: "Green Candidate", partyId: 10005 },
+            { id: 10006, name: "Independent Candidate", partyId: 10006 }
+        ],
+        votes: {
+            parties: {
+                10001: 5209069,  // Conservative - 37.65%
+                10002: 3633185,  // Liberal - 26.26%
+                10003: 2515288,  // NDP - 18.18%
+                10004: 1379991,  // Bloc Québécois - 9.98%
+                10005: 937613,   // Green - 6.78%
+                10006: 159148    // Independent / Others - 1.15%
+            }
+        },
+        seats: {
+            10001: 143,  // Conservative
+            10002: 77,   // Liberal
+            10003: 37,   // NDP
+            10004: 49,   // Bloc Québécois
+            10005: 0,    // Green
+            10006: 2     // Independent / Others
+        }
+    },
     "sweden_2022": {
         name: "2022 Swedish General Election",
         description: "Right-wing coalition victory using Sainte-Lague method",
@@ -149,7 +192,20 @@ const ELECTION_PRESETS = {
                 2005: 4699917,   // AfD
                 2006: 2286070    // The Left
             }
-        }
+        },
+        actualSeats: {
+            2001: 206,  // SPD
+            2002: 197,  // CDU/CSU
+            2003: 118,  // Alliance 90/The Greens
+            2004: 92,   // FDP
+            2005: 83,   // AfD
+            2006: 39    // The Left
+        },
+        specialSeats: {
+            ssw: 1  // SSW (South Schleswig Voters' Association) - minority party, 1 seat
+        },
+        overhangSeats: 138,
+        finalParliamentSize: 736  // Total including overhang and SSW
     },
     "germany_2025": {
         name: "2025 German Federal Election",
@@ -197,7 +253,18 @@ const ELECTION_PRESETS = {
                 2106: 1944200,   // FDP
                 2107: 1422100    // LINKE
             }
-        }
+        },
+        actualSeats: {
+            2101: 258,  // CDU/CSU
+            2102: 141,  // AfD
+            2103: 118,  // SPD
+            2104: 89,   // GRÜNE
+            2105: 64,   // BSW
+            2106: 38,   // FDP
+            2107: 25    // LINKE
+        },
+        overhangSeats: 135,  // Approximate overhang/leveling seats
+        finalParliamentSize: 733  // Total including overhang
     },
     "japan_2021": {
         name: "2021 Japanese General Election",
@@ -244,7 +311,20 @@ const ELECTION_PRESETS = {
                 4006: 1246725,  // DPP
                 4007: 0         // Reiwa (Ran only list candidates)
             }
-        }
+        },
+        actualSeats: {
+            4001: 261,  // LDP
+            4002: 96,   // CDP
+            4003: 41,   // Ishin
+            4004: 32,   // Komeito
+            4005: 10,   // JCP
+            4006: 11    // DPP
+        },
+        specialSeats: {
+            others: 14  // Others/Independents
+        },
+        overhangSeats: 0,
+        finalParliamentSize: 465
     },
     "japan_2024": {
         name: "2024 Japanese General Election",
@@ -291,7 +371,21 @@ const ELECTION_PRESETS = {
                 4106: 425000,    // Reiwa
                 4107: 3695000    // JCP
             }
-        }
+        },
+        actualSeats: {
+            4101: 191,  // LDP
+            4102: 148,  // CDP
+            4103: 28,   // DPP
+            4104: 24,   // Komeito
+            4105: 38,   // Nippon Ishin
+            4106: 9,    // Reiwa
+            4107: 8     // JCP
+        },
+        specialSeats: {
+            others: 19  // Others/Independents
+        },
+        overhangSeats: 0,  // Parallel system - no overhang
+        finalParliamentSize: 465  // 289 district + 176 list
     },
     "ireland_pres_2011": {
         name: "2011 Irish Presidential Election",
@@ -394,7 +488,17 @@ const ELECTION_PRESETS = {
                 6005: 40000,    // NZ First
                 6006: 95000     // Te Pāti Māori
             }
-        }
+        },
+        actualSeats: {
+            6001: 48,  // National
+            6002: 34,  // Labour
+            6003: 15,  // Green
+            6004: 11,  // ACT
+            6005: 8,   // NZ First
+            6006: 6    // Te Pāti Māori
+        },
+        overhangSeats: 2,  // Te Pāti Māori won 6 electorate seats but entitled to only 4 proportionally
+        finalParliamentSize: 122  // Later 123 after by-election
     },
     "new_zealand_2020": {
         name: "2020 New Zealand General Election",
@@ -434,7 +538,16 @@ const ELECTION_PRESETS = {
                 6104: 176128,   // ACT
                 6105: 60837     // Māori
             }
-        }
+        },
+        actualSeats: {
+            6101: 65,  // Labour
+            6102: 33,  // National
+            6103: 10,  // Green
+            6104: 10,  // ACT
+            6105: 2    // Te Pāti Māori
+        },
+        overhangSeats: 0,
+        finalParliamentSize: 120  // Standard size, no overhang
     },
     "taiwan_2024": {
         name: "2024 Taiwan Legislative Election",
@@ -465,7 +578,17 @@ const ELECTION_PRESETS = {
                 7002: 5401933,  // KMT
                 7003: 403357    // TPP
             }
-        }
+        },
+        actualSeats: {
+            7001: 51,   // DPP
+            7002: 52,   // KMT
+            7003: 8     // TPP
+        },
+        specialSeats: {
+            independents: 2
+        },
+        overhangSeats: 0,
+        finalParliamentSize: 113  // 73 district + 40 list
     },
     "taiwan_2020": {
         name: "2020 Taiwan Legislative Election",
@@ -504,7 +627,83 @@ const ELECTION_PRESETS = {
                 7104: 141952,   // NPP
                 7105: 60033     // PFP
             }
-        }
+        },
+        actualSeats: {
+            7101: 61,   // DPP
+            7102: 38,   // KMT
+            7103: 5,    // TPP
+            7104: 3,    // NPP
+            7105: 1     // PFP
+        },
+        specialSeats: {
+            independents: 5
+        },
+        overhangSeats: 0,
+        finalParliamentSize: 113
+    },
+    "italy_2022": {
+        name: "2022 Italian General Election (Chamber of Deputies)",
+        description: "19th Italian General Election under the Rosatellum law. Right-wing coalition victory led by Brothers of Italy. Parallel/MMM system with 400 seats (147 district, 245 list, 8 overseas). D'Hondt allocation for list seats.",
+        system: "parallel",
+        raceType: "legislative",
+        totalSeats: 400,
+        threshold: 0,
+        allocationMethod: "dhondt",
+        parties: [
+            { id: 11001, name: "Brothers of Italy (FdI)", color: "#003B7B" },
+            { id: 11002, name: "Democratic Party (PD)", color: "#EF3E3E" },
+            { id: 11003, name: "Five Star Movement (M5S)", color: "#FFD700" },
+            { id: 11004, name: "Lega", color: "#0A7F41" },
+            { id: 11005, name: "Forza Italia (FI)", color: "#0087DC" },
+            { id: 11006, name: "Action - Italia Viva (Az-IV)", color: "#E9B000" },
+            { id: 11007, name: "Greens and Left Alliance (AVS)", color: "#E53935" },
+            { id: 11008, name: "Others / Regional Parties", color: "#999999" }
+        ],
+        candidates: [
+            { id: 11001, name: "FdI Candidate", partyId: 11001 },
+            { id: 11002, name: "PD Candidate", partyId: 11002 },
+            { id: 11003, name: "M5S Candidate", partyId: 11003 },
+            { id: 11004, name: "Lega Candidate", partyId: 11004 },
+            { id: 11005, name: "FI Candidate", partyId: 11005 },
+            { id: 11006, name: "Az-IV Candidate", partyId: 11006 },
+            { id: 11007, name: "AVS Candidate", partyId: 11007 },
+            { id: 11008, name: "Others Candidate", partyId: 11008 }
+        ],
+        votes: {
+            parties: {
+                11001: 7301303,  // FdI - 25.99%
+                11002: 5348676,  // PD - 19.04%
+                11003: 4335494,  // M5S - 15.43%
+                11004: 2465114,  // Lega - 8.79%
+                11005: 2279266,  // FI - 8.11%
+                11006: 2186505,  // Az-IV - 7.78%
+                11007: 1021808,  // AVS - 3.64%
+                11008: 3191062   // Others - 11.22%
+            },
+            candidates: {
+                11001: 7301303,  // FdI
+                11002: 5348676,  // PD
+                11003: 4335494,  // M5S
+                11004: 2465114,  // Lega
+                11005: 2279266,  // FI
+                11006: 2186505,  // Az-IV
+                11007: 1021808,  // AVS
+                11008: 3191062   // Others
+            }
+        },
+        actualSeats: {
+            11001: 119,  // FdI
+            11002: 69,   // PD
+            11003: 52,   // M5S
+            11004: 66,   // Lega
+            11005: 45,   // FI
+            11006: 21,   // Az-IV
+            11007: 12,   // AVS
+            11008: 16    // Others
+        },
+        districtSeats: 147,
+        baseListSeats: 245,
+        finalParliamentSize: 400
     },
     "israel_2022": {
         name: "2022 Israeli Legislative Election",

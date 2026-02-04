@@ -864,3 +864,24 @@ input[type="color"] {
 }
 
 
+
+/* Toggle Switch Styles */
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #667eea;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}

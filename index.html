@@ -21,21 +21,6 @@
         </header>
 
         <div class="main-content">
-            <!-- Electoral System Selection -->
-            <section class="card">
-                <h2>1. Choose Electoral System</h2>
-                <select id="electoralSystem" class="system-select">
-                    <option value="">-- Select an Electoral System --</option>
-                    <option value="fptp">First-Past-the-Post (FPTP) / Single-Member Plurality (SMP)</option>
-                    <option value="irv">Instant-Runoff Voting (IRV) / Ranked-Choice Voting (RCV)</option>
-                    <option value="stv">Single Transferable Vote (STV)</option>
-                    <option value="mmp">Mixed-Member Proportional (MMP) / Additional Member System (AMS)</option>
-                    <option value="parallel">Parallel Voting / Mixed-Member Majoritarian (MMM)</option>
-                    <option value="party-list">Party-List Proportional Representation (PR)</option>
-                </select>
-                <div id="systemDescription" class="system-description"></div>
-            </section>
-
             <!-- Historical Election Presets - Collapsible -->
             <section class="card" id="presetsSection" style="display: none;">
                 <button onclick="togglePresetsPanel()" class="country-toggle-btn">
@@ -80,6 +65,13 @@
                             <span class="country-flag">🇹🇼</span>
                             <span class="country-name">Taiwan 2020</span>
                             <span class="country-count">Parallel • 113 seats • 5% threshold • D'Hondt</span>
+                        </button>
+                        
+                        <!-- Italy -->
+                        <button onclick="importElectionPreset('italy_2022')" class="country-btn">
+                            <span class="country-flag">🇮🇹</span>
+                            <span class="country-name">Italy 2022</span>
+                            <span class="country-count">Parallel • 400 seats • No threshold • D'Hondt</span>
                         </button>
                         
                         <!-- New Zealand (newest first) -->
@@ -129,6 +121,11 @@
                             <span class="country-name">United Kingdom 2017</span>
                             <span class="country-count">FPTP • 650 seats</span>
                         </button>
+                        <button onclick="importElectionPreset('canada_2008')" class="country-btn">
+                            <span class="country-flag">🇨🇦</span>
+                            <span class="country-name">Canada 2008</span>
+                            <span class="country-count">FPTP • 308 seats</span>
+                        </button>
                         <button onclick="importElectionPreset('israel_2022')" class="country-btn">
                             <span class="country-flag">🇮🇱</span>
                             <span class="country-name">Israel 2022</span>
@@ -156,6 +153,21 @@
                         </p>
                     </div>
                 </div>
+            </section>
+
+            <!-- Electoral System Selection -->
+            <section class="card">
+                <h2>1. Choose Electoral System</h2>
+                <select id="electoralSystem" class="system-select">
+                    <option value="">-- Select an Electoral System --</option>
+                    <option value="fptp">First-Past-the-Post (FPTP) / Single-Member Plurality (SMP)</option>
+                    <option value="irv">Instant-Runoff Voting (IRV) / Ranked-Choice Voting (RCV)</option>
+                    <option value="stv">Single Transferable Vote (STV)</option>
+                    <option value="mmp">Mixed-Member Proportional (MMP) / Additional Member System (AMS)</option>
+                    <option value="parallel">Parallel Voting / Mixed-Member Majoritarian (MMM)</option>
+                    <option value="party-list">Party-List Proportional Representation (PR)</option>
+                </select>
+                <div id="systemDescription" class="system-description"></div>
             </section>
 
             <!-- Party Management Section -->
@@ -482,6 +494,58 @@
                     </div>
                     
                     <div id="rankingBallotsContainer"></div>
+                </div>
+                
+                <!-- Manual Seat Override Toggle (MMP/MMM only) -->
+                <div id="manualSeatOverrideSection" style="display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border: 2px solid #667eea; border-radius: 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                        <div>
+                            <h4 style="margin: 0 0 5px 0; color: #667eea;">Manual Seat Input</h4>
+                            <p style="margin: 0; font-size: 0.9em; color: #666;">Override automatic seat allocation with actual results</p>
+                        </div>
+                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 60px; height: 34px;">
+                            <input type="checkbox" id="manualSeatOverrideToggle" style="opacity: 0; width: 0; height: 0;">
+                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Seat Input Grid (initially hidden) -->
+                    <div id="manualSeatInputs" style="display: none;">
+                        <div style="margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">
+                            <strong style="color: #1565c0;">Manual Entry Mode Active</strong>
+                            <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #1976d2;">
+                                Enter the actual seats won by each party. The system will compare these to calculated values.
+                            </p>
+                        </div>
+                        
+                        <!-- Dynamic seat inputs will be generated here -->
+                        <div id="manualSeatInputGrid" class="voting-input-section">
+                            <!-- Generated by updateManualSeatInputs() -->
+                        </div>
+                        
+                        <!-- Total Seats Counter with Real-time Validation -->
+                        <div id="manualSeatsTotalContainer" style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border: 2px solid #e0e0e0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong style="font-size: 1.1em;">Total Seats Entered:</strong>
+                                    <span id="manualSeatsTotal" style="font-size: 1.2em; font-weight: 600; color: #667eea; margin-left: 10px;">0</span>
+                                </div>
+                                <div>
+                                    <strong style="font-size: 1.1em;">Expected Total:</strong>
+                                    <span id="expectedSeatsTotal" style="font-size: 1.2em; font-weight: 600; color: #666; margin-left: 10px;">0</span>
+                                </div>
+                            </div>
+                            <div id="seatValidationIndicator" style="margin-top: 10px; padding: 10px; border-radius: 4px; display: none;">
+                                <!-- Status message populated by validateManualSeats() -->
+                            </div>
+                        </div>
+                        
+                        <!-- Validation Check Button -->
+                        <button id="validateManualSeatsBtn" onclick="validateManualSeatsComprehensive()" 
+                                style="margin-top: 15px; padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;">
+                            🔍 Run Comprehensive Validation Check
+                        </button>
+                    </div>
                 </div>
                 
                 <button onclick="calculateResults()" class="btn-calculate">🗳️ Calculate Election Results</button>

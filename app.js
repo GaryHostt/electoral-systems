@@ -13,7 +13,10 @@ let electionState = {
     baseListSeats: 0,         // NEW: For MMP/MMM list tier
     threshold: 5,
     allocationMethod: 'dhondt',
-    levelingEnabled: false
+    levelingEnabled: false,
+    isManualSeatMode: false,  // NEW: Tracks if manual mode is active
+    manualSeats: {},          // NEW: Stores user-entered seats {partyId: seatCount}
+    calculatedSeats: {}       // NEW: Stores system-calculated seats for comparison
 };
 
 // Keep backward compatibility aliases for now (will remove after full migration)
@@ -163,6 +166,33 @@ function importElectionPreset(presetKey) {
     const levelingToggle = document.getElementById('mmpLevelingToggle');
     if (levelingToggle) levelingToggle.checked = preset.levelingEnabled || false;
     
+    // NEW: If preset includes actual seats, automatically enable manual mode
+    if (preset.actualSeats) {
+        electionState.isManualSeatMode = true;
+        electionState.manualSeats = { ...preset.actualSeats };
+        electionState.calculatedSeats = {};  // Reset calculated seats
+        
+        // Show manual seat section if MMP/MMM
+        if (preset.system === 'mmp' || preset.system === 'parallel') {
+            const manualToggle = document.getElementById('manualSeatOverrideToggle');
+            if (manualToggle) {
+                manualToggle.checked = true;
+                const inputsDiv = document.getElementById('manualSeatInputs');
+                if (inputsDiv) inputsDiv.style.display = 'block';
+            }
+        }
+        
+        // Show info message
+        setTimeout(() => {
+            const message = preset.overhangSeats > 0 
+                ? `Imported actual results with ${preset.overhangSeats} overhang/leveling seats (Total: ${preset.finalParliamentSize} seats)`
+                : `Imported actual results (Total: ${preset.finalParliamentSize} seats)`;
+            
+            console.log(message);
+            // Could add UI notification here
+        }, 200);
+    }
+    
     // Populate voting boxes with preset vote counts
     setTimeout(() => {
         // Only populate vote boxes if preset has votes (party-list, MMP, MMM systems)
@@ -217,6 +247,22 @@ function populateVotingBoxes(voteData, preset) {
                 validateFPTPSeatsTotal();
             }
         }, 100);
+    }
+    
+    // NEW: Populate manual seats if provided
+    if (preset && preset.actualSeats && (preset.system === 'mmp' || preset.system === 'parallel')) {
+        setTimeout(() => {
+            updateManualSeatInputs(); // Generate inputs first
+            
+            Object.entries(preset.actualSeats).forEach(([partyId, seatCount]) => {
+                const seatsInput = document.getElementById(`manual-seats-${partyId}`);
+                if (seatsInput) {
+                    seatsInput.value = seatCount;
+                }
+            });
+            
+            updateManualSeatTotal(); // Update validation
+        }, 150);
     }
 }
 
@@ -899,6 +945,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // NEW: Setup manual seat override toggle
+    const manualToggle = document.getElementById('manualSeatOverrideToggle');
+    if (manualToggle) {
+        manualToggle.addEventListener('change', (e) => {
+            electionState.isManualSeatMode = e.target.checked;
+            const inputsDiv = document.getElementById('manualSeatInputs');
+            
+            if (e.target.checked) {
+                if (inputsDiv) inputsDiv.style.display = 'block';
+                updateManualSeatInputs();
+                updateManualSeatTotal();
+            } else {
+                if (inputsDiv) inputsDiv.style.display = 'none';
+                electionState.manualSeats = {};
+                electionState.calculatedSeats = {};
+            }
+        });
+    }
+    
     // Setup color picker
     setupColorPicker();
     
@@ -1102,6 +1167,20 @@ function onSystemChange() {
     }
     
     updateVotingInputs();
+    
+    // NEW: Show/hide manual seat override section
+    const manualSeatSection = document.getElementById('manualSeatOverrideSection');
+    if (manualSeatSection) {
+        if (system === 'mmp' || system === 'parallel') {
+            manualSeatSection.style.display = 'block';
+        } else {
+            manualSeatSection.style.display = 'none';
+            // Reset manual mode if switching away
+            electionState.isManualSeatMode = false;
+            const toggle = document.getElementById('manualSeatOverrideToggle');
+            if (toggle) toggle.checked = false;
+        }
+    }
     
     // Auto-generate candidates for MMP/MMM if needed
     autoGenerateMixedSystemCandidates();
@@ -1710,6 +1789,165 @@ function updateVotingInputs() {
             this.value = this.value.replace(/,/g, '');
         });
     });
+}
+
+// Generate manual seat input fields for each party
+function updateManualSeatInputs() {
+    const container = document.getElementById('manualSeatInputGrid');
+    if (!container) return;
+    
+    let html = '<h4 style="margin: 0 0 15px 0;">Seats Won by Party</h4>';
+    
+    parties.forEach(party => {
+        const currentValue = electionState.manualSeats[party.id] || 0;
+        html += `
+            <div class="vote-input-row">
+                <label>
+                    <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
+                    ${party.name}
+                </label>
+                <input type="number" min="0" max="1000" value="${currentValue}" 
+                       id="manual-seats-${party.id}" 
+                       class="number-input"
+                       oninput="updateManualSeatTotal()" />
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Real-time validation of manual seat total
+function updateManualSeatTotal() {
+    let total = 0;
+    parties.forEach(party => {
+        const input = document.getElementById(`manual-seats-${party.id}`);
+        if (input) {
+            const value = parseInt(input.value) || 0;
+            electionState.manualSeats[party.id] = value;
+            total += value;
+        }
+    });
+    
+    const system = document.getElementById('electoralSystem').value;
+    const districtSeats = parseInt(document.getElementById('districtSeatsInput')?.value) || 0;
+    const listSeats = parseInt(document.getElementById('listSeatsInput')?.value) || 0;
+    const expectedTotal = districtSeats + listSeats;
+    
+    // Update display
+    const totalDisplay = document.getElementById('manualSeatsTotal');
+    const expectedDisplay = document.getElementById('expectedSeatsTotal');
+    if (totalDisplay) totalDisplay.textContent = total;
+    if (expectedDisplay) expectedDisplay.textContent = expectedTotal;
+    
+    // Show validation indicator
+    const indicator = document.getElementById('seatValidationIndicator');
+    if (indicator) {
+        indicator.style.display = 'block';
+        
+        if (total === expectedTotal) {
+            indicator.style.background = '#d4edda';
+            indicator.style.borderLeft = '4px solid #2ecc71';
+            indicator.style.color = '#155724';
+            indicator.innerHTML = '✓ Seat total matches base parliament size';
+        } else if (total < expectedTotal) {
+            const diff = expectedTotal - total;
+            indicator.style.background = '#fff3cd';
+            indicator.style.borderLeft = '4px solid #ffc107';
+            indicator.style.color = '#856404';
+            indicator.innerHTML = `⚠ ${diff} seat${diff !== 1 ? 's' : ''} short of base size`;
+        } else {
+            const diff = total - expectedTotal;
+            // Overhang is normal in MMP - show as info, not error
+            indicator.style.background = '#e3f2fd';
+            indicator.style.borderLeft = '4px solid #2196f3';
+            indicator.style.color = '#1565c0';
+            indicator.innerHTML = `ℹ ${diff} overhang seat${diff !== 1 ? 's' : ''} (Total: ${total}, Base: ${expectedTotal})`;
+        }
+    }
+}
+
+// Comprehensive validation check
+function validateManualSeatsComprehensive() {
+    const total = Object.values(electionState.manualSeats).reduce((sum, s) => sum + s, 0);
+    const system = document.getElementById('electoralSystem').value;
+    const districtSeats = parseInt(document.getElementById('districtSeatsInput')?.value) || 0;
+    const listSeats = parseInt(document.getElementById('listSeatsInput')?.value) || 0;
+    const expectedTotal = districtSeats + listSeats;
+    
+    let issues = [];
+    
+    // Check 1: Total seats match
+    if (total !== expectedTotal) {
+        issues.push(`Total seats (${total}) does not match expected parliament size (${expectedTotal})`);
+    }
+    
+    // Check 2: No negative values
+    parties.forEach(party => {
+        const seats = electionState.manualSeats[party.id] || 0;
+        if (seats < 0) {
+            issues.push(`${party.name} has negative seats (${seats})`);
+        }
+    });
+    
+    // Check 3: At least one party has seats
+    if (total === 0) {
+        issues.push('No seats allocated to any party');
+    }
+    
+    // Display results
+    if (issues.length === 0) {
+        alert('✓ Validation Passed\n\nAll seat allocations are valid:\n• Total matches expected parliament size\n• No negative values\n• All data is consistent');
+    } else {
+        alert('⚠ Validation Issues Found\n\n' + issues.map((issue, i) => `${i + 1}. ${issue}`).join('\n'));
+    }
+}
+
+// Show logic trace modal for manual seat mode
+function showLogicTrace() {
+    const results = window.lastCalculationResults;
+    if (!results || !results.isManualMode) return;
+    
+    let traceHTML = '<div style="font-family: monospace; background: #f8f9fa; padding: 20px; border-radius: 8px;">';
+    traceHTML += '<h3 style="margin: 0 0 15px 0;">Logic Trace: Calculated vs Manual Seats</h3>';
+    traceHTML += '<table style="width: 100%; border-collapse: collapse;">';
+    traceHTML += '<thead><tr style="background: #667eea; color: white;">';
+    traceHTML += '<th style="padding: 10px; text-align: left;">Party</th>';
+    traceHTML += '<th style="padding: 10px; text-align: right;">Vote %</th>';
+    traceHTML += '<th style="padding: 10px; text-align: right;">Calculated Seats</th>';
+    traceHTML += '<th style="padding: 10px; text-align: right;">Manual Seats</th>';
+    traceHTML += '<th style="padding: 10px; text-align: right;">Difference</th>';
+    traceHTML += '</tr></thead><tbody>';
+    
+    results.results.forEach(r => {
+        const diffColor = r.seatDifference === 0 ? '#666' : (r.seatDifference > 0 ? '#2ecc71' : '#e74c3c');
+        traceHTML += `<tr style="border-bottom: 1px solid #ddd;">`;
+        traceHTML += `<td style="padding: 10px;">${r.name}</td>`;
+        traceHTML += `<td style="padding: 10px; text-align: right;">${r.percentage.toFixed(1)}%</td>`;
+        traceHTML += `<td style="padding: 10px; text-align: right;">${r.calculatedSeats}</td>`;
+        traceHTML += `<td style="padding: 10px; text-align: right;">${r.seats}</td>`;
+        traceHTML += `<td style="padding: 10px; text-align: right; color: ${diffColor}; font-weight: 600;">`;
+        traceHTML += `${r.seatDifference > 0 ? '+' : ''}${r.seatDifference}`;
+        traceHTML += `</td></tr>`;
+    });
+    
+    traceHTML += '</tbody></table>';
+    traceHTML += '<p style="margin-top: 15px; color: #666;">Differences show how manual entry diverges from system calculations.</p>';
+    traceHTML += '</div>';
+    
+    // Display in modal
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 800px; max-height: 80vh; overflow: auto;';
+    modal.innerHTML = traceHTML + '<button onclick="this.parentElement.remove(); document.querySelector(\'.logic-trace-backdrop\').remove()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; width: 100%;">Close</button>';
+    
+    // Add backdrop
+    const backdrop = document.createElement('div');
+    backdrop.className = 'logic-trace-backdrop';
+    backdrop.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;';
+    backdrop.onclick = () => { modal.remove(); backdrop.remove(); };
+    
+    document.body.appendChild(backdrop);
+    document.body.appendChild(modal);
 }
 
 function validateFPTPSeatsTotal() {
@@ -3931,6 +4169,11 @@ function calculateIterativeLeveling(districtWins, targets, partyVotes, baseParli
 }
 
 function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins = null) {
+    // CHECK: If manual seat mode is active, use manual seats
+    if (electionState.isManualSeatMode && Object.keys(electionState.manualSeats).length > 0) {
+        return calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins);
+    }
+    
     // Pure function - no DOM access
     // Mixed-Member Proportional: Compensatory system with district + list seats
     
@@ -4087,7 +4330,150 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     };
 }
 
+// Manual seat calculation for MMP
+function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins) {
+    // Ensure calculatedSeats object exists
+    if (!electionState.calculatedSeats || typeof electionState.calculatedSeats !== 'object') {
+        electionState.calculatedSeats = {};
+    }
+    
+    // First, run normal calculation to get what SHOULD have happened
+    electionState.isManualSeatMode = false; // Temporarily disable
+    const calculatedResults = calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins);
+    electionState.isManualSeatMode = true; // Re-enable
+    
+    // Store calculated seats for comparison
+    calculatedResults.results.forEach(party => {
+        const partyObj = parties.find(p => p.name === party.name);
+        if (partyObj) {
+            electionState.calculatedSeats[partyObj.id] = party.seats;
+        }
+    });
+    
+    // Build results using manual seats
+    const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+    const manualResults = parties.map(party => {
+        const voteCount = votes.parties[party.id] || 0;
+        const votePercentage = totalPartyVotes > 0 ? (voteCount / totalPartyVotes * 100) : 0;
+        const manualSeats = electionState.manualSeats[party.id] || 0;
+        const calculatedSeats = electionState.calculatedSeats[party.id] || 0;
+        const seatDifference = manualSeats - calculatedSeats;
+        
+        return {
+            name: party.name,
+            color: party.color,
+            votes: voteCount,
+            percentage: votePercentage,
+            seats: manualSeats,
+            calculatedSeats: calculatedSeats,
+            seatDifference: seatDifference,
+            isManualOverride: true
+        };
+    }).filter(r => r.votes > 0 || r.seats > 0);
+    
+    manualResults.sort((a, b) => b.seats - a.seats);
+    
+    // Calculate disproportionality using manual seats
+    const totalManualSeats = manualResults.reduce((sum, r) => sum + r.seats, 0);
+    const voteShares = {};
+    const seatShares = {};
+    manualResults.forEach(r => {
+        voteShares[r.name] = r.percentage;
+        seatShares[r.name] = totalManualSeats > 0 ? (r.seats / totalManualSeats * 100) : 0;
+    });
+    
+    const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
+    const gallagher = calculateGallagher(voteShares, seatShares);
+    
+    return {
+        type: 'mixed',
+        results: manualResults,
+        totalSeats: totalManualSeats,
+        totalVotes: totalPartyVotes,
+        disproportionality: disproportionality,
+        gallagher: gallagher,
+        isManualMode: true,
+        calculatedResults: calculatedResults,
+        threshold: threshold,
+        allocationMethod: allocationMethod
+    };
+}
+
+// Manual seat calculation for Parallel/MMM
+function calculateParallelWithManualSeats(votes, districtSeats, listSeats, threshold, allocationMethod, forcedDistricts) {
+    // Ensure calculatedSeats object exists
+    if (!electionState.calculatedSeats || typeof electionState.calculatedSeats !== 'object') {
+        electionState.calculatedSeats = {};
+    }
+    
+    // First, run normal calculation
+    electionState.isManualSeatMode = false;
+    const calculatedResults = calculateParallel(votes, districtSeats, listSeats, threshold, allocationMethod, forcedDistricts);
+    electionState.isManualSeatMode = true;
+    
+    // Store calculated seats
+    calculatedResults.results.forEach(party => {
+        const partyObj = parties.find(p => p.name === party.name);
+        if (partyObj) {
+            electionState.calculatedSeats[partyObj.id] = party.seats;
+        }
+    });
+    
+    // Build results using manual seats (same logic as MMP)
+    const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+    const manualResults = parties.map(party => {
+        const voteCount = votes.parties[party.id] || 0;
+        const votePercentage = totalPartyVotes > 0 ? (voteCount / totalPartyVotes * 100) : 0;
+        const manualSeats = electionState.manualSeats[party.id] || 0;
+        const calculatedSeats = electionState.calculatedSeats[party.id] || 0;
+        const seatDifference = manualSeats - calculatedSeats;
+        
+        return {
+            name: party.name,
+            color: party.color,
+            votes: voteCount,
+            percentage: votePercentage,
+            seats: manualSeats,
+            calculatedSeats: calculatedSeats,
+            seatDifference: seatDifference,
+            isManualOverride: true
+        };
+    }).filter(r => r.votes > 0 || r.seats > 0);
+    
+    manualResults.sort((a, b) => b.seats - a.seats);
+    
+    // Calculate disproportionality
+    const totalManualSeats = manualResults.reduce((sum, r) => sum + r.seats, 0);
+    const voteShares = {};
+    const seatShares = {};
+    manualResults.forEach(r => {
+        voteShares[r.name] = r.percentage;
+        seatShares[r.name] = totalManualSeats > 0 ? (r.seats / totalManualSeats * 100) : 0;
+    });
+    
+    const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
+    const gallagher = calculateGallagher(voteShares, seatShares);
+    
+    return {
+        type: 'mixed',
+        results: manualResults,
+        totalSeats: totalManualSeats,
+        totalVotes: totalPartyVotes,
+        disproportionality: disproportionality,
+        gallagher: gallagher,
+        isManualMode: true,
+        calculatedResults: calculatedResults,
+        threshold: threshold,
+        allocationMethod: allocationMethod
+    };
+}
+
 function calculateParallel(votes, districtSeats, listSeats, threshold, allocationMethod, forcedDistricts = null) {
+    // CHECK: If manual seat mode is active, use manual seats
+    if (electionState.isManualSeatMode && Object.keys(electionState.manualSeats).length > 0) {
+        return calculateParallelWithManualSeats(votes, districtSeats, listSeats, threshold, allocationMethod, forcedDistricts);
+    }
+    
     // Pure function - no DOM access
     // Parallel Voting (MMM): Non-compensatory mixed system
     
@@ -4732,6 +5118,11 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         } else if (compareToSystem === 'mmp') {
             // For STV → MMP, use district wins from STV results for Double-Gate
             const districtWins = translatedVotes._stvDistrictWins || null;
+            
+            // CRITICAL: Temporarily disable manual mode for shadow calculation
+            const wasManualMode = electionState.isManualSeatMode;
+            electionState.isManualSeatMode = false;
+            
             shadowResults = calculateMMP(
                 translatedVotes, 
                 params.districtSeats || Math.floor((params.totalSeats || 10) / 2),
@@ -4741,6 +5132,9 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
                 params.levelingEnabled || false,
                 districtWins // Pass district wins for Double-Gate
             );
+            
+            // Restore manual mode state
+            electionState.isManualSeatMode = wasManualMode;
         } else {
             shadowResults = calculators[compareToSystem](translatedVotes);
         }
@@ -4750,6 +5144,10 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         const primaryResults = window.lastCalculationResults;
         const forcedDistricts = primaryResults?.partyDistrictWins || null;
         
+        // CRITICAL: Temporarily disable manual mode for shadow calculation
+        const wasManualMode = electionState.isManualSeatMode;
+        electionState.isManualSeatMode = false;
+        
         shadowResults = calculateParallel(
             translatedVotes,
             params.districtSeats || Math.floor((params.totalSeats || 10) * 0.62),
@@ -4758,11 +5156,18 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             params.allocationMethod || 'dhondt',
             forcedDistricts // Pass district wins to ensure consistency
         );
+        
+        // Restore manual mode state
+        electionState.isManualSeatMode = wasManualMode;
     } else if (currentSystem === 'parallel' && compareToSystem === 'mmp') {
         // Parallel → MMP: Use same district winners as primary result
         const params = window.lastCalculationParams || {};
         const primaryResults = window.lastCalculationResults;
         const forcedDistricts = primaryResults?.partyDistrictWins || null;
+        
+        // CRITICAL: Temporarily disable manual mode for shadow calculation
+        const wasManualMode = electionState.isManualSeatMode;
+        electionState.isManualSeatMode = false;
         
         shadowResults = calculateMMP(
             translatedVotes,
@@ -4773,6 +5178,9 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             params.levelingEnabled || false,
             forcedDistricts // Pass district wins to ensure consistency
         );
+        
+        // Restore manual mode state
+        electionState.isManualSeatMode = wasManualMode;
     } else if (currentSystem === 'fptp' && compareToSystem === 'mmp') {
         // FPTP → MMP: Use FPTP total seats as district count
         const params = window.lastCalculationParams || {};
@@ -4785,6 +5193,10 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         const forcedDistricts = translatedVotes._fptpDistrictWins || null;
         
+        // CRITICAL: Temporarily disable manual mode for shadow calculation
+        const wasManualMode = electionState.isManualSeatMode;
+        electionState.isManualSeatMode = false;
+        
         shadowResults = calculateMMP(
             translatedVotes,
             districtSeats,
@@ -4794,6 +5206,9 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             false,  // No leveling for shadow comparison
             forcedDistricts  // Use FPTP's actual seat distribution as district wins
         );
+        
+        // Restore manual mode state
+        electionState.isManualSeatMode = wasManualMode;
         
         console.log('FPTP → MMP Shadow calculation:', {
             districtSeats,
@@ -4813,6 +5228,10 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         const forcedDistricts = translatedVotes._fptpDistrictWins || null;
         
+        // CRITICAL: Temporarily disable manual mode for shadow calculation
+        const wasManualMode = electionState.isManualSeatMode;
+        electionState.isManualSeatMode = false;
+        
         shadowResults = calculateParallel(
             translatedVotes,
             districtSeats,
@@ -4821,6 +5240,9 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             params.allocationMethod || 'dhondt',
             forcedDistricts  // Use FPTP's actual seat distribution as district wins
         );
+        
+        // Restore manual mode state
+        electionState.isManualSeatMode = wasManualMode;
         
         console.log('FPTP → Parallel Shadow calculation:', {
             districtSeats,
@@ -4982,6 +5404,12 @@ function generateComparisonRows(primaryResults, shadowResults) {
         }
     });
     
+    // Calculate total shadow seats for percentage calculation
+    let totalShadowSeats = 0;
+    partyMap.forEach((data) => {
+        totalShadowSeats += data.shadow;
+    });
+    
     // Generate rows
     partyMap.forEach((data, partyName) => {
         const diff = data.shadow - data.primary;
@@ -4993,6 +5421,14 @@ function generateComparisonRows(primaryResults, shadowResults) {
         const primaryDisplay = isSingleWinner ? (data.primary === 1 ? 'Winner' : '—') : data.primary;
         const shadowDisplay = isSingleWinner ? (data.shadow === 1 ? 'Winner' : '—') : data.shadow;
         
+        // Calculate new seat share percentage
+        const seatSharePercent = totalShadowSeats > 0 
+            ? (data.shadow / totalShadowSeats * 100).toFixed(1) + '%'
+            : '0%';
+        const newSeatShareDisplay = isSingleWinner 
+            ? (data.shadow === 1 ? '100%' : '0%') 
+            : seatSharePercent;
+        
         html += `
             <tr>
                 <td class="comparison-table td">
@@ -5001,6 +5437,7 @@ function generateComparisonRows(primaryResults, shadowResults) {
                 </td>
                 <td class="comparison-table td comparison-table__td--center">${primaryDisplay}</td>
                 <td class="comparison-table td comparison-table__td--center">${shadowDisplay}</td>
+                <td class="comparison-table td comparison-table__td--center">${newSeatShareDisplay}</td>
                 <td class="comparison-table td comparison-table__td--center ${diffClass}">
                     ${diffText}
                 </td>
@@ -5308,6 +5745,7 @@ function showShadowResult() {
                         <th style="padding: 12px; text-align: left;">Party</th>
                         <th style="padding: 12px; text-align: center;">${systemNames[currentSystem]} Seats</th>
                         <th style="padding: 12px; text-align: center;">${systemNames[compareSystem]} Seats</th>
+                        <th style="padding: 12px; text-align: center;">New Seat Share</th>
                         <th style="padding: 12px; text-align: center;">Difference</th>
                     </tr>
                 </thead>
@@ -5372,6 +5810,9 @@ function displayResults(results, system) {
         
         // Also store in global variable for immediate access
         window.lastElectionResults = electionData;
+        
+        // NEW: Store results for logic trace
+        window.lastCalculationResults = results;
     } catch (e) {
         console.error('Error saving election data:', e);
     }
@@ -5702,6 +6143,21 @@ function displayResults(results, system) {
         
         // Top Candidates section removed - candidates are auto-generated for party-list systems
     } else if (results.type === 'mixed') {
+        // NEW: Show manual mode indicator
+        if (results.isManualMode) {
+            html += `
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
+                    <h3 style="margin: 0 0 10px 0; color: #1565c0;">🔧 Manual Seat Entry Mode Active</h3>
+                    <p style="margin: 0 0 10px 0; color: #1976d2;">
+                        Results show manually entered seat allocations compared to calculated values.
+                    </p>
+                    <button onclick="showLogicTrace()" style="padding: 8px 16px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        📊 View Logic Trace
+                    </button>
+                </div>
+            `;
+        }
+        
         // Add charts section with two-row layout (Option B)
         html += '<div class="charts-container" style="flex-direction: column; gap: 20px;">';
         // Top row: Party votesChart and comparisonChart
@@ -5829,13 +6285,23 @@ function displayResults(results, system) {
                 statusBadge += ' <span style="background: #ff9800; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-left: 8px;">Overhang</span>';
             }
             
+            // NEW: Add mismatch indicator for manual mode
+            if (results.isManualMode && r.seatDifference !== undefined && r.seatDifference !== 0) {
+                const diffColor = r.seatDifference > 0 ? '#2ecc71' : '#e74c3c';
+                const diffSign = r.seatDifference > 0 ? '+' : '';
+                statusBadge += ` <span style="background: ${diffColor}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-left: 8px;">
+                    ${diffSign}${r.seatDifference} vs calculated
+                </span>`;
+            }
+            
             html += `
                 <div class="result-item" style="border-left-color: ${r.color}; ${r.belowThreshold ? 'opacity: 0.6;' : ''}">
                     <div class="result-info">
                         <div class="result-name">${r.name}${statusBadge}</div>
                         <div class="result-stats">
                             ${formatNumber(r.votes)} votes (${r.percentage.toFixed(1)}%) • 
-                            ${r.seats} total seats (${r.districtSeats} district + ${r.listSeats} list)
+                            ${r.seats} total seats ${r.districtSeats !== undefined ? `(${r.districtSeats} district + ${r.listSeats} list)` : `(${seatPercentage.toFixed(1)}%)`}
+                            ${results.isManualMode && r.calculatedSeats !== undefined ? ` • Calculated: ${r.calculatedSeats} seats` : ''}
                         </div>
                     </div>
                     <div class="result-bar">
@@ -6325,7 +6791,7 @@ function displayResults(results, system) {
             'irv': 'Instant-Runoff Voting',
             'party-list': 'Party-List Proportional Representation',
             'mmp': 'Mixed-Member Proportional',
-            'parallel': 'Parallel Voting',
+            'parallel': 'Parallel Voting / Mixed-Member Majoritarian',
             'stv': 'Single Transferable Vote'
         };
         
