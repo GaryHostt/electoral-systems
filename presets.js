@@ -52,7 +52,7 @@ const ELECTION_PRESETS = {
         description: "Unexpected Conservative majority. Marked by the collapse of the Liberal Democrats and the SNP landslide in Scotland. Demonstrates extreme FPTP disproportionality for UKIP and the Greens.",
         system: "fptp",
         raceType: "legislative",
-        totalSeats: 650,
+        totalSeats: 648,
         threshold: 0,
         allocationMethod: "plurality",
         parties: [
@@ -104,7 +104,7 @@ const ELECTION_PRESETS = {
     },
     "uk_2024": {
         name: "2024 UK General Election",
-        description: "Landslide Labour victory despite only 33.7% of the vote. Reform UK wins 14% of votes but only 5 seats (0.8% of seats).",
+        description: "Landslide Labour victory despite only 33.8% of the vote. Reform UK wins 14.3% of votes but only 5 seats (0.8% of seats).",
         system: "fptp",
         raceType: "legislative",
         totalSeats: 650,
@@ -116,28 +116,58 @@ const ELECTION_PRESETS = {
             { id: 14003, name: "Reform UK", color: "#12B6CF" },
             { id: 14004, name: "Liberal Democrats", color: "#FDBB30" },
             { id: 14005, name: "Green Party", color: "#6AB023" },
-            { id: 14006, name: "SNP", color: "#FDF38E" }
+            { id: 14006, name: "SNP", color: "#FDF38E" },
+            { id: 14007, name: "Sinn Féin", color: "#326760" },
+            { id: 14008, name: "Democratic Unionist Party", color: "#D46A4C" },
+            { id: 14009, name: "Plaid Cymru", color: "#008142" },
+            { id: 14010, name: "Social Democratic and Labour Party", color: "#2AA82C" },
+            { id: 14011, name: "Alliance", color: "#F6BE00" },
+            { id: 14012, name: "Ulster Unionist Party", color: "#48A5EE" },
+            { id: 14013, name: "Workers Party of Britain", color: "#CC0000" },
+            { id: 14014, name: "Alba", color: "#FF4500" },
+            { id: 14015, name: "Independent", color: "#808080" },
+            { id: 14016, name: "Traditional Unionist Voice", color: "#0066CC" }
         ],
         votes: {
             parties: {
-                14001: 9708716,  // 33.7%
-                14002: 6828925,  // 23.7%
-                14003: 4117221,  // 14.3%
-                14004: 3519199,  // 12.2%
-                14005: 1944501,  // 6.8%
-                14006: 724758    // 2.5%
+                14001: 9734054,  // 33.8% - Labour
+                14002: 6828726,  // 23.7% - Conservative
+                14003: 4117610,  // 14.3% - Reform UK
+                14004: 3519214,  // 12.2% - Liberal Democrats
+                14005: 1943804,  // 6.8% - Green
+                14006: 724758,   // 2.5% - SNP
+                14007: 210891,   // 0.7% - Sinn Féin
+                14008: 172058,   // 0.6% - DUP
+                14009: 194811,   // 0.7% - Plaid Cymru
+                14010: 86861,    // 0.3% - SDLP
+                14011: 117191,   // 0.4% - Alliance
+                14012: 94779,    // 0.3% - UUP
+                14013: 210252,   // 0.7% - Workers Party of Britain
+                14014: 11784,    // 0.0% - Alba
+                14015: 564042,   // Independent
+                14016: 48685     // Traditional Unionist Voice
             }
         },
         seats: {
-            14001: 412,
-            14002: 121,
-            14004: 72,
-            14006: 9,
-            14003: 5,
-            14005: 4
+            14001: 412,  // Labour
+            14002: 121,  // Conservative
+            14004: 72,   // Liberal Democrats
+            14006: 9,    // SNP
+            14003: 5,    // Reform UK
+            14005: 4,    // Green
+            14007: 7,    // Sinn Féin
+            14008: 5,    // DUP
+            14009: 4,    // Plaid Cymru
+            14010: 2,    // SDLP
+            14011: 1,    // Alliance
+            14012: 1,    // UUP
+            14013: 0,    // Workers Party of Britain
+            14014: 0,    // Alba
+            14015: 6,    // Independent
+            14016: 1     // Traditional Unionist Voice
         },
         specialSeats: {
-            others: 27
+            others: 0  // All seats now accounted for
         },
         finalParliamentSize: 650
     },
@@ -181,10 +211,10 @@ const ELECTION_PRESETS = {
     },
     "uk_2010": {
         name: "2010 UK General Election",
-        description: "The first hung parliament since 1974. Lead to the Conservative-Liberal Democrat coalition. Liberal Democrats won 23% of votes but only 8.8% of seats.",
+        description: "The first hung parliament since 1974. Lead to the Conservative-Liberal Democrat coalition. Liberal Democrats won 23% of votes but only 8.8% of seats. UKIP won 3.1% of votes but zero seats, demonstrating FPTP disproportionality.",
         system: "fptp",
         raceType: "legislative",
-        totalSeats: 650,
+        totalSeats: 641,
         threshold: 0,
         allocationMethod: "plurality",
         parties: [
@@ -192,7 +222,22 @@ const ELECTION_PRESETS = {
             { id: 16002, name: "Labour Party", color: "#DC241F" },
             { id: 16003, name: "Liberal Democrats", color: "#FDBB30" },
             { id: 16004, name: "SNP", color: "#FDF38E" },
-            { id: 16005, name: "UKIP", color: "#70147A" }
+            { id: 16005, name: "UKIP", color: "#70147A" },
+            { id: 16006, name: "Sinn Féin", color: "#326760" },
+            { id: 16007, name: "Plaid Cymru", color: "#008142" },
+            { id: 16008, name: "Social Democratic & Labour Party", color: "#2AA82C" },
+            { id: 16009, name: "Green Party", color: "#6AB023" },
+            { id: 16010, name: "Alliance Party", color: "#F6BE00" },
+            { id: 16011, name: "British National Party", color: "#000000" },
+            { id: 16012, name: "Ulster Conservatives and Unionists - New Force", color: "#0047AB" },
+            { id: 16013, name: "English Democrats", color: "#FF0000" },
+            { id: 16014, name: "Respect-Unity Coalition", color: "#FF6600" },
+            { id: 16015, name: "Traditional Unionist Voice", color: "#0066CC" },
+            { id: 16016, name: "Christian Party", color: "#FFD700" },
+            { id: 16017, name: "Independent Community and Health Concern", color: "#8B4513" },
+            { id: 16018, name: "Trade Unionist and Socialist Coalition", color: "#CC0000" },
+            { id: 16019, name: "Scottish Socialist Party", color: "#FF4500" },
+            { id: 16020, name: "Others", color: "#999999" }
         ],
         votes: {
             parties: {
@@ -200,19 +245,50 @@ const ELECTION_PRESETS = {
                 16002: 8609527,  // 29.0%
                 16003: 6836824,  // 23.0%
                 16004: 491386,   // 1.7%
-                16005: 919471    // 3.1%
+                16005: 919546,   // 3.1% - UKIP
+                16006: 171942,   // 0.6% - Sinn Féin
+                16007: 165394,   // 0.6% - Plaid Cymru
+                16008: 110970,   // 0.4% - SDLP
+                16009: 285616,   // 1.0% - Green
+                16010: 42762,    // 0.1% - Alliance Party
+                16011: 564331,   // 1.9% - BNP
+                16012: 102361,   // 0.3% - UCUNF
+                16013: 64826,    // 0.2% - English Democrats
+                16014: 33251,    // 0.1% - Respect-Unity
+                16015: 26300,    // 0.1% - TUV
+                16016: 18623,    // 0.1% - Christian Party
+                16017: 16150,    // 0.1% - ICHC
+                16018: 12275,    // 0.0% - TUSC
+                16019: 3157,     // 0.0% - SSP
+                16020: 321309    // 1.1% - Others
             }
         },
         seats: {
             16001: 306,
             16002: 258,
             16003: 57,
-            16004: 6
+            16004: 6,
+            16005: 0,  // UKIP
+            16006: 5,  // Sinn Féin
+            16007: 3,  // Plaid Cymru
+            16008: 3,  // SDLP
+            16009: 1,  // Green
+            16010: 1,  // Alliance Party
+            16011: 0,  // BNP
+            16012: 0,  // UCUNF
+            16013: 0,  // English Democrats
+            16014: 0,  // Respect-Unity
+            16015: 0,  // TUV
+            16016: 0,  // Christian Party
+            16017: 0,  // ICHC
+            16018: 0,  // TUSC
+            16019: 0,  // SSP
+            16020: 1   // Others
         },
         specialSeats: {
-            others: 23
+            others: 0  // All seats now accounted for in parties array
         },
-        finalParliamentSize: 650
+        finalParliamentSize: 641
     },
     "canada_2008": {
         name: "2008 Canadian Federal Election",
@@ -335,7 +411,7 @@ const ELECTION_PRESETS = {
     },
     "canada_2019": {
         name: "2019 Canadian Federal Election",
-        description: "Liberals lose their majority but remain the largest party. Bloc Québécois experiences a major resurgence in Quebec.",
+        description: "Liberals lose their majority but remain the largest party. Bloc Québécois experiences a major resurgence in Quebec. People's Party (PPC) won 1.6% of votes but zero seats, demonstrating FPTP disproportionality.",
         system: "fptp",
         raceType: "legislative",
         totalSeats: 338,
@@ -346,7 +422,10 @@ const ELECTION_PRESETS = {
             { id: 12002, name: "Conservative Party", color: "#004770" },
             { id: 12003, name: "New Democratic Party", color: "#F37021" },
             { id: 12004, name: "Bloc Québécois", color: "#0080C4" },
-            { id: 12005, name: "Green Party", color: "#3D9B35" }
+            { id: 12005, name: "Green Party", color: "#3D9B35" },
+            { id: 12006, name: "People's Party (PPC)", color: "#1F2742" },
+            { id: 12007, name: "Other", color: "#999999" },
+            { id: 12008, name: "Independent", color: "#808080" }
         ],
         votes: {
             parties: {
@@ -354,7 +433,10 @@ const ELECTION_PRESETS = {
                 12002: 6239227, // 34.3%
                 12003: 2903722, // 16.0%
                 12004: 1387030, // 7.6%
-                12005: 1189631  // 6.5%
+                12005: 1189631, // 6.5%
+                12006: 292661,  // 1.6% - PPC (0 seats)
+                12007: 66520,   // 0.4% - Other (0 seats)
+                12008: 75827    // 0.4% - Independent (1 seat)
             }
         },
         seats: {
@@ -362,10 +444,13 @@ const ELECTION_PRESETS = {
             12002: 121,
             12004: 32,
             12003: 24,
-            12005: 3
+            12005: 3,
+            12006: 0,  // PPC
+            12007: 0,  // Other
+            12008: 1   // Independent
         },
         specialSeats: {
-            independents: 1
+            independents: 0  // Independent already counted in seats (12008: 1)
         },
         finalParliamentSize: 338
     },
@@ -469,6 +554,7 @@ const ELECTION_PRESETS = {
         name: "2021 German Federal Election",
         description: "SPD victory, MMP with overhang seats and leveling. Note: The Left Party (4.9% - below 5% threshold) received full proportional representation because they won 3 direct mandates, demonstrating the 'Double Gate' rule.",
         system: "mmp",
+        totalSeats: 736,
         districtSeats: 299,      // Statutory district count
         baseListSeats: 299,      // Statutory list count
         threshold: 5,
@@ -526,6 +612,7 @@ const ELECTION_PRESETS = {
         name: "2017 German Federal Election",
         description: "Merkel's fourth term. Significant expansion of the Bundestag (709 seats) due to 111 overhang and leveling seats. First entry of the AfD as the third-largest force.",
         system: "mmp",
+        totalSeats: 709,
         districtSeats: 299,
         baseListSeats: 299,
         threshold: 5,
@@ -581,6 +668,7 @@ const ELECTION_PRESETS = {
         name: "2021 Japanese General Election",
         description: "LDP majoritarian victory under Parallel voting (MMM). Opposition cooperation in 75% of districts was offset by LDP rural dominance.",
         system: "parallel",
+        totalSeats: 465,
         districtSeats: 289,
         baseListSeats: 176,
         threshold: 0, 
@@ -649,6 +737,7 @@ const ELECTION_PRESETS = {
         name: "2024 Japanese General Election",
         description: "LDP-Komeito coalition loses majority. Political funding scandals lead to significant seat losses for the LDP.",
         system: "parallel",
+        totalSeats: 465,
         districtSeats: 289,
         baseListSeats: 176,
         threshold: 0,
@@ -776,6 +865,7 @@ const ELECTION_PRESETS = {
         name: "2023 New Zealand General Election",
         description: "Clear compensatory MMP with 5% threshold. Features two-seat overhang from Te Pāti Māori.",
         system: "mmp",
+        totalSeats: 122,
         districtSeats: 72,       // Electorate seats
         baseListSeats: 48,       // List seats
         threshold: 5,
@@ -830,6 +920,7 @@ const ELECTION_PRESETS = {
         name: "2020 New Zealand General Election",
         description: "Historic Labour landslide with 50% party vote - first time any party won outright majority under MMP (since 1996). Jacinda Ardern's COVID-19 response credited for victory.",
         system: "mmp",
+        totalSeats: 120,
         districtSeats: 72,
         baseListSeats: 48,
         threshold: 5,
@@ -879,6 +970,7 @@ const ELECTION_PRESETS = {
         name: "2024 Taiwan Legislative Election",
         description: "Hung parliament. KMT becomes largest party, DPP loses majority, TPP holds balance of power. Total 113 seats.",
         system: "parallel",
+        totalSeats: 113,
         districtSeats: 79,
         baseListSeats: 34,
         threshold: 5,
@@ -928,6 +1020,7 @@ const ELECTION_PRESETS = {
         name: "2020 Taiwan Legislative Election",
         description: "DPP retains majority. Newcomers TPP and TSP enter the legislature. Total 113 seats (73 Dist + 6 Indig + 34 List).",
         system: "parallel",
+        totalSeats: 113,
         districtSeats: 79,      // 73 General + 6 Indigenous
         baseListSeats: 34,
         threshold: 5,           // Strict 5% threshold
@@ -990,6 +1083,7 @@ const ELECTION_PRESETS = {
         name: "2013 German Federal Election",
         description: "Angela Merkel's best result. The FDP (4.8%) fell just short of the 5% threshold, resulting in 15% of the total vote being 'wasted'.",
         system: "mmp",
+        totalSeats: 631,
         districtSeats: 299,
         baseListSeats: 299,
         threshold: 5,
@@ -1039,6 +1133,7 @@ const ELECTION_PRESETS = {
         name: "2022 Italian Legislative Election",
         description: "Right-wing coalition victory under the 'Rosatellum' parallel system. Absolute majority achieved despite 44% vote share due to dominant SMD performance. Total 400 seats.",
         system: "parallel",
+        totalSeats: 400,
         districtSeats: 147,      // Single-member districts (FPTP)
         baseListSeats: 245,      // Proportional list seats (excluding 8 abroad seats)
         threshold: 3,           // 3% for parties, 10% for coalitions
@@ -1117,6 +1212,7 @@ const ELECTION_PRESETS = {
         name: "2018 Italian Legislative Election",
         description: "Inaugural election for the Rosatellum system. The Five Star Movement was the largest single party, while the Center-Right was the largest coalition.",
         system: "parallel",
+        totalSeats: 630,
         districtSeats: 232,
         baseListSeats: 386,
         threshold: 3,
@@ -1131,12 +1227,21 @@ const ELECTION_PRESETS = {
         ],
         votes: {
             parties: {
-                17001: 10732066, // 32.7%
-                17002: 5698687,  // 17.4%
-                17003: 6161896,  // 18.8%
-                17004: 4596956,  // 14.0%
-                17005: 1429550,  // 4.4%
-                17006: 1114799   // 3.4%
+                17001: 10732066, // M5S (32.68%)
+                17002: 5698687,  // Lega (17.37%)
+                17003: 6161896,  // PD (18.76%)
+                17004: 4596956,  // FI (14.01%)
+                17005: 1429550,  // FdI (4.35%)
+                17006: 1114799   // LeU (3.39%)
+            },
+            candidates: {
+                // Aggregated by coalition candidates
+                17002: 12152045, // Center-Right Coalition (Lega + FI + FdI + Noi con l'Italia)
+                17001: 10732066, // M5S (Standalone)
+                17003: 7506723,  // Center-Left Coalition (PD + +Europa + others)
+                17006: 1114799,  // LeU (Standalone)
+                17004: 0,        // (Tallied under 17002)
+                17005: 0         // (Tallied under 17002)
             }
         },
         actualDistrictWins: {
@@ -1253,26 +1358,69 @@ const ELECTION_PRESETS = {
     },
     "netherlands_2023": {
         name: "2023 Netherlands General Election",
-        description: "Extremely low threshold (0.67% for one seat) leading to high party fragmentation.",
+        description: "Extremely low threshold (0.67% for one seat) leading to high party fragmentation. Record 17 parties enter parliament. PVV and D66 tie for largest party with 26 seats each.",
         system: "party-list",
         totalSeats: 150,
         threshold: 0.67,
         allocationMethod: "hare",
         parties: [
-            { id: 9001, name: "Party for Freedom (PVV)", color: "#1C4788" },
-            { id: 9002, name: "GroenLinks-PvdA", color: "#B40D1E" },
-            { id: 9003, name: "People's Party for Freedom (VVD)", color: "#FF7F00" },
-            { id: 9004, name: "New Social Contract (NSC)", color: "#00A7E1" },
-            { id: 9005, name: "BBB", color: "#92D050" }
+            { id: 9001, name: "Democrats 66 (D66)", color: "#00A7E1" },
+            { id: 9002, name: "Party for Freedom (PVV)", color: "#1C4788" },
+            { id: 9003, name: "People's Party for Freedom and Democracy (VVD)", color: "#FF7F00" },
+            { id: 9004, name: "Coalition Labour Party-Green Left (PvdA-GL)", color: "#B40D1E" },
+            { id: 9005, name: "Christian Democrat Appeal (CDA)", color: "#00A651" },
+            { id: 9006, name: "Correct Answer 2021 (JA 21)", color: "#FFD700" },
+            { id: 9007, name: "Forum for Democracy (FvD)", color: "#800020" },
+            { id: 9008, name: "Farmers – Citizens Movement (BBB)", color: "#92D050" },
+            { id: 9009, name: "Denk (DENK)", color: "#FF6B35" },
+            { id: 9010, name: "Reformed Political Party (SGP)", color: "#0066CC" },
+            { id: 9011, name: "Party for Animals (PvdD)", color: "#8B4513" },
+            { id: 9012, name: "Christian Union (CU)", color: "#0066FF" },
+            { id: 9013, name: "Socialist Party (SP)", color: "#FF0000" },
+            { id: 9014, name: "50 +", color: "#FF69B4" },
+            { id: 9015, name: "Volt", color: "#502379" },
+            { id: 9016, name: "New Social Contract (NSC)", color: "#00CED1" },
+            { id: 9017, name: "Others", color: "#999999" }
         ],
         votes: {
             parties: {
-                9001: 2450000,  // PVV
-                9002: 1650000,  // GL/PvdA
-                9003: 1589519,  // VVD
-                9004: 1000000,  // NSC
-                9005: 485634    // BBB (4.6% - won 7 seats)
+                9001: 1767721,  // D66 - 16.89%
+                9002: 1753640,  // PVV - 16.75%
+                9003: 1491089,  // VVD - 14.24%
+                9004: 1324521,  // PvdA-GL - 12.67%
+                9005: 1234425,  // CDA - 11.79%
+                9006: 622469,   // JA 21 - 5.95%
+                9007: 476587,   // FvD - 4.55%
+                9008: 278561,   // BBB - 2.66%
+                9009: 252595,   // DENK - 2.42%
+                9010: 237606,   // SGP - 2.28%
+                9011: 200074,   // PvdD - 2.06%
+                9012: 215176,   // CU - 1.92%
+                9013: 197872,   // SP - 1.89%
+                9014: 150587,   // 50+ - 1.44%
+                9015: 112515,   // Volt - 1.08%
+                9016: 39286,    // NSC - 0.38%
+                9017: 110903    // Others - 1.03%
             }
+        },
+        actualSeats: {
+            9001: 26,  // D66
+            9002: 26,  // PVV
+            9003: 22,  // VVD
+            9004: 20,  // PvdA-GL
+            9005: 18,  // CDA
+            9006: 9,   // JA 21
+            9007: 7,   // FvD
+            9008: 4,   // BBB
+            9009: 3,   // DENK
+            9010: 3,   // SGP
+            9011: 3,   // PvdD
+            9012: 3,   // CU
+            9013: 3,   // SP
+            9014: 2,   // 50+
+            9015: 1,   // Volt
+            9016: 0,   // NSC
+            9017: 0    // Others
         }
     },
     "netherlands_2021": {

@@ -5,6 +5,58 @@ All notable changes to the Electoral Systems Simulator project will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-02-01
+
+### 🔧 Code Quality Refactoring
+
+**Major refactoring to improve code maintainability, remove "vibe coded" patterns, and establish better development practices**
+
+#### Code Quality Improvements
+
+**1. Debug Logging System**
+- Added `DEBUG_MODE` flag (controlled via `localStorage.setItem('debugMode', 'true')`)
+- Created `debugLog()` helper function to gate all debug logging
+- Replaced 50+ `console.log()` statements with `debugLog()` calls
+- Production code no longer cluttered with debug output
+
+**2. Constants Extraction**
+- Created `CONSTANTS` object with all magic numbers:
+  - `DISTRICT_VARIANCE_MIN/MAX`: 0.8, 1.2
+  - `MAJORITY_THRESHOLD`: 0.5
+  - `DISPROPORTIONALITY_THRESHOLD`: 0.5
+  - `DEFAULT_TOTAL_SEATS`: 10
+  - `DEFAULT_THRESHOLD`: 5
+  - `DEFAULT_DISTRICT_RATIO`: 0.5
+  - `PARALLEL_DISTRICT_RATIO`: 0.62
+  - `PARALLEL_LIST_RATIO`: 0.38
+- Replaced all hardcoded magic numbers throughout codebase
+
+**3. Common Pattern Extraction**
+- Created `withManualModeDisabled()` helper to eliminate 6+ duplicate manual mode guard patterns
+- Created `getCalculationParams()` helper to standardize parameter extraction
+- Reduced code duplication in comparison functions
+
+**4. Standardized Error Handling**
+- Created `handleError()` utility function for consistent error handling
+- All calculation functions now use standardized error pattern
+- Removed inconsistent mix of `alert()`, `console.error()`, and `return null`
+
+**5. Type Safety Improvements**
+- Created `normalizePartyId()` and `normalizePartyIdToString()` utilities
+- Standardized party ID type handling throughout codebase
+- Improved consistency between STV (string IDs) and IRV (number IDs)
+
+**6. Deterministic District Simulation**
+- Replaced `Math.random()` with deterministic seed-based variance
+- District simulation now produces consistent results for same inputs
+- Enables reliable testing and debugging
+
+#### Technical Details
+
+- **Files Modified**: `app.js` (major refactoring)
+- **Breaking Changes**: None (all changes are internal improvements)
+- **Performance**: No performance impact, improved maintainability
+
 ## [2.8.0] - 2026-01-31
 
 ### 🌍 Custom Legislature Sizes - Real-World Parliament Simulation

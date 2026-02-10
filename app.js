@@ -1,3 +1,81 @@
+// ===== CONSTANTS =====
+const CONSTANTS = {
+    // District simulation
+    DISTRICT_VARIANCE_MIN: 0.8,
+    DISTRICT_VARIANCE_MAX: 1.2,
+    
+    // Thresholds
+    MAJORITY_THRESHOLD: 0.5,
+    DISPROPORTIONALITY_THRESHOLD: 0.5,
+    
+    // Defaults
+    DEFAULT_TOTAL_SEATS: 10,
+    DEFAULT_THRESHOLD: 5,
+    
+    // Seat allocation ratios
+    DEFAULT_DISTRICT_RATIO: 0.5,
+    PARALLEL_DISTRICT_RATIO: 0.62,
+    PARALLEL_LIST_RATIO: 0.38
+};
+
+// ===== DEBUG UTILITIES =====
+// Debug mode can be enabled via localStorage: localStorage.setItem('debugMode', 'true')
+const DEBUG_MODE = localStorage.getItem('debugMode') === 'true';
+
+function debugLog(...args) {
+    if (DEBUG_MODE) {
+        console.log(...args);
+    }
+}
+
+// ===== HELPER FUNCTIONS =====
+/**
+ * Temporarily disables manual seat mode for a calculation, then restores it
+ * @param {Function} callback - Function to execute with manual mode disabled
+ * @returns {*} - Return value of the callback
+ */
+function withManualModeDisabled(callback) {
+    const wasManualMode = electionState.isManualSeatMode;
+    try {
+        electionState.isManualSeatMode = false;
+        return callback();
+    } finally {
+        electionState.isManualSeatMode = wasManualMode;
+    }
+}
+
+/**
+ * Standardized error handling for calculation functions
+ * @param {Error} error - The error object
+ * @param {string} context - Context where error occurred (e.g., "MMP Calculation")
+ * @param {boolean} showAlert - Whether to show alert to user (default: true)
+ * @returns {null} - Always returns null to signal error
+ */
+function handleError(error, context, showAlert = true) {
+    console.error(`[${context}]`, error);
+    if (showAlert) {
+        alert(`Error in ${context}: ${error.message || error}`);
+    }
+    return null;
+}
+
+/**
+ * Gets calculation parameters from stored state or provides defaults
+ * @returns {Object} - Calculation parameters
+ */
+function getCalculationParams() {
+    const params = window.lastCalculationParams || {};
+    return {
+        districtSeats: params.districtSeats || Math.floor((params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS) * CONSTANTS.DEFAULT_DISTRICT_RATIO),
+        baseListSeats: params.baseListSeats || Math.floor((params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS) * CONSTANTS.DEFAULT_DISTRICT_RATIO),
+        threshold: params.threshold || CONSTANTS.DEFAULT_THRESHOLD,
+        allocationMethod: params.allocationMethod || 'dhondt',
+        levelingEnabled: params.levelingEnabled || false,
+        totalSeats: params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS,
+        totalVoters: params.totalVoters || 0
+    };
+}
+
 // ===== STATE MANAGEMENT =====
 // Replace global variables with state object
 let electionState = {
@@ -103,7 +181,7 @@ function importElectionPreset(presetKey) {
             return;
         }
         
-        console.log(`Loading preset: ${preset.name}`);
+        debugLog(`Loading preset: ${preset.name}`);
         
         // Reset current state
         resetState();
@@ -264,7 +342,7 @@ function importElectionPreset(presetKey) {
                 ? `Imported actual results with ${preset.overhangSeats} overhang/leveling seats (Total: ${preset.finalParliamentSize} seats)`
                 : `Imported actual results (Total: ${preset.finalParliamentSize} seats)`;
             
-            console.log(message);
+            debugLog(message);
             // Could add UI notification here
         }, 200);
     }
@@ -340,7 +418,7 @@ function populateVotingBoxes(voteData, preset) {
             if (isParallel && preset.actualDistrictWins) {
                 // For Parallel voting, populate district and list inputs separately
                 Object.entries(preset.actualDistrictWins).forEach(([partyId, districtCount]) => {
-                    const partyIdInt = parseInt(partyId);
+                    const partyIdInt = normalizePartyId(partyId);
                     const districtInput = document.getElementById(`manual-district-seats-${partyIdInt}`);
                     if (districtInput) {
                         districtInput.value = districtCount;
@@ -351,7 +429,7 @@ function populateVotingBoxes(voteData, preset) {
                     }
                 });
                 Object.entries(preset.actualSeats).forEach(([partyId, totalSeats]) => {
-                    const partyIdInt = parseInt(partyId);
+                    const partyIdInt = normalizePartyId(partyId);
                     // Try both string and int keys for lookup
                     const districtWins = preset.actualDistrictWins[partyId] || preset.actualDistrictWins[partyIdInt] || 0;
                     const listSeats = totalSeats - districtWins;
@@ -2639,15 +2717,14 @@ function calculateResults() {
                 return;
             }
             // Debug logging
-            console.log('IRV Calculation Debug:', {
+            debugLog('IRV Calculation Debug:', {
                 totalVoters: params.totalVoters,
                 ballotsCount: params.ballots.length,
                 ballots: params.ballots
             });
             results = calculateIRV(params.votes, params.totalVoters, params.ballots, params.numBallotTypes);
             if (!results) {
-                console.error('IRV calculation returned null');
-                alert('IRV calculation failed. Please check your ballot data.');
+                handleError(new Error('IRV calculation returned null'), 'IRV Calculation');
                 return; // Don't display if calculation failed
             }
             break;
@@ -2665,36 +2742,28 @@ function calculateResults() {
             }
             try {
                 results = calculateSTV(params.votes, params.totalSeats, params.totalVoters, params.ballots, params.numBallotTypes);
-                if (!results) {
-                    console.error('STV calculation returned null');
-                    alert('STV calculation failed. Please check your ballot data.');
+                    if (!results) {
+                        handleError(new Error('STV calculation returned null'), 'STV Calculation');
+                        return;
+                    }
+                } catch (e) {
+                    handleError(e, 'STV Engine');
                     return;
                 }
-            } catch (e) {
-                console.error('STV Engine Error:', e);
-                alert('STV Engine Error: ' + e.message);
-                return;
-            }
             break;
         case 'mmp':
             // Validate MMP input data
             if (!params.votes || !params.votes.parties || !params.votes.candidates) {
-                console.error('MMP Calculation Error: Missing required vote data', {
-                    hasVotes: !!params.votes,
-                    hasParties: !!(params.votes && params.votes.parties),
-                    hasCandidates: !!(params.votes && params.votes.candidates)
-                });
-                alert('MMP calculation requires both party votes and candidate votes. Please add parties and candidates.');
+                handleError(new Error('MMP calculation requires both party votes and candidate votes'), 'MMP Calculation');
                 return;
             }
             
             if (!params.districtSeats || !params.baseListSeats || (params.districtSeats + params.baseListSeats) < 1) {
-                console.error('MMP Calculation Error: Invalid seat counts', { districtSeats: params.districtSeats, baseListSeats: params.baseListSeats });
-                alert('Please set valid numbers for District Seats and List Seats.');
+                handleError(new Error('Invalid seat counts for District Seats and List Seats'), 'MMP Calculation');
                 return;
             }
             
-            console.log('MMP Calculation Debug:', {
+            debugLog('MMP Calculation Debug:', {
                 districtSeats: params.districtSeats,
                 baseListSeats: params.baseListSeats,
                 totalSeats: params.districtSeats + params.baseListSeats,
@@ -2720,8 +2789,7 @@ function calculateResults() {
                 );
                 
                 if (!results) {
-                    console.error('MMP calculation returned null');
-                    alert('MMP calculation failed. Please check your party and candidate data.');
+                    handleError(new Error('MMP calculation returned null'), 'MMP Calculation');
                     return;
                 }
             } catch (error) {
@@ -2733,22 +2801,16 @@ function calculateResults() {
         case 'parallel':
             // Validate Parallel input data
             if (!params.votes || !params.votes.parties || !params.votes.candidates) {
-                console.error('Parallel Calculation Error: Missing required vote data', {
-                    hasVotes: !!params.votes,
-                    hasParties: !!(params.votes && params.votes.parties),
-                    hasCandidates: !!(params.votes && params.votes.candidates)
-                });
-                alert('Parallel voting (MMM) requires both party votes and candidate votes. Please add parties and candidates.');
+                handleError(new Error('Parallel voting (MMM) requires both party votes and candidate votes'), 'Parallel Calculation');
                 return;
             }
             
             if (!params.districtSeats || !params.baseListSeats || (params.districtSeats + params.baseListSeats) < 1) {
-                console.error('Parallel Calculation Error: Invalid seat counts', { districtSeats: params.districtSeats, baseListSeats: params.baseListSeats });
-                alert('Please set valid numbers for District Seats and List Seats.');
+                handleError(new Error('Invalid seat counts for District Seats and List Seats'), 'Parallel Calculation');
                 return;
             }
             
-            console.log('Parallel Calculation Debug:', {
+            debugLog('Parallel Calculation Debug:', {
                 districtSeats: params.districtSeats,
                 baseListSeats: params.baseListSeats,
                 totalSeats: params.districtSeats + params.baseListSeats,
@@ -2760,11 +2822,10 @@ function calculateResults() {
             
             try {
                 results = calculateParallel(params.votes, params.districtSeats, params.baseListSeats, params.threshold, params.allocationMethod);
-            } catch (error) {
-                console.error('Parallel calculation encountered an error:', error.message);
-                alert('Parallel/MMM calculation failed: ' + error.message);
-                return;
-            }
+                } catch (error) {
+                    handleError(error, 'Parallel/MMM Calculation');
+                    return;
+                }
             break;
     }
     
@@ -2921,7 +2982,7 @@ function calculateTRS(votes) {
 
 function calculateIRV(votes, totalVoters, ballots, numBallotTypes) {
     // Pure function - no DOM access
-    console.log('calculateIRV called with:', { totalVoters, ballotsCount: ballots?.length, numBallotTypes });
+    debugLog('calculateIRV called with:', { totalVoters, ballotsCount: ballots?.length, numBallotTypes });
     
     if (totalVoters === 0) {
         // Return null to signal error (UI layer will handle alert)
@@ -2931,7 +2992,7 @@ function calculateIRV(votes, totalVoters, ballots, numBallotTypes) {
     
     // Check if we have ranking data
     const hasRankingData = ballots && ballots.length > 0;
-    console.log('calculateIRV: hasRankingData =', hasRankingData);
+    debugLog('calculateIRV: hasRankingData =', hasRankingData);
     
     // If no ranking data, auto-inject "Sincere Vote" ballots from candidate votes
     if (!hasRankingData || ballots.length === 0) {
@@ -2952,7 +3013,7 @@ function calculateIRV(votes, totalVoters, ballots, numBallotTypes) {
         
         // Use synthetic ballots for calculation
         ballots = syntheticBallots;
-        console.log('calculateIRV: Created', syntheticBallots.length, 'sincere vote ballots');
+        debugLog('calculateIRV: Created', syntheticBallots.length, 'sincere vote ballots');
     }
     
     // Now proceed with IRV calculation using ballots
@@ -3024,7 +3085,7 @@ function calculateIRV(votes, totalVoters, ballots, numBallotTypes) {
             .reduce((sum, id) => sum + voteCounts[id], 0);
         
         const maxVotes = Math.max(...activeCandidates.map(id => voteCounts[id]));
-        if (maxVotes / activeTotal > 0.5) {
+        if (maxVotes / activeTotal > CONSTANTS.MAJORITY_THRESHOLD) {
             // Majority winner
             const winner = activeCandidates.find(id => voteCounts[id] === maxVotes);
             roundsData.push({
@@ -3305,7 +3366,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
     const currentSystem = document.getElementById('electoralSystem')?.value || '';
     const isPartyBasedSTV = currentSystem === 'stv';
     
-    console.log('STV Calculation Debug:', {
+    debugLog('STV Calculation Debug:', {
         system: currentSystem,
         isPartyBasedSTV: isPartyBasedSTV,
         ballotsCount: ballots.length,
@@ -3329,7 +3390,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
         }));
     });
     
-    console.log(`Expanded ${ballots.length} ballot types into ${scaledBallots.length} individual ballots`);
+    debugLog(`Expanded ${ballots.length} ballot types into ${scaledBallots.length} individual ballots`);
     
     // Calculate total votes (integer)
     const totalVotesScaled = scaledBallots.reduce((sum, b) => sum + b.weight, 0);
@@ -3434,8 +3495,8 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
             roundNumber++;
             
             // Diagnostic logging
-            console.log(`=== Round ${roundNumber} Start ===`);
-            console.log(`Total ballots: ${scaledBallots.length}, Locked: ${lockedBallotIds.size}, Elected: ${electedCandidates.length}/${seats}`);
+            debugLog(`=== Round ${roundNumber} Start ===`);
+            debugLog(`Total ballots: ${scaledBallots.length}, Locked: ${lockedBallotIds.size}, Elected: ${electedCandidates.length}/${seats}`);
             
             // Count current votes for each party based on ballot weights
             // ONLY count ballots that are NOT quota-locked
@@ -3492,12 +3553,12 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 const party = parties.find(p => p.id == id);  // Use == for type-coercion comparison (string vs number)
                 partyTallies[party ? party.name : id] = (votes / SCALE_FACTOR).toFixed(2);
             });
-            console.log(`Party tallies:`, partyTallies);
-            console.log(`Exhausted: ${(exhaustedVotesScaled / SCALE_FACTOR).toFixed(2)}`);
+            debugLog(`Party tallies:`, partyTallies);
+            debugLog(`Exhausted: ${(exhaustedVotesScaled / SCALE_FACTOR).toFixed(2)}`);
             
             // DEBUG: Track total votes in system to detect leaks
             const currentTotalVotes = Object.values(currentPartyVotesScaled).reduce((sum, v) => sum + v, 0) + exhaustedVotesScaled;
-            console.log(`Round ${roundNumber}: Total Active Votes in System = ${(currentTotalVotes / SCALE_FACTOR).toFixed(2)}`);
+            debugLog(`Round ${roundNumber}: Total Active Votes in System = ${(currentTotalVotes / SCALE_FACTOR).toFixed(2)}`);
             
             // Check if any party meets quota
             const activeParties = parties.filter(p => 
@@ -3549,7 +3610,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                     }
                 });
                 
-                console.log(`Electing ${electedCandidate.displayName}: need to lock ${quotaScaled/SCALE_FACTOR} votes from ${ballotsContributing.length} ballots`);
+                debugLog(`Electing ${electedCandidate.displayName}: need to lock ${quotaScaled/SCALE_FACTOR} votes from ${ballotsContributing.length} ballots`);
                 
                 // Lock ballots up to quota amount
                 const surplusScaled = Math.max(0, totalVotesForWinner - quotaScaled);
@@ -3620,7 +3681,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 
                 exhaustedVotesScaled += surplusExhaustedScaled;
                 
-                console.log(`Locked ${ballotsFullyLocked} ballots fully, ${ballotsPartiallyLocked} partially. Total locked: ${weightLocked/SCALE_FACTOR}, surplus exhausted: ${surplusExhaustedScaled/SCALE_FACTOR}`);
+                debugLog(`Locked ${ballotsFullyLocked} ballots fully, ${ballotsPartiallyLocked} partially. Total locked: ${weightLocked/SCALE_FACTOR}, surplus exhausted: ${surplusExhaustedScaled/SCALE_FACTOR}`);
                 
                 // Record round data
                 const voteCounts = {};
@@ -3764,8 +3825,8 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
             console.error(`❌ Vote Conservation FAILED: Expected ${expectedVotes/SCALE_FACTOR}, got ${totalVotesInSystem/SCALE_FACTOR}, difference ${voteDifference/SCALE_FACTOR}`);
             console.error(`  - Locked: ${totalLockedWeight/SCALE_FACTOR}, Active: ${totalActiveWeight/SCALE_FACTOR}, Exhausted: ${exhaustedVotesScaled/SCALE_FACTOR}`);
         } else {
-            console.log(`✅ Vote Conservation: ${(totalVotesInSystem / SCALE_FACTOR).toFixed(2)} votes preserved`);
-            console.log(`  - Locked: ${(totalLockedWeight/SCALE_FACTOR).toFixed(2)}, Active: ${(totalActiveWeight/SCALE_FACTOR).toFixed(2)}, Exhausted: ${(exhaustedVotesScaled/SCALE_FACTOR).toFixed(2)}`);
+            debugLog(`✅ Vote Conservation: ${(totalVotesInSystem / SCALE_FACTOR).toFixed(2)} votes preserved`);
+            debugLog(`  - Locked: ${(totalLockedWeight/SCALE_FACTOR).toFixed(2)}, Active: ${(totalActiveWeight/SCALE_FACTOR).toFixed(2)}, Exhausted: ${(exhaustedVotesScaled/SCALE_FACTOR).toFixed(2)}`);
         }
         
         // Store ballots for shadow comparison
@@ -4355,7 +4416,7 @@ function simulateDistricts(candidateVotes, districtCount) {
     for (let d = 0; d < districtCount; d++) {
         const districtResults = {};
         
-        candidates.forEach(candidate => {
+        candidates.forEach((candidate, candidateIndex) => {
             // Partition: Divide total votes by number of districts
             const baseVotes = (candidateVotes[candidate.id] || 0) / districtCount;
             
@@ -4363,8 +4424,11 @@ function simulateDistricts(candidateVotes, districtCount) {
             if (baseVotes === 0) {
                 districtResults[candidate.id] = 0; // No variance for zero-vote candidates
             } else {
-                // Variance: ±20% noise so different parties win different districts
-                const variance = 0.8 + Math.random() * 0.4; // 80% to 120% of base
+                // Deterministic variance: Use candidate ID and district index as seed for consistent results
+                // This ensures the same candidate always gets the same variance for the same district
+                const seed = (candidate.id * 1000 + d) % 10000; // Create unique seed per candidate-district pair
+                const normalizedSeed = seed / 10000; // Normalize to 0-1
+                const variance = CONSTANTS.DISTRICT_VARIANCE_MIN + normalizedSeed * (CONSTANTS.DISTRICT_VARIANCE_MAX - CONSTANTS.DISTRICT_VARIANCE_MIN);
                 districtResults[candidate.id] = baseVotes * variance;
             }
         });
@@ -4498,7 +4562,7 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     }, 0);
     
     // DEBUG: Log qualifying parties and vote total for debugging
-    console.log('MMP Qualifying Parties Debug:', {
+    debugLog('MMP Qualifying Parties Debug:', {
         totalPartyVotes: totalPartyVotes,
         qualifyingVoteTotal: qualifyingVoteTotal,
         qualifyingParties: qualifyingParties.map(p => ({
@@ -4560,7 +4624,7 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     }
     
     // DEBUG: Log proportional targets (after initializing all parties)
-    console.log('MMP Proportional Targets Debug:', {
+    debugLog('MMP Proportional Targets Debug:', {
         totalParliamentSeats: totalParliamentSeats,
         totalTargetSeats: totalTargetSeats,
         targets: Object.entries(proportionalTargets).map(([id, seats]) => {
@@ -4610,7 +4674,7 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     const baseParliamentSize = Object.values(baseSeats).reduce((sum, s) => sum + s, 0);
     
     // DEBUG: Log base seats and overhang
-    console.log('MMP Base Seats Debug:', {
+    debugLog('MMP Base Seats Debug:', {
         baseParliamentSize: baseParliamentSize,
         expectedParliamentSize: totalParliamentSeats,
         overhangTotal: overhangTotal,
@@ -4662,7 +4726,7 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     const actualTotalSeats = finalParliamentSize;
     
     // DEBUG: Log final seat allocation
-    console.log('MMP Final Seats Debug:', {
+    debugLog('MMP Final Seats Debug:', {
         actualTotalSeats: actualTotalSeats,
         expectedTotal: totalParliamentSeats,
         overhangTotal: overhangTotal,
@@ -4773,9 +4837,9 @@ function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, thresh
         forcedDistrictWinsForCalculation[p.id] = electionState.manualSeats[p.id] || 0;
     });
     
-    electionState.isManualSeatMode = false; // Temporarily disable
-    const calculatedResults = calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWinsForCalculation, bypassThreshold, enableOverhang);
-    electionState.isManualSeatMode = true; // Re-enable
+    const calculatedResults = withManualModeDisabled(() => {
+        return calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWinsForCalculation, bypassThreshold, enableOverhang);
+    });
     
     // Store calculated seats for comparison
     calculatedResults.results.forEach(party => {
@@ -4907,7 +4971,7 @@ function extractDistrictWinsFromCandidateVotes(candidateVotes, districtCount) {
     
     // Copy to partyDistrictWins
     Object.keys(partyDistricts).forEach(partyId => {
-        partyDistrictWins[parseInt(partyId)] = partyDistricts[partyId] || 0;
+        partyDistrictWins[normalizePartyId(partyId)] = partyDistricts[partyId] || 0;
     });
     
     return partyDistrictWins;
@@ -5455,7 +5519,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         let ballots = votes.ballots;
         if (!ballots && window.lastCalculationParams && window.lastCalculationParams.ballots) {
             ballots = window.lastCalculationParams.ballots;
-            console.log('IRV Comparison: Using ballots from lastCalculationParams');
+            debugLog('IRV Comparison: Using ballots from lastCalculationParams');
         }
         
         if (!ballots || ballots.length === 0) {
@@ -5480,7 +5544,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             totalVoters: totalVoters
         };
         
-        console.log('IRV → FPTP: Converted ballots to candidate votes', {
+        debugLog('IRV → FPTP: Converted ballots to candidate votes', {
             ballotsCount: ballots.length,
             totalVoters: totalVoters,
             candidateVotes: candidateVotes
@@ -5489,7 +5553,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
     
     // FPTP → MMP: Use FPTP party votes as MMP party votes, actual seats as district wins
     if (currentSystem === 'fptp' && compareToSystem === 'mmp') {
-        console.log('FPTP → MMP: Translating FPTP legislative data to MMP format');
+        debugLog('FPTP → MMP: Translating FPTP legislative data to MMP format');
         
         // FPTP legislative mode already has party votes - use them directly
         translatedVotes = {
@@ -5511,7 +5575,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             
             translatedVotes._fptpDistrictWins = fptpDistrictWins;
             
-            console.log('FPTP → MMP: District wins mapped from FPTP results', fptpDistrictWins);
+            debugLog('FPTP → MMP: District wins mapped from FPTP results', fptpDistrictWins);
         }
         
         shadowDisclaimer = "Note: FPTP seat distribution treated as district wins. MMP calculation shows how list seats would compensate for disproportionality.";
@@ -5519,7 +5583,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
     
     // FPTP → Parallel: Use FPTP party votes as Parallel party votes, actual seats as district wins
     if (currentSystem === 'fptp' && compareToSystem === 'parallel') {
-        console.log('FPTP → Parallel: Translating FPTP legislative data to Parallel format');
+        debugLog('FPTP → Parallel: Translating FPTP legislative data to Parallel format');
         
         // FPTP legislative mode already has party votes - use them directly
         translatedVotes = {
@@ -5541,7 +5605,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             
             translatedVotes._fptpDistrictWins = fptpDistrictWins;
             
-            console.log('FPTP → Parallel: District wins mapped from FPTP results', fptpDistrictWins);
+            debugLog('FPTP → Parallel: District wins mapped from FPTP results', fptpDistrictWins);
         }
         
         shadowDisclaimer = "Note: FPTP seat distribution treated as district wins. Parallel/MMM calculation shows independent list tier allocation (non-compensatory).";
@@ -5549,7 +5613,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
     
     // STV → Party-List/MMP: Translate ranked to party votes
     if (currentSystem === 'stv' && ['mmp', 'party-list'].includes(compareToSystem)) {
-        console.log('STV Comparison Debug: Translating STV ballots to party votes', {
+        debugLog('STV Comparison Debug: Translating STV ballots to party votes', {
             ballotsCount: votes.ballots?.length,
             compareToSystem: compareToSystem
         });
@@ -5561,7 +5625,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         // Use translateSTVtoPartyVotes to get both party and candidate votes
         const flattenedData = translateSTVtoPartyVotes(votes.ballots, candidates);
-        console.log('STV Comparison Debug: Flattened data', flattenedData);
+        debugLog('STV Comparison Debug: Flattened data', flattenedData);
         
         translatedVotes = {
             parties: flattenedData.parties,
@@ -5587,7 +5651,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             
             // Store district wins for Double-Gate logic in shadow MMP calculation
             translatedVotes._stvDistrictWins = stvDistrictWins;
-            console.log('STV Comparison Debug: Mapped STV seats to district wins for Double-Gate', stvDistrictWins);
+            debugLog('STV Comparison Debug: Mapped STV seats to district wins for Double-Gate', stvDistrictWins);
             
             // NEW: Adjust total voters to account for exhausted ballots in STV
             // This creates a meaningful difference: MMP counts all votes, STV loses some to exhaustion
@@ -5604,7 +5668,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
                     note: "STV exhausted ballots would have counted in Party-List/MMP"
                 };
                 
-                console.log(`STV Comparison: ${exhaustedVotes} exhausted votes reduce effective turnout for shadow calculation`);
+                debugLog(`STV Comparison: ${exhaustedVotes} exhausted votes reduce effective turnout for shadow calculation`);
             }
         }
     }
@@ -5625,7 +5689,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         // When comparing TO STV, we need seats, totalVoters, ballots, numBallotTypes
         // Use stored params if available, otherwise extract from translatedVotes
         const params = window.lastCalculationParams || {};
-        const seats = params.totalSeats || 10;
+        const seats = params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS;
         const totalVoters = params.totalVoters || 0;
         const ballots = translatedVotes.ballots || [];
         const numBallotTypes = params.numBallotTypes || 5;
@@ -5638,30 +5702,26 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         if (compareToSystem === 'party-list') {
             shadowResults = calculatePartyListPR(
                 translatedVotes, 
-                params.totalSeats || 10, 
-                params.threshold || 5, 
+                params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS, 
+                params.threshold || CONSTANTS.DEFAULT_THRESHOLD, 
                 params.allocationMethod || 'dhondt'
             );
         } else if (compareToSystem === 'mmp') {
             // For STV → MMP, use district wins from STV results for Double-Gate
             const districtWins = translatedVotes._stvDistrictWins || null;
             
-            // CRITICAL: Temporarily disable manual mode for shadow calculation
-            const wasManualMode = electionState.isManualSeatMode;
-            electionState.isManualSeatMode = false;
-            
-            shadowResults = calculateMMP(
-                translatedVotes, 
-                params.districtSeats || Math.floor((params.totalSeats || 10) / 2),
-                params.baseListSeats || Math.floor((params.totalSeats || 10) / 2),
-                params.threshold || 5,
-                params.allocationMethod || 'dhondt',
-                params.levelingEnabled || false,
-                districtWins // Pass district wins for Double-Gate
-            );
-            
-            // Restore manual mode state
-            electionState.isManualSeatMode = wasManualMode;
+            const calcParams = getCalculationParams();
+            shadowResults = withManualModeDisabled(() => {
+                return calculateMMP(
+                    translatedVotes, 
+                    calcParams.districtSeats,
+                    calcParams.baseListSeats,
+                    calcParams.threshold,
+                    calcParams.allocationMethod,
+                    calcParams.levelingEnabled,
+                    districtWins // Pass district wins for Double-Gate
+                );
+            });
         } else {
             shadowResults = calculators[compareToSystem](translatedVotes);
         }
@@ -5671,43 +5731,35 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         const primaryResults = window.lastCalculationResults;
         const forcedDistricts = primaryResults?.partyDistrictWins || null;
         
-        // CRITICAL: Temporarily disable manual mode for shadow calculation
-        const wasManualMode = electionState.isManualSeatMode;
-        electionState.isManualSeatMode = false;
-        
-        shadowResults = calculateParallel(
-            translatedVotes,
-            params.districtSeats || Math.floor((params.totalSeats || 10) * 0.62),
-            params.baseListSeats || Math.floor((params.totalSeats || 10) * 0.38),
-            params.threshold || 5,
-            params.allocationMethod || 'dhondt',
-            forcedDistricts // Pass district wins to ensure consistency
-        );
-        
-        // Restore manual mode state
-        electionState.isManualSeatMode = wasManualMode;
+        const calcParams = getCalculationParams();
+        shadowResults = withManualModeDisabled(() => {
+            return calculateParallel(
+                translatedVotes,
+                calcParams.districtSeats || Math.floor((calcParams.totalSeats) * CONSTANTS.PARALLEL_DISTRICT_RATIO),
+                calcParams.baseListSeats || Math.floor((calcParams.totalSeats) * CONSTANTS.PARALLEL_LIST_RATIO),
+                calcParams.threshold,
+                calcParams.allocationMethod,
+                forcedDistricts // Pass district wins to ensure consistency
+            );
+        });
     } else if (currentSystem === 'parallel' && compareToSystem === 'mmp') {
         // Parallel → MMP: Use same district winners as primary result
         const params = window.lastCalculationParams || {};
         const primaryResults = window.lastCalculationResults;
         const forcedDistricts = primaryResults?.partyDistrictWins || null;
         
-        // CRITICAL: Temporarily disable manual mode for shadow calculation
-        const wasManualMode = electionState.isManualSeatMode;
-        electionState.isManualSeatMode = false;
-        
-        shadowResults = calculateMMP(
-            translatedVotes,
-            params.districtSeats || Math.floor((params.totalSeats || 10) / 2),
-            params.baseListSeats || Math.floor((params.totalSeats || 10) / 2),
-            params.threshold || 5,
-            params.allocationMethod || 'dhondt',
-            params.levelingEnabled || false,
-            forcedDistricts // Pass district wins to ensure consistency
-        );
-        
-        // Restore manual mode state
-        electionState.isManualSeatMode = wasManualMode;
+        const calcParams = getCalculationParams();
+        shadowResults = withManualModeDisabled(() => {
+            return calculateMMP(
+                translatedVotes,
+                calcParams.districtSeats,
+                calcParams.baseListSeats,
+                calcParams.threshold,
+                calcParams.allocationMethod,
+                calcParams.levelingEnabled,
+                forcedDistricts // Pass district wins to ensure consistency
+            );
+        });
     } else if (currentSystem === 'fptp' && compareToSystem === 'mmp') {
         // FPTP → MMP: Use FPTP total seats as district count
         const params = window.lastCalculationParams || {};
@@ -5720,24 +5772,20 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         const forcedDistricts = translatedVotes._fptpDistrictWins || null;
         
-        // CRITICAL: Temporarily disable manual mode for shadow calculation
-        const wasManualMode = electionState.isManualSeatMode;
-        electionState.isManualSeatMode = false;
+        const calcParams = getCalculationParams();
+        shadowResults = withManualModeDisabled(() => {
+            return calculateMMP(
+                translatedVotes,
+                districtSeats,
+                baseListSeats,
+                calcParams.threshold,
+                calcParams.allocationMethod,
+                false,  // No leveling for shadow comparison
+                forcedDistricts  // Use FPTP's actual seat distribution as district wins
+            );
+        });
         
-        shadowResults = calculateMMP(
-            translatedVotes,
-            districtSeats,
-            baseListSeats,
-            params.threshold || 5,
-            params.allocationMethod || 'dhondt',
-            false,  // No leveling for shadow comparison
-            forcedDistricts  // Use FPTP's actual seat distribution as district wins
-        );
-        
-        // Restore manual mode state
-        electionState.isManualSeatMode = wasManualMode;
-        
-        console.log('FPTP → MMP Shadow calculation:', {
+        debugLog('FPTP → MMP Shadow calculation:', {
             districtSeats,
             baseListSeats,
             forcedDistricts,
@@ -5755,23 +5803,19 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         const forcedDistricts = translatedVotes._fptpDistrictWins || null;
         
-        // CRITICAL: Temporarily disable manual mode for shadow calculation
-        const wasManualMode = electionState.isManualSeatMode;
-        electionState.isManualSeatMode = false;
+        const calcParams = getCalculationParams();
+        shadowResults = withManualModeDisabled(() => {
+            return calculateParallel(
+                translatedVotes,
+                districtSeats,
+                listSeats,
+                calcParams.threshold,
+                calcParams.allocationMethod,
+                forcedDistricts  // Use FPTP's actual seat distribution as district wins
+            );
+        });
         
-        shadowResults = calculateParallel(
-            translatedVotes,
-            districtSeats,
-            listSeats,
-            params.threshold || 5,
-            params.allocationMethod || 'dhondt',
-            forcedDistricts  // Use FPTP's actual seat distribution as district wins
-        );
-        
-        // Restore manual mode state
-        electionState.isManualSeatMode = wasManualMode;
-        
-        console.log('FPTP → Parallel Shadow calculation:', {
+        debugLog('FPTP → Parallel Shadow calculation:', {
             districtSeats,
             listSeats,
             totalSeats: districtSeats + listSeats,
@@ -5785,7 +5829,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         shadowResults = calculatePartyListPR(
             translatedVotes,
             params.totalSeats || 10,
-            params.threshold || 5,
+            params.threshold || CONSTANTS.DEFAULT_THRESHOLD,
             params.allocationMethod || 'dhondt'
         );
     } else if (currentSystem === 'mmp' && compareToSystem === 'party-list') {
@@ -5795,7 +5839,7 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         shadowResults = calculatePartyListPR(
             translatedVotes, // Already has votes.parties from MMP
             params.totalSeats || 10,
-            params.threshold || 5,
+            params.threshold || CONSTANTS.DEFAULT_THRESHOLD,
             params.allocationMethod || 'dhondt'
         );
     } else if (currentSystem === 'party-list' && compareToSystem === 'mmp') {
@@ -5831,9 +5875,9 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         shadowResults = calculateMMP(
             translatedVotes,
-            params.districtSeats || Math.floor((params.totalSeats || 10) / 2),
-            params.baseListSeats || Math.floor((params.totalSeats || 10) / 2),
-            params.threshold || 5,
+            params.districtSeats || Math.floor((params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS) * CONSTANTS.DEFAULT_DISTRICT_RATIO),
+            params.baseListSeats || Math.floor((params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS) * CONSTANTS.DEFAULT_DISTRICT_RATIO),
+            params.threshold || CONSTANTS.DEFAULT_THRESHOLD,
             params.allocationMethod || 'dhondt',
             params.levelingEnabled || false,
             null // No forced district wins - let MMP simulate them
@@ -5869,9 +5913,9 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
         
         shadowResults = calculateParallel(
             translatedVotes,
-            params.districtSeats || Math.floor((params.totalSeats || 10) * 0.62),
-            params.baseListSeats || Math.floor((params.totalSeats || 10) * 0.38),
-            params.threshold || 5,
+            params.districtSeats || Math.floor((params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS) * CONSTANTS.PARALLEL_DISTRICT_RATIO),
+            params.baseListSeats || Math.floor((params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS) * CONSTANTS.PARALLEL_LIST_RATIO),
+            params.threshold || CONSTANTS.DEFAULT_THRESHOLD,
             params.allocationMethod || 'dhondt',
             null // No forced districts - let Parallel simulate them
         );
@@ -6034,7 +6078,7 @@ function generateComparisonInsight(primaryResults, shadowResults, currentSystem,
         // Skip detailed metrics here since we now have dedicated metrics section above
         // Just provide high-level interpretation
         
-        if (Math.abs(gDiff) < 0.5) {
+        if (Math.abs(gDiff) < CONSTANTS.DISPROPORTIONALITY_THRESHOLD) {
             insight += `<p style="margin-bottom: 10px;">Both systems produced remarkably similar levels of proportionality for this specific vote distribution.</p>`;
         } else if (isImprovement) {
             insight += `<p style="margin-bottom: 10px;">Switching from ${currentName} to ${compareName} significantly improves proportionality, reducing representation gaps and giving smaller parties fairer seat allocations.</p>`;
@@ -6228,7 +6272,7 @@ function showShadowResult() {
     const votes = window.lastCalculationVotes;
     const primaryResults = window.lastCalculationResults;
     
-    console.log('showShadowResult Debug:', {
+    debugLog('showShadowResult Debug:', {
         currentSystem,
         compareSystem,
         votesExists: !!votes,
@@ -6244,7 +6288,7 @@ function showShadowResult() {
     
     const shadowResults = calculateShadowResult(currentSystem, compareSystem, votes);
     
-    console.log('showShadowResult: Shadow results received', {
+    debugLog('showShadowResult: Shadow results received', {
         hasError: !!shadowResults.error,
         error: shadowResults.error,
         resultsType: shadowResults?.type,
@@ -7379,7 +7423,7 @@ function displayResults(results, system) {
     if (!analysis) {
         arrowDiv.innerHTML = '<p>Arrow\'s Theorem analysis not available for this system.</p>';
         console.error('No Arrow analysis found for system:', system);
-        console.log('Available systems:', Object.keys(arrowAnalysis));
+        debugLog('Available systems:', Object.keys(arrowAnalysis));
     } else {
         let arrowHtml = `
             <h4>${analysis.title}</h4>
@@ -7425,7 +7469,7 @@ function displayResults(results, system) {
             const rankingSystems = ['irv', 'stv'];
             const isRankingSystem = rankingSystems.includes(system);
             
-            console.log('📊 Creating charts with data:', { 
+            debugLog('📊 Creating charts with data:', { 
                 votes: votesChartData.length, 
                 seats: seatsChartData.length,
                 isRankingSystem: isRankingSystem
@@ -7487,7 +7531,7 @@ function displayResults(results, system) {
                 window.createPieChart(seatsChartId, seatsChartData, seatsTitle);
             }
             
-            console.log('✅ All charts created successfully');
+            debugLog('✅ All charts created successfully');
         } catch (error) {
             console.error('❌ Chart creation error:', error);
             console.error('Stack:', error.stack);
