@@ -207,64 +207,60 @@ const ELECTION_PRESETS = {
         overhangSeats: 138,
         finalParliamentSize: 736  // Total including overhang and SSW
     },
-    "germany_2025": {
-        name: "2025 German Federal Election",
-        description: "CDU/CSU returns to power. Note: FDP (4.9% - below 5% threshold) and LINKE (3.1%) face potential exclusion unless they win direct mandates, demonstrating the 'Double Gate' rule.",
+    "germany_2017": {
+        name: "2017 German Federal Election",
+        description: "Merkel's fourth term. Significant expansion of the Bundestag (709 seats) due to 111 overhang and leveling seats. First entry of the AfD as the third-largest force.",
         system: "mmp",
         districtSeats: 299,
         baseListSeats: 299,
         threshold: 5,
+        bypassThreshold: 3,
         allocationMethod: "sainte-lague",
         levelingEnabled: true,
         parties: [
-            { id: 2101, name: "CDU/CSU", color: "#000000" },
-            { id: 2102, name: "AfD", color: "#009EE0" },
-            { id: 2103, name: "SPD", color: "#E3000F" },
-            { id: 2104, name: "GRÜNE", color: "#64A12D" },
-            { id: 2105, name: "BSW", color: "#8B0000" },
-            { id: 2106, name: "FDP", color: "#FFED00" },
-            { id: 2107, name: "LINKE", color: "#BE3075" }
+            { id: 1001, name: "CDU/CSU", color: "#000000" },
+            { id: 1002, name: "SPD", color: "#E3000F" },
+            { id: 1003, name: "AfD", color: "#009EE0" },
+            { id: 1004, name: "FDP", color: "#FFED00" },
+            { id: 1005, name: "The Left", color: "#BE3075" },
+            { id: 1006, name: "Alliance 90/The Greens", color: "#64A12D" }
         ],
         candidates: [
-            { id: 2101, name: "CDU/CSU Candidate", partyId: 2101 },
-            { id: 2102, name: "AfD Candidate", partyId: 2102 },
-            { id: 2103, name: "SPD Candidate", partyId: 2103 },
-            { id: 2104, name: "GRÜNE Candidate", partyId: 2104 },
-            { id: 2105, name: "BSW Candidate", partyId: 2105 },
-            { id: 2106, name: "FDP Candidate", partyId: 2106 },
-            { id: 2107, name: "LINKE Candidate", partyId: 2107 }
+            { id: 1001, name: "CDU/CSU Candidate", partyId: 1001 },
+            { id: 1002, name: "SPD Candidate", partyId: 1002 },
+            { id: 1003, name: "AfD Candidate", partyId: 1003 },
+            { id: 1004, name: "FDP Candidate", partyId: 1004 },
+            { id: 1005, name: "The Left Candidate", partyId: 1005 },
+            { id: 1006, name: "Alliance 90/The Greens Candidate", partyId: 1006 }
         ],
         votes: {
             parties: {
-                2101: 14576200,  // CDU/CSU - 31.2%
-                2102: 8642940,   // AfD - 18.5%
-                2103: 7054500,   // SPD - 15.1%
-                2104: 5325900,   // GRÜNE - 11.4%
-                2105: 3830900,   // BSW - 8.2%
-                2106: 2289200,   // FDP - 4.9%
-                2107: 1448200    // LINKE - 3.1%
+                1001: 15317344, // CDU/CSU
+                1002: 9539381,  // SPD
+                1003: 5878115,  // AfD
+                1004: 4999449,  // FDP
+                1005: 4297270,  // The Left
+                1006: 4158400   // Alliance 90/The Greens
             },
             candidates: {
-                2101: 15210450,  // CDU/CSU
-                2102: 8233100,   // AfD
-                2103: 7455200,   // SPD
-                2104: 5122300,   // GRÜNE
-                2105: 2105400,   // BSW
-                2106: 1944200,   // FDP
-                2107: 1422100    // LINKE
+                1001: 17286238, // CDU/CSU (CDU: 14,030,751 + CSU: 3,255,487)
+                1002: 11429231, // SPD
+                1003: 5317499,  // AfD
+                1004: 3249238,  // FDP
+                1005: 3966637,  // The Left
+                1006: 3717922   // Alliance 90/The Greens
             }
         },
         actualSeats: {
-            2101: 258,  // CDU/CSU
-            2102: 141,  // AfD
-            2103: 118,  // SPD
-            2104: 89,   // GRÜNE
-            2105: 64,   // BSW
-            2106: 38,   // FDP
-            2107: 25    // LINKE
+            1001: 246,  // CDU/CSU
+            1002: 153,  // SPD
+            1003: 94,   // AfD
+            1004: 80,   // FDP
+            1005: 69,   // The Left
+            1006: 67    // Alliance 90/The Greens
         },
-        overhangSeats: 135,  // Approximate overhang/leveling seats
-        finalParliamentSize: 733  // Total including overhang
+        overhangSeats: 111,
+        finalParliamentSize: 709
     },
     "japan_2021": {
         name: "2021 Japanese General Election",
