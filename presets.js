@@ -1721,5 +1721,293 @@ const ELECTION_PRESETS = {
             { preferences: [5204, 5202], percentage: 0.80, name: "Hoar to Poliquin" },
             { preferences: [5204], percentage: 0.38, name: "Hoar exhausted" }
         ]
+    },
+    "us_house_2012": {
+        name: "2012 US House of Representatives Election",
+        description: "A classic example of an 'election inversion' in a majoritarian system. Despite Democratic candidates winning the national popular vote by 1.1%, the Republican Party won a significant majority of 234 seats. Demonstrates the impact of geographic sorting and district boundaries in FPTP systems.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 435,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 12001, name: "Republican Party", color: "#E81B23" },
+            { id: 12002, name: "Democratic Party", color: "#0015BC" },
+            { id: 12003, name: "Libertarian Party", color: "#FED105" },
+            { id: 12004, name: "Green Party", color: "#17AA5C" },
+            { id: 12005, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                12001: 58228253, // 47.6% (Popular Vote second)
+                12002: 59645531, // 48.8% (Popular Vote winner)
+                12003: 1330230,  // 1.1%
+                12004: 367000,   // 0.3%
+                12005: 2700000   // Aggregate for Ind/Misc
+            }
+        },
+        seats: {
+            12001: 234, // Republicans (Hold majority)
+            12002: 201, // Democrats (Minority)
+            12003: 0,
+            12004: 0,
+            12005: 0
+        },
+        finalParliamentSize: 435
+    },
+    "us_house_1952": {
+        name: "1952 US House Election",
+        description: "Coattail Inversion. Despite Eisenhower's landslide victory, House Democrats narrowly won the popular vote due to safe seats in the 'Solid South', while Republicans captured the majority of seats.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 435,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 5201, name: "Democratic Party", color: "#0015BC" },
+            { id: 5202, name: "Republican Party", color: "#E81B23" },
+            { id: 5203, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                5201: 28642537, // 49.7%
+                5202: 28393794, // 49.3%
+                5203: 563601
+            }
+        },
+        seats: {
+            5201: 213,
+            5202: 221,
+            5203: 1
+        },
+        finalParliamentSize: 435
+    },
+    "us_house_1942": {
+        name: "1942 US House Election",
+        description: "War-time Inversion. Midterm voters favored Republicans nationwide (+2.0%), but the Democratic incumbency and geographic efficiency allowed them to retain a 13-seat majority.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 435,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 4201, name: "Republican Party", color: "#E81B23" },
+            { id: 4202, name: "Democratic Party", color: "#0015BC" },
+            { id: 4203, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                4201: 14217145, // 50.6%
+                4202: 13331245, // 47.4%
+                4203: 551600
+            }
+        },
+        seats: {
+            4201: 209,
+            4202: 222,
+            4203: 4
+        },
+        finalParliamentSize: 435
+    },
+    "us_house_1916": {
+        name: "1916 US House Election",
+        description: "Triple Inversion. Republicans won a clear popular vote plurality (+3.1%), but Democrats won more seats. Because neither reached 218, Democrats formed a coalition with minor parties to hold the speakership.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 435,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 1601, name: "Republican Party", color: "#E81B23" },
+            { id: 1602, name: "Democratic Party", color: "#0015BC" },
+            { id: 1603, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                1601: 8081622, // 48.4%
+                1602: 7523912, // 45.1%
+                1603: 1094000
+            }
+        },
+        seats: {
+            1601: 210,
+            1602: 214,
+            1603: 11
+        },
+        finalParliamentSize: 435
+    },
+    "us_house_1888": {
+        name: "1888 US House Election",
+        description: "Total System Inversion. Democrats won the popular vote for both the Presidency and the House, yet lost both due to geographic efficiency. Republicans took a 3-seat House majority with 4% less of the popular vote.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 325,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 8801, name: "Democratic Party", color: "#0015BC" },
+            { id: 8802, name: "Republican Party", color: "#E81B23" },
+            { id: 8803, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                8801: 5414378, // 49.6%
+                8802: 4978452, // 45.6%
+                8803: 520000
+            }
+        },
+        seats: {
+            8801: 161,
+            8802: 164,
+            8803: 0
+        },
+        finalParliamentSize: 325
+    },
+    "us_house_1848": {
+        name: "1848 US House Election",
+        description: "Three-Party Disruption. The Free Soil Party split the anti-slavery vote. Democrats won the popular vote plurality, but the Whigs won the most seats, resulting in a chaotic hung parliament where neither major party held 116 seats.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 231,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 4801, name: "Whig Party", color: "#F5F5DC" },
+            { id: 4802, name: "Democratic Party", color: "#0015BC" },
+            { id: 4803, name: "Free Soil Party", color: "#17AA5C" }
+        ],
+        votes: {
+            parties: {
+                4801: 1100000, // ~45.3%
+                4802: 1175000, // ~48.4%
+                4803: 150000  // ~6.2%
+            }
+        },
+        seats: {
+            4801: 116,
+            4802: 113,
+            4803: 2
+        },
+        finalParliamentSize: 231
+    },
+    "us_house_1842": {
+        name: "1842 US House Election",
+        description: "The 'Antebellum Anomaly'. Whigs won the popular vote plurality (48.7%) but the Democrats won a massive 147-seat majority to the Whigs' 72. This 20% seat-to-vote disparity is one of the highest in US history.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 223,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 4201, name: "Whig Party", color: "#F5F5DC" },
+            { id: 4202, name: "Democratic Party", color: "#0015BC" },
+            { id: 4203, name: "Liberty Party", color: "#FED105" }
+        ],
+        votes: {
+            parties: {
+                4201: 960000,  // ~48.7%
+                4202: 935000,  // ~47.5%
+                4203: 75000    // ~3.8%
+            }
+        },
+        seats: {
+            4201: 72,
+            4202: 147,
+            4203: 0
+        },
+        finalParliamentSize: 223
+    },
+    "uk_1951": {
+        name: "1951 UK General Election",
+        description: "The ultimate UK inversion. Labour won the highest popular vote share in its history (48.8%) but lost to Winston Churchill's Conservatives (48.0%), who won 26 more seats. Demonstrates how 'piling up' votes in safe industrial seats is inefficient in FPTP.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 625,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 5101, name: "Labour Party", color: "#E4003B" },
+            { id: 5102, name: "Conservative Party", color: "#0087DC" },
+            { id: 5103, name: "Liberal Party", color: "#FAA61A" },
+            { id: 5104, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                5101: 13948883, // 48.8%
+                5102: 13717852, // 48.0%
+                5103: 730546,   // 2.5%
+                5104: 171942    // 0.7%
+            }
+        },
+        seats: {
+            5101: 295,
+            5102: 321,
+            5103: 6,
+            5104: 3
+        },
+        finalParliamentSize: 625
+    },
+    "uk_1974_feb": {
+        name: "1974 (Feb) UK General Election",
+        description: "A rare 'Hung Parliament' inversion. Edward Heath's Conservatives won the popular vote by 0.7% (approx. 226,000 votes), but Harold Wilson's Labour Party won 4 more seats and formed a minority government.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 635,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 7401, name: "Conservative Party", color: "#0087DC" },
+            { id: 7402, name: "Labour Party", color: "#E4003B" },
+            { id: 7403, name: "Liberal Party", color: "#FAA61A" },
+            { id: 7404, name: "SNP", color: "#FDF38E" },
+            { id: 7405, name: "Others/Northern Ireland", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                7401: 11872180, // 37.9%
+                7402: 11645616, // 37.2%
+                7403: 6063470,  // 19.3%
+                7404: 633323,   // 2.0%
+                7405: 1100000   // Aggregate
+            }
+        },
+        seats: {
+            7401: 297,
+            7402: 301,
+            7403: 14,
+            7404: 7,
+            7405: 16
+        },
+        finalParliamentSize: 635
+    },
+    "canada_1979": {
+        name: "1979 Canadian Federal Election",
+        description: "Pierre Trudeau's Liberals won the popular vote by over 4%, yet Joe Clark's Progressive Conservatives formed a minority government. This was driven by Liberal concentration in Quebec and PC dominance in the West.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 282,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 7901, name: "Liberal Party", color: "#D71920" },
+            { id: 7902, name: "Progressive Conservative", color: "#004770" },
+            { id: 7903, name: "New Democratic Party", color: "#F37021" },
+            { id: 7904, name: "Social Credit", color: "#28C8C8" }
+        ],
+        votes: {
+            parties: {
+                7901: 4638358, // 40.1%
+                7902: 4111606, // 35.9%
+                7903: 2048988, // 17.9%
+                7904: 527604   // 4.6%
+            }
+        },
+        seats: {
+            7901: 114,
+            7902: 136,
+            7903: 26,
+            7904: 6
+        },
+        finalParliamentSize: 282
     }
 };
