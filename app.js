@@ -7842,10 +7842,10 @@ window.togglePresetsPanel = function() {
     }
 };
 
-// Toggle function for country groups
-window.toggleCountryGroup = function(countryId) {
-    const panel = document.getElementById(`countryGroupPanel-${countryId}`);
-    const icon = document.getElementById(`countryGroupIcon-${countryId}`);
+// Toggle function for country/system groups (works for both country and system groupings)
+window.toggleCountryGroup = function(groupId) {
+    const panel = document.getElementById(`countryGroupPanel-${groupId}`);
+    const icon = document.getElementById(`countryGroupIcon-${groupId}`);
     
     if (panel && icon) {
         if (panel.style.display === 'none') {
