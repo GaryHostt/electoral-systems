@@ -47,6 +47,61 @@ const ELECTION_PRESETS = {
             9010: 2     // Others
         }
     },
+    "uk_2015": {
+        name: "2015 UK General Election",
+        description: "Unexpected Conservative majority. Marked by the collapse of the Liberal Democrats and the SNP landslide in Scotland. Demonstrates extreme FPTP disproportionality for UKIP and the Greens.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 650,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 7001, name: "Conservative", color: "#0087DC" },
+            { id: 7002, name: "Labour", color: "#DC241F" },
+            { id: 7003, name: "UKIP", color: "#70147A" },
+            { id: 7004, name: "Liberal Democrats", color: "#FDBB30" },
+            { id: 7005, name: "SNP", color: "#FDF38E" },
+            { id: 7006, name: "Green Party", color: "#6AB023" },
+            { id: 7007, name: "Democratic Unionist (DUP)", color: "#D46A4C" },
+            { id: 7008, name: "Sinn Féin", color: "#326760" },
+            { id: 7009, name: "Plaid Cymru", color: "#008142" },
+            { id: 7010, name: "SDLP", color: "#2AA82C" },
+            { id: 7011, name: "Ulster Unionist (UUP)", color: "#48A5EE" }
+        ],
+        votes: {
+            parties: {
+                7001: 11299609, // Conservative (36.8%)
+                7002: 9347273,  // Labour (30.4%)
+                7003: 3881099,  // UKIP (12.6%)
+                7004: 2415919,  // Lib Dem (7.9%)
+                7005: 1454436,  // SNP (4.7%)
+                7006: 1111603,  // Green (3.8%)
+                7007: 184260,   // DUP (0.6%)
+                7008: 176232,   // Sinn Féin (0.6%)
+                7009: 181704,   // Plaid Cymru (0.6%)
+                7010: 99809,    // SDLP (0.3%)
+                7011: 114935    // UUP (0.4%)
+            }
+        },
+        seats: {
+            7001: 330, // Conservatives (Majority)
+            7002: 232, // Labour
+            7005: 56,  // SNP
+            7004: 8,   // Liberal Democrats
+            7007: 8,   // DUP
+            7008: 4,   // Sinn Féin
+            7009: 3,   // Plaid Cymru
+            7010: 3,   // SDLP
+            7011: 2,   // UUP
+            7003: 1,   // UKIP
+            7006: 1    // Green
+        },
+        specialSeats: {
+            speaker: 1,
+            independents: 1 // Sylvia Hermon (North Down)
+        },
+        finalParliamentSize: 650
+    },
     "canada_2008": {
         name: "2008 Canadian Federal Election",
         description: "40th Canadian General Election. Conservative minority government. Green Party won 6.78% but zero seats, highlighting FPTP's disproportionality. Bloc Québécois regional concentration secured 49 seats with just 9.98%.",
@@ -89,6 +144,44 @@ const ELECTION_PRESETS = {
             10005: 0,    // Green
             10006: 2     // Independent / Others
         }
+    },
+    "canada_2025": {
+        name: "2025 Canadian Federal Election",
+        description: "Mark Carney leads the Liberals to a fourth term minority government. Historic consolidation of the top two parties (85%+) while the NDP loses official party status. First election with 343 seats.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 343,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 8001, name: "Liberal Party", color: "#D71920" },
+            { id: 8002, name: "Conservative Party", color: "#004770" },
+            { id: 8003, name: "Bloc Québécois", color: "#0080C4" },
+            { id: 8004, name: "New Democratic Party (NDP)", color: "#F37021" },
+            { id: 8005, name: "Green Party", color: "#3D9B35" },
+            { id: 8006, name: "People's Party (PPC)", color: "#1F2742" }
+        ],
+        votes: {
+            parties: {
+                8001: 8670000, // Liberal (43.8%) - Approximate based on final totals
+                8002: 8185000, // Conservative (41.3%)
+                8003: 1246000, // Bloc Québécois (6.3%)
+                8004: 1246000, // NDP (6.3%)
+                8005: 242000,  // Green (1.2%)
+                8006: 139000   // PPC (0.7%)
+            }
+        },
+        seats: {
+            8001: 169, // Liberals (Strong Minority)
+            8002: 144, // Conservatives (Official Opposition)
+            8003: 22,  // Bloc Québécois
+            8004: 7,   // NDP (Loss of official party status)
+            8005: 1    // Green (Elizabeth May)
+        },
+        specialSeats: {
+            independents: 0
+        },
+        finalParliamentSize: 343
     },
     "sweden_2022": {
         name: "2022 Swedish General Election",
@@ -751,7 +844,7 @@ const ELECTION_PRESETS = {
     },
     "israel_2022": {
         name: "2022 Israeli Legislative Election",
-        description: "Single national constituency with 3.25% threshold demonstrating wasted vote effect.",
+        description: "Single national constituency with 3.25% threshold. Meretz (3.16%) and Balad (2.91%) failed threshold, resulting in ~6% wasted votes that helped Netanyahu secure majority.",
         system: "party-list",
         totalSeats: 120,
         threshold: 3.25,
@@ -761,7 +854,15 @@ const ELECTION_PRESETS = {
             { id: 8002, name: "Yesh Atid", color: "#50C8ED" },
             { id: 8003, name: "Religious Zionist Party", color: "#FF8000" },
             { id: 8004, name: "National Unity", color: "#0047AB" },
-            { id: 8005, name: "Shas", color: "#000000" }
+            { id: 8005, name: "Shas", color: "#000000" },
+            { id: 8006, name: "Meretz", color: "#00B294" },
+            { id: 8007, name: "Balad", color: "#FFA500" },
+            { id: 8008, name: "United Torah Judaism", color: "#000080" },
+            { id: 8009, name: "Yisrael Beiteinu", color: "#C41E3A" },
+            { id: 8010, name: "United Arab List (Ra'am)", color: "#009639" },
+            { id: 8011, name: "Hadash-Ta'al", color: "#FF0000" },
+            { id: 8012, name: "Labor Party", color: "#E50000" },
+            { id: 8013, name: "Others (Non-Qualifying)", color: "#999999" }
         ],
         votes: {
             parties: {
@@ -769,8 +870,28 @@ const ELECTION_PRESETS = {
                 8002: 847435,   // Yesh Atid
                 8003: 516470,   // Religious Zionist
                 8004: 432482,   // National Unity
-                8005: 392964    // Shas
+                8005: 392964,   // Shas
+                8008: 280194,   // UTJ
+                8009: 213687,   // Yisrael Beiteinu
+                8010: 194047,   // Ra'am
+                8011: 178735,   // Hadash-Ta'al
+                8012: 175992,   // Labor
+                8006: 150793,   // Meretz (3.16% - Qualifies if threshold lowered)
+                8007: 138617,   // Balad (2.91% - Qualifies if threshold lowered)
+                8013: 124000    // Aggregate of all other tiny parties (<1%)
             }
+        },
+        actualSeats: {
+            8001: 32,
+            8002: 24,
+            8003: 14,
+            8005: 11,
+            8004: 12,
+            8008: 7,
+            8009: 6,
+            8010: 5,
+            8011: 5,
+            8012: 4
         }
     },
     "israel_2021": {
@@ -824,14 +945,16 @@ const ELECTION_PRESETS = {
             { id: 9001, name: "Party for Freedom (PVV)", color: "#1C4788" },
             { id: 9002, name: "GroenLinks-PvdA", color: "#B40D1E" },
             { id: 9003, name: "People's Party for Freedom (VVD)", color: "#FF7F00" },
-            { id: 9004, name: "New Social Contract (NSC)", color: "#00A7E1" }
+            { id: 9004, name: "New Social Contract (NSC)", color: "#00A7E1" },
+            { id: 9005, name: "BBB", color: "#92D050" }
         ],
         votes: {
             parties: {
                 9001: 2450000,  // PVV
                 9002: 1650000,  // GL/PvdA
                 9003: 1589519,  // VVD
-                9004: 1000000   // NSC
+                9004: 1000000,  // NSC
+                9005: 485634    // BBB (4.6% - won 7 seats)
             }
         }
     },

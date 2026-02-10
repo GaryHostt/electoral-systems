@@ -5925,9 +5925,11 @@ function generateComparisonRows(primaryResults, shadowResults) {
         }
     });
     
-    // Calculate total shadow seats for percentage calculation
+    // Calculate totals for percentage calculations
+    let totalPrimarySeats = 0;
     let totalShadowSeats = 0;
     partyMap.forEach((data) => {
+        totalPrimarySeats += data.primary;
         totalShadowSeats += data.shadow;
     });
     
@@ -5941,6 +5943,14 @@ function generateComparisonRows(primaryResults, shadowResults) {
         // For single-winner systems, show "Winner" instead of seat count
         const primaryDisplay = isSingleWinner ? (data.primary === 1 ? 'Winner' : '—') : data.primary;
         const shadowDisplay = isSingleWinner ? (data.shadow === 1 ? 'Winner' : '—') : data.shadow;
+        
+        // Calculate old seat share percentage
+        const oldSeatSharePercent = totalPrimarySeats > 0 
+            ? (data.primary / totalPrimarySeats * 100).toFixed(1) + '%'
+            : '0%';
+        const oldSeatShareDisplay = isSingleWinner 
+            ? (data.primary === 1 ? '100%' : '0%') 
+            : oldSeatSharePercent;
         
         // Calculate new seat share percentage
         const seatSharePercent = totalShadowSeats > 0 
@@ -5957,6 +5967,7 @@ function generateComparisonRows(primaryResults, shadowResults) {
                     ${partyName}
                 </td>
                 <td class="comparison-table td comparison-table__td--center">${primaryDisplay}</td>
+                <td class="comparison-table td comparison-table__td--center">${oldSeatShareDisplay}</td>
                 <td class="comparison-table td comparison-table__td--center">${shadowDisplay}</td>
                 <td class="comparison-table td comparison-table__td--center">${newSeatShareDisplay}</td>
                 <td class="comparison-table td comparison-table__td--center ${diffClass}">
@@ -6265,6 +6276,7 @@ function showShadowResult() {
                     <tr>
                         <th style="padding: 12px; text-align: left;">Party</th>
                         <th style="padding: 12px; text-align: center;">${systemNames[currentSystem]} Seats</th>
+                        <th style="padding: 12px; text-align: center;">Old Seat Share</th>
                         <th style="padding: 12px; text-align: center;">${systemNames[compareSystem]} Seats</th>
                         <th style="padding: 12px; text-align: center;">New Seat Share</th>
                         <th style="padding: 12px; text-align: center;">Difference</th>
