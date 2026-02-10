@@ -2137,6 +2137,14 @@ function updateManualSeatInputs() {
                 </div>
             `;
         });
+        
+        // Add Total Seats Entered display for MMM (parallel)
+        html += `
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                <strong style="font-size: 1em; color: #667eea;">Total Seats Entered:</strong>
+                <span id="manualSeatsEnteredTotal" style="font-size: 1.1em; font-weight: 600; color: #667eea; margin-left: 10px;">0</span>
+            </div>
+        `;
     } else if (isPartyList) {
         // For Party-List PR, show simple seat inputs (no direct mandate indicator)
         parties.forEach(party => {
@@ -2154,6 +2162,14 @@ function updateManualSeatInputs() {
                 </div>
             `;
         });
+        
+        // Add Total Seats Entered display for party-list
+        html += `
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                <strong style="font-size: 1em; color: #667eea;">Total Seats Entered:</strong>
+                <span id="manualSeatsEnteredTotal" style="font-size: 1.1em; font-weight: 600; color: #667eea; margin-left: 10px;">0</span>
+            </div>
+        `;
     } else {
         // For MMP, show single total seats input with direct mandate indicator
         parties.forEach(party => {
@@ -2175,6 +2191,14 @@ function updateManualSeatInputs() {
                 </div>
             `;
         });
+        
+        // Add Total Seats Entered display for MMP
+        html += `
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                <strong style="font-size: 1em; color: #667eea;">Total Seats Entered:</strong>
+                <span id="manualSeatsEnteredTotal" style="font-size: 1.1em; font-weight: 600; color: #667eea; margin-left: 10px;">0</span>
+            </div>
+        `;
     }
     
     container.innerHTML = html;
@@ -2188,6 +2212,9 @@ function updateManualSeatInputs() {
             totalContainer.style.display = 'block';
         }
     }
+    
+    // Initialize the total display
+    updateManualSeatTotal();
 }
 
 // Real-time validation of manual seat total
@@ -2196,11 +2223,10 @@ function updateManualSeatTotal() {
     const isParallel = currentSystem === 'parallel';
     const isPartyList = currentSystem === 'party-list';
     
-    // Hide seat total container for party-list systems
+    // Hide seat total container for party-list systems (but still calculate total for display)
     const totalContainer = document.getElementById('manualSeatsTotalContainer');
     if (totalContainer && isPartyList) {
         totalContainer.style.display = 'none';
-        return; // Early return for party-list - no need to calculate totals
     }
     
     let total = 0;
@@ -2227,6 +2253,12 @@ function updateManualSeatTotal() {
         }
     });
     
+    // Update the new "Total Seats Entered" display for all systems
+    const enteredTotalDisplay = document.getElementById('manualSeatsEnteredTotal');
+    if (enteredTotalDisplay) {
+        enteredTotalDisplay.textContent = total;
+    }
+    
     const system = document.getElementById('electoralSystem').value;
     let expectedTotal;
     if (isPartyList) {
@@ -2242,15 +2274,15 @@ function updateManualSeatTotal() {
         expectedTotal = districtSeats + listSeats;
     }
     
-    // Update display
+    // Update display (for MMM and MMP validation container)
     const totalDisplay = document.getElementById('manualSeatsTotal');
     const expectedDisplay = document.getElementById('expectedSeatsTotal');
     if (totalDisplay) totalDisplay.textContent = total;
     if (expectedDisplay) expectedDisplay.textContent = expectedTotal;
     
-    // Show validation indicator
+    // Show validation indicator (only for MMM and MMP, not party-list)
     const indicator = document.getElementById('seatValidationIndicator');
-    if (indicator) {
+    if (indicator && !isPartyList) {
         indicator.style.display = 'block';
         
         if (total === expectedTotal) {

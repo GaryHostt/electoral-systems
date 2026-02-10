@@ -647,7 +647,24 @@ const ELECTION_PRESETS = {
             { id: 1003, name: "AfD", color: "#009EE0" },
             { id: 1004, name: "FDP", color: "#FFED00" },
             { id: 1005, name: "The Left", color: "#BE3075" },
-            { id: 1006, name: "Alliance 90/The Greens", color: "#64A12D" }
+            { id: 1006, name: "Alliance 90/The Greens", color: "#64A12D" },
+            { id: 1007, name: "Free Voters", color: "#0066CC" },
+            { id: 1008, name: "Die PARTEI", color: "#FF0000" },
+            { id: 1009, name: "Human Environment Animal Protection Party", color: "#00AA00" },
+            { id: 1010, name: "National Democratic Party", color: "#8B4513" },
+            { id: 1011, name: "Pirate Party Germany", color: "#FF6600" },
+            { id: 1012, name: "Ecological Democratic Party", color: "#00CC00" },
+            { id: 1013, name: "Basic Income Alliance", color: "#9B59B6" },
+            { id: 1014, name: "V-Partei3", color: "#E91E63" },
+            { id: 1015, name: "German Centre [de]", color: "#34495E" },
+            { id: 1016, name: "Democracy in Motion", color: "#1ABC9C" },
+            { id: 1017, name: "Bavaria Party", color: "#F39C12" },
+            { id: 1018, name: "Alliance of German Democrats", color: "#95A5A6" },
+            { id: 1019, name: "Alliance for Human Rights, Animal and Nature Protection", color: "#27AE60" },
+            { id: 1020, name: "Marxist–Leninist Party", color: "#C0392B" },
+            { id: 1021, name: "Partei für Gesundheitsforschung", color: "#3498DB" },
+            { id: 1022, name: "Menschliche Welt [de]", color: "#E67E22" },
+            { id: 1023, name: "German Communist Party", color: "#E74C3C" }
         ],
         candidates: [
             { id: 1001, name: "CDU/CSU Candidate", partyId: 1001 },
@@ -655,7 +672,20 @@ const ELECTION_PRESETS = {
             { id: 1003, name: "AfD Candidate", partyId: 1003 },
             { id: 1004, name: "FDP Candidate", partyId: 1004 },
             { id: 1005, name: "The Left Candidate", partyId: 1005 },
-            { id: 1006, name: "Alliance 90/The Greens Candidate", partyId: 1006 }
+            { id: 1006, name: "Alliance 90/The Greens Candidate", partyId: 1006 },
+            { id: 1007, name: "Free Voters Candidate", partyId: 1007 },
+            { id: 1008, name: "Die PARTEI Candidate", partyId: 1008 },
+            { id: 1009, name: "Human Environment Animal Protection Party Candidate", partyId: 1009 },
+            { id: 1010, name: "National Democratic Party Candidate", partyId: 1010 },
+            { id: 1011, name: "Pirate Party Germany Candidate", partyId: 1011 },
+            { id: 1012, name: "Ecological Democratic Party Candidate", partyId: 1012 },
+            { id: 1014, name: "V-Partei3 Candidate", partyId: 1014 },
+            { id: 1017, name: "Bavaria Party Candidate", partyId: 1017 },
+            { id: 1019, name: "Alliance for Human Rights, Animal and Nature Protection Candidate", partyId: 1019 },
+            { id: 1020, name: "Marxist–Leninist Party Candidate", partyId: 1020 },
+            { id: 1021, name: "Partei für Gesundheitsforschung Candidate", partyId: 1021 },
+            { id: 1022, name: "Menschliche Welt [de] Candidate", partyId: 1022 },
+            { id: 1023, name: "German Communist Party Candidate", partyId: 1023 }
         ],
         votes: {
             parties: {
@@ -664,7 +694,24 @@ const ELECTION_PRESETS = {
                 1003: 5878115,  // AfD
                 1004: 4999449,  // FDP
                 1005: 4297270,  // The Left
-                1006: 4158400   // Alliance 90/The Greens
+                1006: 4158400,  // Alliance 90/The Greens
+                1007: 463292,   // Free Voters
+                1008: 454349,   // Die PARTEI
+                1009: 374179,   // Human Environment Animal Protection Party
+                1010: 176020,   // National Democratic Party
+                1011: 173476,   // Pirate Party Germany
+                1012: 144809,   // Ecological Democratic Party
+                1013: 97539,    // Basic Income Alliance
+                1014: 64073,    // V-Partei3
+                1015: 63203,   // German Centre [de]
+                1016: 60914,    // Democracy in Motion
+                1017: 58037,    // Bavaria Party
+                1018: 41251,    // Alliance of German Democrats
+                1019: 32221,    // Alliance for Human Rights, Animal and Nature Protection
+                1020: 29785,    // Marxist–Leninist Party
+                1021: 23404,    // Partei für Gesundheitsforschung
+                1022: 11661,    // Menschliche Welt [de]
+                1023: 11558     // German Communist Party
             },
             candidates: {
                 1001: 17286238, // CDU/CSU (CDU: 14,030,751 + CSU: 3,255,487)
@@ -672,7 +719,20 @@ const ELECTION_PRESETS = {
                 1003: 5317499,  // AfD
                 1004: 3249238,  // FDP
                 1005: 3966637,  // The Left
-                1006: 3717922   // Alliance 90/The Greens
+                1006: 3717922,  // Alliance 90/The Greens
+                1007: 589056,   // Free Voters
+                1008: 245659,   // Die PARTEI
+                1009: 22917,    // Human Environment Animal Protection Party
+                1010: 45169,    // National Democratic Party
+                1011: 93196,    // Pirate Party Germany
+                1012: 166228,   // Ecological Democratic Party
+                1014: 1201,     // V-Partei3
+                1017: 62622,    // Bavaria Party
+                1019: 6114,     // Alliance for Human Rights, Animal and Nature Protection
+                1020: 35760,    // Marxist–Leninist Party
+                1021: 1537,     // Partei für Gesundheitsforschung
+                1022: 2205,     // Menschliche Welt [de]
+                1023: 7517      // German Communist Party
             }
         },
         actualSeats: {
@@ -1119,13 +1179,23 @@ const ELECTION_PRESETS = {
             { id: 18003, name: "The Left", color: "#BE3075" },
             { id: 18004, name: "Greens", color: "#64A12D" },
             { id: 18005, name: "FDP", color: "#FFED00" },
-            { id: 18006, name: "AfD", color: "#009EE0" }
+            { id: 18006, name: "AfD", color: "#009EE0" },
+            { id: 18007, name: "Pirate Party Germany", color: "#FF6600" },
+            { id: 18008, name: "National Democratic Party", color: "#8B4513" },
+            { id: 18009, name: "Free Voters", color: "#0066CC" },
+            { id: 18010, name: "Human Environment Animal Protection Party", color: "#00AA00" },
+            { id: 18011, name: "Ecological Democratic Party", color: "#00CC00" }
         ],
         candidates: [
             { id: 18001, name: "CDU/CSU Candidate", partyId: 18001 },
             { id: 18002, name: "SPD Candidate", partyId: 18002 },
             { id: 18003, name: "The Left Candidate", partyId: 18003 },
-            { id: 18004, name: "Greens Candidate", partyId: 18004 }
+            { id: 18004, name: "Greens Candidate", partyId: 18004 },
+            { id: 18007, name: "Pirate Party Germany Candidate", partyId: 18007 },
+            { id: 18008, name: "National Democratic Party Candidate", partyId: 18008 },
+            { id: 18009, name: "Free Voters Candidate", partyId: 18009 },
+            { id: 18010, name: "Human Environment Animal Protection Party Candidate", partyId: 18010 },
+            { id: 18011, name: "Ecological Democratic Party Candidate", partyId: 18011 }
         ],
         votes: {
             parties: {
@@ -1134,13 +1204,23 @@ const ELECTION_PRESETS = {
                 18003: 3755699,  // 8.6%
                 18004: 3694057,  // 8.4%
                 18005: 2083533,  // 4.8% (Failed threshold)
-                18006: 2056985   // 4.7% (Failed threshold)
+                18006: 2056985,  // 4.7% (Failed threshold)
+                18007: 959177,   // Pirate Party Germany
+                18008: 560828,   // National Democratic Party
+                18009: 423977,   // Free Voters
+                18010: 140366,   // Human Environment Animal Protection Party
+                18011: 127088    // Ecological Democratic Party
             },
             candidates: {
                 18001: 19777721,
                 18002: 12843458,
                 18003: 3585178,
-                18004: 3180299
+                18004: 3180299,
+                18007: 963623,  // Pirate Party Germany
+                18008: 635135,  // National Democratic Party
+                18009: 431640,  // Free Voters
+                18010: 4437,    // Human Environment Animal Protection Party
+                18011: 128209   // Ecological Democratic Party
             }
         },
         actualSeats: {
