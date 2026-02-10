@@ -19,6 +19,7 @@ let electionState = {
     levelingEnabled: false,           // Keep for backward compatibility
     isManualSeatMode: false,  // NEW: Tracks if manual mode is active
     manualSeats: {},          // NEW: Stores user-entered seats {partyId: seatCount}
+    manualDistrictSeats: {},  // NEW: For Parallel voting - stores district seats separately {partyId: districtSeatCount}
     calculatedSeats: {}       // NEW: Stores system-calculated seats for comparison
 };
 
@@ -66,6 +67,7 @@ function resetState() {
         levelingEnabled: false,
         isManualSeatMode: false,
         manualSeats: {},
+        manualDistrictSeats: {},
         calculatedSeats: {}
     };
     // Update backward compatibility aliases
@@ -173,11 +175,9 @@ function importElectionPreset(presetKey) {
         if (seatsInput) seatsInput.value = preset.totalSeats;
     }
     
-    // Update threshold (if visible) - sync both inputs
+    // Update threshold (if visible)
     const electoralThreshold = document.getElementById('electoralThreshold');
-    const thresholdInput = document.getElementById('thresholdInput');
     if (electoralThreshold) electoralThreshold.value = preset.threshold || 0;
-    if (thresholdInput) thresholdInput.value = preset.threshold || 0;
     
     // Update allocation method (if visible)
     const allocationSelect = document.getElementById('allocationMethod');
@@ -240,6 +240,12 @@ function importElectionPreset(presetKey) {
     if (preset.actualSeats) {
         electionState.isManualSeatMode = true;
         electionState.manualSeats = { ...preset.actualSeats };
+        // For Parallel voting, populate district seats from actualDistrictWins if available
+        if (preset.system === 'parallel' && preset.actualDistrictWins) {
+            electionState.manualDistrictSeats = { ...preset.actualDistrictWins };
+        } else {
+            electionState.manualDistrictSeats = {};
+        }
         electionState.calculatedSeats = {};  // Reset calculated seats
         
         // Show manual seat section if MMP/MMM
@@ -328,12 +334,45 @@ function populateVotingBoxes(voteData, preset) {
         setTimeout(() => {
             updateManualSeatInputs(); // Generate inputs first
             
-            Object.entries(preset.actualSeats).forEach(([partyId, seatCount]) => {
-                const seatsInput = document.getElementById(`manual-seats-${partyId}`);
-                if (seatsInput) {
-                    seatsInput.value = seatCount;
-                }
-            });
+            const system = preset.system || electionState.system;
+            const isParallel = system === 'parallel';
+            
+            if (isParallel && preset.actualDistrictWins) {
+                // For Parallel voting, populate district and list inputs separately
+                Object.entries(preset.actualDistrictWins).forEach(([partyId, districtCount]) => {
+                    const partyIdInt = parseInt(partyId);
+                    const districtInput = document.getElementById(`manual-district-seats-${partyIdInt}`);
+                    if (districtInput) {
+                        districtInput.value = districtCount;
+                        // Update state
+                        electionState.manualDistrictSeats[partyIdInt] = districtCount;
+                    } else {
+                        console.warn(`Could not find district input for party ${partyIdInt}`);
+                    }
+                });
+                Object.entries(preset.actualSeats).forEach(([partyId, totalSeats]) => {
+                    const partyIdInt = parseInt(partyId);
+                    // Try both string and int keys for lookup
+                    const districtWins = preset.actualDistrictWins[partyId] || preset.actualDistrictWins[partyIdInt] || 0;
+                    const listSeats = totalSeats - districtWins;
+                    const listInput = document.getElementById(`manual-list-seats-${partyIdInt}`);
+                    if (listInput) {
+                        listInput.value = listSeats;
+                    } else {
+                        console.warn(`Could not find list input for party ${partyIdInt}`);
+                    }
+                    // Ensure manualSeats is set to total
+                    electionState.manualSeats[partyIdInt] = totalSeats;
+                });
+            } else {
+                // For MMP, use single total seats input
+                Object.entries(preset.actualSeats).forEach(([partyId, seatCount]) => {
+                    const seatsInput = document.getElementById(`manual-seats-${partyId}`);
+                    if (seatsInput) {
+                        seatsInput.value = seatCount;
+                    }
+                });
+            }
             
             updateManualSeatTotal(); // Update validation
         }, 150);
@@ -1038,25 +1077,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // NEW: Setup threshold input (sync with electoralThreshold)
-    const thresholdInput = document.getElementById('thresholdInput');
+    // NEW: Setup threshold input (for MMP) - only electoralThreshold, no duplicate
     const electoralThreshold = document.getElementById('electoralThreshold');
-    if (thresholdInput) {
-        thresholdInput.addEventListener('change', (e) => {
-            const value = parseFloat(e.target.value) || 5;
-            electionState.threshold = value;
-            // Sync with existing electoralThreshold input
-            if (electoralThreshold) {
-                electoralThreshold.value = value;
-            }
-        });
-    }
-    // Also sync electoralThreshold to thresholdInput
-    if (electoralThreshold && thresholdInput) {
+    if (electoralThreshold) {
         electoralThreshold.addEventListener('change', (e) => {
             const value = parseFloat(e.target.value) || 5;
             electionState.threshold = value;
-            thresholdInput.value = value;
         });
     }
     
@@ -1318,12 +1344,6 @@ function onSystemChange() {
         if (thresholdBypassContainer) {
             if (system === 'mmp') {
                 thresholdBypassContainer.style.display = 'block';
-                // Initialize threshold input from electoralThreshold
-                const electoralThreshold = document.getElementById('electoralThreshold');
-                const thresholdInput = document.getElementById('thresholdInput');
-                if (electoralThreshold && thresholdInput) {
-                    thresholdInput.value = electoralThreshold.value || 5;
-                }
                 // Initialize bypass threshold from state
                 const bypassThresholdInput = document.getElementById('bypassThresholdInput');
                 if (bypassThresholdInput) {
@@ -1356,6 +1376,22 @@ function onSystemChange() {
         }
     } catch (e) {
         console.warn('Error updating overhangCompensationContainer:', e);
+    }
+    
+    // NEW: Show/hide PR tier percentage container (Parallel only)
+    try {
+        const prTierPercentageContainer = document.getElementById('prTierPercentageContainer');
+        if (prTierPercentageContainer) {
+            if (system === 'parallel') {
+                prTierPercentageContainer.style.display = 'block';
+                // Initialize calculated seats display
+                updateSeatsFromPRPercentage();
+            } else {
+                prTierPercentageContainer.style.display = 'none';
+            }
+        }
+    } catch (e) {
+        console.warn('Error updating prTierPercentageContainer:', e);
     }
     
     // Auto-generate candidates for MMP/MMM if needed
@@ -1972,40 +2008,93 @@ function updateManualSeatInputs() {
     const container = document.getElementById('manualSeatInputGrid');
     if (!container) return;
     
+    const system = document.getElementById('electoralSystem')?.value || electionState.system;
+    const isParallel = system === 'parallel';
+    
     let html = '<h4 style="margin: 0 0 15px 0;">Seats Won by Party</h4>';
     
-    parties.forEach(party => {
-        const currentValue = electionState.manualSeats[party.id] || 0;
-        const hasDirectMandate = currentValue > 0;
-        const directMandateIndicator = hasDirectMandate 
-            ? '<span title="Direct Mandate: Party has won electorate seats and bypasses threshold requirement" style="color: #28a745; font-weight: bold; margin-left: 8px;">✓ Direct Mandate</span>'
-            : '';
-        html += `
-            <div class="vote-input-row">
-                <label>
-                    <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
-                    ${party.name}${directMandateIndicator}
-                </label>
-                <input type="number" min="0" max="1000" value="${currentValue}" 
-                       id="manual-seats-${party.id}" 
-                       class="number-input"
-                       oninput="updateManualSeatTotal()" />
-            </div>
-        `;
-    });
+    if (isParallel) {
+        // For Parallel voting, show separate district and list inputs
+        html += '<p style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Enter district seats and list seats separately for each party.</p>';
+        html += '<div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 10px; font-weight: 600; color: #667eea; padding: 5px;">';
+        html += '<div>Party</div><div style="text-align: center;">District</div><div style="text-align: center;">List</div>';
+        html += '</div>';
+        
+        parties.forEach(party => {
+            const currentDistrictValue = electionState.manualDistrictSeats[party.id] || 0;
+            const currentListValue = (electionState.manualSeats[party.id] || 0) - currentDistrictValue;
+            
+            html += `
+                <div class="vote-input-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; align-items: center;">
+                    <label style="display: flex; align-items: center;">
+                        <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
+                        ${party.name}
+                    </label>
+                    <input type="number" min="0" max="1000" value="${currentDistrictValue}" 
+                           id="manual-district-seats-${party.id}" 
+                           class="number-input"
+                           style="text-align: center;"
+                           oninput="updateManualSeatTotal()" />
+                    <input type="number" min="0" max="1000" value="${currentListValue}" 
+                           id="manual-list-seats-${party.id}" 
+                           class="number-input"
+                           style="text-align: center;"
+                           oninput="updateManualSeatTotal()" />
+                </div>
+            `;
+        });
+    } else {
+        // For MMP, show single total seats input with direct mandate indicator
+        parties.forEach(party => {
+            const currentValue = electionState.manualSeats[party.id] || 0;
+            const hasDirectMandate = currentValue > 0;
+            const directMandateIndicator = hasDirectMandate 
+                ? '<span title="Direct Mandate: Party has won electorate seats and bypasses threshold requirement" style="color: #28a745; font-weight: bold; margin-left: 8px;">✓ Direct Mandate</span>'
+                : '';
+            html += `
+                <div class="vote-input-row">
+                    <label>
+                        <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
+                        ${party.name}${directMandateIndicator}
+                    </label>
+                    <input type="number" min="0" max="1000" value="${currentValue}" 
+                           id="manual-seats-${party.id}" 
+                           class="number-input"
+                           oninput="updateManualSeatTotal()" />
+                </div>
+            `;
+        });
+    }
     
     container.innerHTML = html;
 }
 
 // Real-time validation of manual seat total
 function updateManualSeatTotal() {
+    const currentSystem = document.getElementById('electoralSystem')?.value || electionState.system;
+    const isParallel = currentSystem === 'parallel';
+    
     let total = 0;
     parties.forEach(party => {
-        const input = document.getElementById(`manual-seats-${party.id}`);
-        if (input) {
-            const value = parseInt(input.value) || 0;
-            electionState.manualSeats[party.id] = value;
-            total += value;
+        if (isParallel) {
+            // For Parallel voting, sum district and list seats separately
+            const districtInput = document.getElementById(`manual-district-seats-${party.id}`);
+            const listInput = document.getElementById(`manual-list-seats-${party.id}`);
+            const districtValue = districtInput ? (parseInt(districtInput.value) || 0) : 0;
+            const listValue = listInput ? (parseInt(listInput.value) || 0) : 0;
+            const totalValue = districtValue + listValue;
+            
+            electionState.manualDistrictSeats[party.id] = districtValue;
+            electionState.manualSeats[party.id] = totalValue;
+            total += totalValue;
+        } else {
+            // For MMP, use single total seats input
+            const input = document.getElementById(`manual-seats-${party.id}`);
+            if (input) {
+                const value = parseInt(input.value) || 0;
+                electionState.manualSeats[party.id] = value;
+                total += value;
+            }
         }
     });
     
@@ -4759,6 +4848,67 @@ function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, thresh
     };
 }
 
+// Helper function to extract district wins from candidate votes (deterministic for Parallel voting)
+// This uses candidate votes to determine district wins without randomness
+function extractDistrictWinsFromCandidateVotes(candidateVotes, districtCount) {
+    const partyDistrictWins = {};
+    parties.forEach(p => partyDistrictWins[p.id] = 0);
+    
+    // Aggregate candidate votes by party
+    const partyVoteTotals = {};
+    parties.forEach(p => partyVoteTotals[p.id] = 0);
+    
+    candidates.forEach(candidate => {
+        const votes = candidateVotes[candidate.id] || 0;
+        if (candidate.partyId) {
+            partyVoteTotals[candidate.partyId] = (partyVoteTotals[candidate.partyId] || 0) + votes;
+        }
+    });
+    
+    // Calculate each party's share of total candidate votes
+    const totalCandidateVotes = Object.values(partyVoteTotals).reduce((sum, v) => sum + v, 0);
+    if (totalCandidateVotes === 0) return partyDistrictWins;
+    
+    // Allocate districts proportionally based on candidate vote share (deterministic)
+    // This gives a reasonable estimate of district wins without randomness
+    const partyShares = {};
+    parties.forEach(p => {
+        partyShares[p.id] = totalCandidateVotes > 0 ? (partyVoteTotals[p.id] / totalCandidateVotes) : 0;
+    });
+    
+    // Allocate districts using largest remainder method for deterministic results
+    const partyDistricts = {};
+    let allocated = 0;
+    
+    // First allocation: integer part
+    parties.forEach(p => {
+        const share = partyShares[p.id] * districtCount;
+        const integerPart = Math.floor(share);
+        partyDistricts[p.id] = integerPart;
+        allocated += integerPart;
+    });
+    
+    // Remaining districts: allocate to parties with largest fractional parts
+    const remaining = districtCount - allocated;
+    if (remaining > 0) {
+        const fractionalParts = parties.map(p => ({
+            partyId: p.id,
+            fractional: (partyShares[p.id] * districtCount) - Math.floor(partyShares[p.id] * districtCount)
+        })).sort((a, b) => b.fractional - a.fractional);
+        
+        for (let i = 0; i < remaining && i < fractionalParts.length; i++) {
+            partyDistricts[fractionalParts[i].partyId]++;
+        }
+    }
+    
+    // Copy to partyDistrictWins
+    Object.keys(partyDistricts).forEach(partyId => {
+        partyDistrictWins[parseInt(partyId)] = partyDistricts[partyId] || 0;
+    });
+    
+    return partyDistrictWins;
+}
+
 // Manual seat calculation for Parallel/MMM
 function calculateParallelWithManualSeats(votes, districtSeats, listSeats, threshold, allocationMethod, forcedDistricts) {
     // Ensure calculatedSeats object exists
@@ -4766,9 +4916,20 @@ function calculateParallelWithManualSeats(votes, districtSeats, listSeats, thres
         electionState.calculatedSeats = {};
     }
     
-    // First, run normal calculation
+    // CRITICAL: For "calculated" comparison, use manual district seats if available
+    // This ensures the calculated seats reflect what the system would compute with actual district results
+    let actualDistrictWins = forcedDistricts;
+    if (!actualDistrictWins && Object.keys(electionState.manualDistrictSeats).length > 0) {
+        // Use manual district seats if they were entered
+        actualDistrictWins = { ...electionState.manualDistrictSeats };
+    } else if (!actualDistrictWins && votes.candidates) {
+        // Fallback to extracting from candidate votes deterministically
+        actualDistrictWins = extractDistrictWinsFromCandidateVotes(votes.candidates, districtSeats);
+    }
+    
+    // First, run normal calculation to get what SHOULD have happened
     electionState.isManualSeatMode = false;
-    const calculatedResults = calculateParallel(votes, districtSeats, listSeats, threshold, allocationMethod, forcedDistricts);
+    const calculatedResults = calculateParallel(votes, districtSeats, listSeats, threshold, allocationMethod, actualDistrictWins);
     electionState.isManualSeatMode = true;
     
     // Store calculated seats

@@ -264,10 +264,10 @@ const ELECTION_PRESETS = {
     },
     "japan_2021": {
         name: "2021 Japanese General Election",
-        description: "LDP majoritarian victory under Parallel voting (MMM)",
+        description: "LDP majoritarian victory under Parallel voting (MMM). Opposition cooperation in 75% of districts was offset by LDP rural dominance.",
         system: "parallel",
-        districtSeats: 289,      // District seats (2024 reform)
-        baseListSeats: 176,      // List seats (2024 reform)
+        districtSeats: 289,
+        baseListSeats: 176,
         threshold: 0, 
         allocationMethod: "dhondt",
         parties: [
@@ -290,41 +290,49 @@ const ELECTION_PRESETS = {
         ],
         votes: {
             parties: {
-                4001: 19914883, // LDP
-                4002: 11492095, // CDP
-                4003: 8050830,  // Ishin
-                4004: 7114282,  // Komeito
-                4005: 4166076,  // JCP
-                4006: 2593396,  // DPP
-                4007: 2215648   // Reiwa
+                4001: 19914883, // LDP PR
+                4002: 11492095, // CDP PR
+                4003: 8050830,  // Ishin PR
+                4004: 7114282,  // Komeito PR
+                4005: 4166076,  // JCP PR
+                4006: 2593396,  // DPP PR
+                4007: 2215648   // Reiwa PR
             },
             candidates: {
-                4001: 27626235, // LDP (Aggregate)
-                4002: 17215621, // CDP
-                4003: 4802860,  // Ishin
-                4004: 872131,   // Komeito
-                4005: 2639631,  // JCP
-                4006: 1246725,  // DPP
+                4001: 27626235, // LDP Constituency
+                4002: 17215621, // CDP Constituency
+                4003: 4802860,  // Ishin Constituency
+                4004: 872131,   // Komeito Constituency
+                4005: 2639631,  // JCP Constituency
+                4006: 1246725,  // DPP Constituency
                 4007: 0         // Reiwa (Ran only list candidates)
             }
         },
+        // NEW: Locked district results to ensure MMM logic works correctly
+        actualDistrictWins: {
+            4001: 187, // LDP won 187 districts
+            4002: 57,  // CDP won 57 districts
+            4003: 16,  // Ishin won 16 districts
+            4004: 9,   // Komeito won 9 districts
+            4005: 1,   // JCP won 1 district
+            4006: 6,   // DPP won 6 districts
+            4007: 0
+        },
         actualSeats: {
-            4001: 261,  // LDP
-            4002: 96,   // CDP
-            4003: 41,   // Ishin
-            4004: 32,   // Komeito
-            4005: 10,   // JCP
-            4006: 11    // DPP
+            4001: 259, // 187 Dist + 72 PR
+            4002: 96,  // 57 Dist + 39 PR
+            4003: 41,  // 16 Dist + 25 PR
+            4004: 32,  // 9 Dist + 23 PR
+            4005: 10,  // 1 Dist + 9 PR
+            4006: 11,  // 6 Dist + 5 PR
+            4007: 3    // 0 Dist + 3 PR
         },
-        specialSeats: {
-            others: 14  // Others/Independents
-        },
-        overhangSeats: 0,
+        specialSeats: { others: 13 }, // Independents/Social Democrats
         finalParliamentSize: 465
     },
     "japan_2024": {
         name: "2024 Japanese General Election",
-        description: "LDP-Komeito coalition loses majority for first time since 2009. Political funding scandal impacts LDP. DPP emerges as kingmaker with 11.3% vote share.",
+        description: "LDP-Komeito coalition loses majority. Political funding scandals lead to significant seat losses for the LDP.",
         system: "parallel",
         districtSeats: 289,
         baseListSeats: 176,
@@ -350,38 +358,45 @@ const ELECTION_PRESETS = {
         ],
         votes: {
             parties: {
-                4101: 14582000,  // LDP - 26.7%
-                4102: 11565000,  // CDP - 21.2%
-                4103: 6173000,   // DPP - 11.3%
-                4104: 5964000,   // Komeito - 10.9%
-                4105: 5105000,   // Nippon Ishin - 9.4%
-                4106: 3804000,   // Reiwa - 7.0%
-                4107: 3362000    // JCP - 6.2%
+                4101: 14582690,
+                4102: 11564222,
+                4103: 6172434,
+                4104: 5964415,
+                4105: 5105127,
+                4106: 3805060,
+                4107: 3362966
             },
             candidates: {
-                4101: 20867000,  // LDP
-                4102: 17181000,  // CDP
-                4103: 2045000,   // DPP
-                4104: 732000,    // Komeito
-                4105: 6048000,   // Nippon Ishin
-                4106: 425000,    // Reiwa
-                4107: 3695000    // JCP
+                4101: 20867762,
+                4102: 15740860,
+                4103: 2349584,
+                4104: 730401,
+                4105: 6048103,
+                4106: 425445,
+                4107: 3695807
             }
         },
+        // NEW: Actual 2024 District breakdown
+        actualDistrictWins: {
+            4101: 132, // LDP
+            4102: 104, // CDP
+            4103: 11,  // DPP
+            4104: 4,   // Komeito
+            4105: 23,  // Ishin
+            4106: 0,   // Reiwa
+            4107: 1    // JCP
+        },
         actualSeats: {
-            4101: 191,  // LDP
-            4102: 148,  // CDP
-            4103: 28,   // DPP
-            4104: 24,   // Komeito
-            4105: 38,   // Nippon Ishin
-            4106: 9,    // Reiwa
-            4107: 8     // JCP
+            4101: 191, // 132 + 59
+            4102: 148, // 104 + 44
+            4103: 28,  // 11 + 17
+            4104: 24,  // 4 + 20
+            4105: 38,  // 23 + 15
+            4106: 9,   // 0 + 9
+            4107: 8    // 1 + 7
         },
-        specialSeats: {
-            others: 19  // Others/Independents
-        },
-        overhangSeats: 0,  // Parallel system - no overhang
-        finalParliamentSize: 465  // 289 district + 176 list
+        specialSeats: { others: 19 }, // Independents/Sanseito/Conservative
+        finalParliamentSize: 465
     },
     "ireland_pres_2011": {
         name: "2011 Irish Presidential Election",
@@ -547,158 +562,191 @@ const ELECTION_PRESETS = {
     },
     "taiwan_2024": {
         name: "2024 Taiwan Legislative Election",
-        description: "Non-compensatory parallel system (73 districts + 34 party-list). TPP emerged as third force with no districts.",
-        system: "parallel",
-        districtSeats: 79,       // 73 regional + 6 indigenous
-        baseListSeats: 34,       // Party-list tier
-        threshold: 5,
-        allocationMethod: "dhondt",
-        parties: [
-            { id: 7001, name: "Democratic Progressive Party (DPP)", color: "#1B9431" },
-            { id: 7002, name: "Kuomintang (KMT)", color: "#000095" },
-            { id: 7003, name: "Taiwan People's Party (TPP)", color: "#28C7C7" }
-        ],
-        candidates: [
-            { id: 7001, name: "DPP Candidate", partyId: 7001 },
-            { id: 7002, name: "KMT Candidate", partyId: 7002 },
-            { id: 7003, name: "TPP Candidate", partyId: 7003 }
-        ],
-        votes: {
-            parties: {
-                7001: 4981060,  // DPP
-                7002: 4764576,  // KMT
-                7003: 3040334   // TPP
-            },
-            candidates: {
-                7001: 6095276,  // DPP
-                7002: 5401933,  // KMT
-                7003: 403357    // TPP
-            }
-        },
-        actualSeats: {
-            7001: 51,   // DPP
-            7002: 52,   // KMT
-            7003: 8     // TPP
-        },
-        specialSeats: {
-            independents: 2
-        },
-        overhangSeats: 0,
-        finalParliamentSize: 113  // 73 district + 40 list
-    },
-    "taiwan_2020": {
-        name: "2020 Taiwan Legislative Election",
-        description: "DPP maintains majority with 33.98% vote share. TPP emerges as third force with 11.22%, replacing NPP.",
+        description: "Hung parliament. KMT becomes largest party, DPP loses majority, TPP holds balance of power. Total 113 seats.",
         system: "parallel",
         districtSeats: 79,
         baseListSeats: 34,
         threshold: 5,
         allocationMethod: "dhondt",
         parties: [
-            { id: 7101, name: "Democratic Progressive Party (DPP)", color: "#1B9431" },
-            { id: 7102, name: "Kuomintang (KMT)", color: "#000095" },
-            { id: 7103, name: "Taiwan People's Party (TPP)", color: "#28C7C7" },
-            { id: 7104, name: "New Power Party (NPP)", color: "#8B4513" },
-            { id: 7105, name: "People First Party (PFP)", color: "#FF6600" }
+            { id: 5101, name: "Kuomintang (KMT)", color: "#000095" },
+            { id: 5102, name: "Democratic Progressive (DPP)", color: "#1B9431" },
+            { id: 5103, name: "Taiwan People's Party (TPP)", color: "#28C8C8" },
+            { id: 5104, name: "New Power Party (NPP)", color: "#FBBE01" }
         ],
         candidates: [
-            { id: 7101, name: "DPP Candidate", partyId: 7101 },
-            { id: 7102, name: "KMT Candidate", partyId: 7102 },
-            { id: 7103, name: "TPP Candidate", partyId: 7103 },
-            { id: 7104, name: "NPP Candidate", partyId: 7104 },
-            { id: 7105, name: "PFP Candidate", partyId: 7105 }
+            { id: 5101, name: "KMT Candidate", partyId: 5101 },
+            { id: 5102, name: "DPP Candidate", partyId: 5102 },
+            { id: 5103, name: "TPP Candidate", partyId: 5103 },
+            { id: 5104, name: "NPP Candidate", partyId: 5104 }
         ],
         votes: {
             parties: {
-                7101: 4811241,  // DPP - 33.98%
-                7102: 4723504,  // KMT - 33.36%
-                7103: 1588806,  // TPP - 11.22%
-                7104: 1098100,  // NPP - 7.75%
-                7105: 518921    // PFP - 3.67%
+                5101: 4764293,  // KMT PR (34.58%)
+                5102: 4981060,  // DPP PR (36.16%)
+                5103: 3040334,  // TPP PR (22.07%)
+                5104: 353670    // NPP PR (2.57% - Failed 5% threshold)
             },
             candidates: {
-                7101: 6332168,  // DPP
-                7102: 5633749,  // KMT
-                7103: 264478,   // TPP
-                7104: 141952,   // NPP
-                7105: 60033     // PFP
+                5101: 5401933,  // KMT Constituency
+                5102: 6095276,  // DPP Constituency
+                5103: 403357,   // TPP Constituency
+                5104: 96589     // NPP Constituency
             }
         },
+        actualDistrictWins: {
+            5101: 39, // 36 Dist + 3 Indig
+            5102: 38, // 36 Dist + 2 Indig
+            5103: 0,
+            5104: 0
+        },
         actualSeats: {
-            7101: 61,   // DPP
-            7102: 38,   // KMT
-            7103: 5,    // TPP
-            7104: 3,    // NPP
-            7105: 1     // PFP
+            5101: 52, // 39 Dist + 13 PR
+            5102: 51, // 38 Dist + 13 PR
+            5103: 8,  // 0 Dist + 8 PR
+            5104: 0
         },
-        specialSeats: {
-            independents: 5
+        specialSeats: { others: 2 }, // 2 Independents (1 Indig, 1 General - caucus with KMT)
+        finalParliamentSize: 113
+    },
+    "taiwan_2020": {
+        name: "2020 Taiwan Legislative Election",
+        description: "DPP retains majority. Newcomers TPP and TSP enter the legislature. Total 113 seats (73 Dist + 6 Indig + 34 List).",
+        system: "parallel",
+        districtSeats: 79,      // 73 General + 6 Indigenous
+        baseListSeats: 34,
+        threshold: 5,           // Strict 5% threshold
+        allocationMethod: "dhondt",
+        parties: [
+            { id: 5001, name: "Democratic Progressive (DPP)", color: "#1B9431" },
+            { id: 5002, name: "Kuomintang (KMT)", color: "#000095" },
+            { id: 5003, name: "Taiwan People's Party (TPP)", color: "#28C8C8" },
+            { id: 5004, name: "New Power Party (NPP)", color: "#FBBE01" },
+            { id: 5005, name: "Taiwan Statebuilding (TSP)", color: "#A73F24" },
+            { id: 5006, name: "People First Party (PFP)", color: "#FF6310" }
+        ],
+        candidates: [
+            { id: 5001, name: "DPP Candidate", partyId: 5001 },
+            { id: 5002, name: "KMT Candidate", partyId: 5002 },
+            { id: 5003, name: "TPP Candidate", partyId: 5003 },
+            { id: 5004, name: "NPP Candidate", partyId: 5004 },
+            { id: 5005, name: "TSP Candidate", partyId: 5005 },
+            { id: 5006, name: "PFP Candidate", partyId: 5006 }
+        ],
+        votes: {
+            parties: {
+                5001: 4811241,  // DPP PR (33.98%)
+                5002: 4724210,  // KMT PR (33.36%)
+                5003: 1588806,  // TPP PR (11.22%)
+                5004: 1098100,  // NPP PR (7.75%)
+                5005: 447286,   // TSP PR (3.16% - Failed 5% threshold)
+                5006: 518921    // PFP PR (3.66% - Failed 5% threshold)
+            },
+            candidates: {
+                5001: 6332168,  // DPP Constituency
+                5002: 5633749,  // KMT Constituency
+                5003: 264478,   // TPP Constituency
+                5004: 141952,   // NPP Constituency
+                5005: 141503,   // TSP Constituency
+                5006: 60033     // PFP Constituency
+            }
         },
-        overhangSeats: 0,
+        // Actual breakdown of the 79 majoritarian wins (73 Dist + 6 Indig)
+        actualDistrictWins: {
+            5001: 48, // 46 Dist + 2 Indig
+            5002: 25, // 22 Dist + 3 Indig
+            5003: 0,
+            5004: 0,
+            5005: 1,
+            5006: 0
+        },
+        actualSeats: {
+            5001: 61,  // 48 Dist + 13 PR
+            5002: 38,  // 25 Dist + 13 PR
+            5003: 5,   // 0 Dist + 5 PR
+            5004: 3,   // 0 Dist + 3 PR
+            5005: 1,   // 1 Dist + 0 PR
+            5006: 0
+        },
+        specialSeats: { others: 5 }, // 5 Independents (mostly caucusing with DPP)
         finalParliamentSize: 113
     },
     "italy_2022": {
-        name: "2022 Italian General Election (Chamber of Deputies)",
-        description: "19th Italian General Election under the Rosatellum law. Right-wing coalition victory led by Brothers of Italy. Parallel/MMM system with 400 seats (147 district, 245 list, 8 overseas). D'Hondt allocation for list seats.",
+        name: "2022 Italian Legislative Election",
+        description: "Right-wing coalition victory under the 'Rosatellum' parallel system. Absolute majority achieved despite 44% vote share due to dominant SMD performance. Total 400 seats.",
         system: "parallel",
-        raceType: "legislative",
-        totalSeats: 400,
-        threshold: 0,
+        districtSeats: 147,      // Single-member districts (FPTP)
+        baseListSeats: 245,      // Proportional list seats (excluding 8 abroad seats)
+        threshold: 3,           // 3% for parties, 10% for coalitions
         allocationMethod: "dhondt",
         parties: [
-            { id: 11001, name: "Brothers of Italy (FdI)", color: "#003B7B" },
-            { id: 11002, name: "Democratic Party (PD)", color: "#EF3E3E" },
-            { id: 11003, name: "Five Star Movement (M5S)", color: "#FFD700" },
-            { id: 11004, name: "Lega", color: "#0A7F41" },
-            { id: 11005, name: "Forza Italia (FI)", color: "#0087DC" },
-            { id: 11006, name: "Action - Italia Viva (Az-IV)", color: "#E9B000" },
-            { id: 11007, name: "Greens and Left Alliance (AVS)", color: "#E53935" },
-            { id: 11008, name: "Others / Regional Parties", color: "#999999" }
+            { id: 6001, name: "Brothers of Italy (FdI)", color: "#0047AB" },
+            { id: 6002, name: "Democratic Party (PD)", color: "#EF3E3E" },
+            { id: 6003, name: "Five Star Movement (M5S)", color: "#FEE000" },
+            { id: 6004, name: "Lega (League)", color: "#008000" },
+            { id: 6005, name: "Forza Italia (FI)", color: "#007FFF" },
+            { id: 6006, name: "Action - Italia Viva (A-IV)", color: "#FF5F1F" },
+            { id: 6007, name: "Greens and Left (AVS)", color: "#32CD32" },
+            { id: 6008, name: "More Europe (+E)", color: "#FFD700" },
+            { id: 6009, name: "Us Moderates (NM)", color: "#00FFFF" }
         ],
         candidates: [
-            { id: 11001, name: "FdI Candidate", partyId: 11001 },
-            { id: 11002, name: "PD Candidate", partyId: 11002 },
-            { id: 11003, name: "M5S Candidate", partyId: 11003 },
-            { id: 11004, name: "Lega Candidate", partyId: 11004 },
-            { id: 11005, name: "FI Candidate", partyId: 11005 },
-            { id: 11006, name: "Az-IV Candidate", partyId: 11006 },
-            { id: 11007, name: "AVS Candidate", partyId: 11007 },
-            { id: 11008, name: "Others Candidate", partyId: 11008 }
+            { id: 6001, name: "FdI Candidate", partyId: 6001 },
+            { id: 6002, name: "PD Candidate", partyId: 6002 },
+            { id: 6003, name: "M5S Candidate", partyId: 6003 },
+            { id: 6004, name: "Lega Candidate", partyId: 6004 },
+            { id: 6005, name: "FI Candidate", partyId: 6005 },
+            { id: 6006, name: "A-IV Candidate", partyId: 6006 },
+            { id: 6007, name: "AVS Candidate", partyId: 6007 },
+            { id: 6008, name: "+E Candidate", partyId: 6008 },
+            { id: 6009, name: "NM Candidate", partyId: 6009 }
         ],
         votes: {
             parties: {
-                11001: 7301303,  // FdI - 25.99%
-                11002: 5348676,  // PD - 19.04%
-                11003: 4335494,  // M5S - 15.43%
-                11004: 2465114,  // Lega - 8.79%
-                11005: 2279266,  // FI - 8.11%
-                11006: 2186505,  // Az-IV - 7.78%
-                11007: 1021808,  // AVS - 3.64%
-                11008: 3191062   // Others - 11.22%
+                6001: 7302517,  // FdI PR (26.00%)
+                6002: 5356180,  // PD PR (19.07%)
+                6003: 4333972,  // M5S PR (15.43%)
+                6004: 2464005,  // Lega PR (8.77%)
+                6005: 2278217,  // FI PR (8.11%)
+                6006: 2186669,  // A-IV PR (7.79%)
+                6007: 1018669,  // AVS PR (3.63%)
+                6008: 793925,   // +E PR (2.83% - Failed individual threshold)
+                6009: 255505    // NM PR (0.91%)
             },
             candidates: {
-                11001: 7301303,  // FdI
-                11002: 5348676,  // PD
-                11003: 4335494,  // M5S
-                11004: 2465114,  // Lega
-                11005: 2279266,  // FI
-                11006: 2186505,  // Az-IV
-                11007: 1021808,  // AVS
-                11008: 3191062   // Others
+                // Total coalition votes in SMDs are typically slightly higher/different
+                // but the single-ballot law maps list votes to candidates directly.
+                6001: 12300244, // Right Coalition (FdI + Lega + FI + NM)
+                6002: 7337975,  // Left Coalition (PD + AVS + +E)
+                6003: 4333972,  // M5S (Standalone)
+                6006: 2186669   // A-IV (Standalone)
             }
         },
-        actualSeats: {
-            11001: 119,  // FdI
-            11002: 69,   // PD
-            11003: 52,   // M5S
-            11004: 66,   // Lega
-            11005: 45,   // FI
-            11006: 21,   // Az-IV
-            11007: 12,   // AVS
-            11008: 16    // Others
+        // Total 147 District seats + 1 (Valle d'Aosta)
+        actualDistrictWins: {
+            6001: 49, // FdI (Assigned share of coalition wins)
+            6004: 42, // Lega (Assigned share)
+            6005: 23, // FI (Assigned share)
+            6009: 7,  // NM (Assigned share)
+            6002: 7,  // PD
+            6007: 2,  // AVS
+            6003: 10, // M5S
+            6006: 0
         },
-        districtSeats: 147,
-        baseListSeats: 245,
+        actualSeats: {
+            6001: 119, // 49 Dist + 69 PR + 1 Abroad
+            6002: 69,  // 7 Dist + 57 PR + 5 Abroad
+            6003: 52,  // 10 Dist + 41 PR + 1 Abroad
+            6004: 66,  // 42 Dist + 23 PR + 1 Abroad
+            6005: 45,  // 23 Dist + 22 PR
+            6006: 21,  // 0 Dist + 21 PR
+            6007: 12,  // 2 Dist + 10 PR
+            6009: 7    // 7 Dist + 0 PR
+        },
+        specialSeats: { 
+            abroad: 8,
+            aosta: 1 
+        },
         finalParliamentSize: 400
     },
     "israel_2022": {
