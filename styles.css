@@ -310,6 +310,13 @@ input[type="color"] {
 
 .results-section {
     background: #f8f9fa;
+    overflow: visible;
+    min-height: auto;
+}
+
+#results {
+    overflow: visible;
+    min-height: auto;
 }
 
 .result-item {

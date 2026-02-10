@@ -6727,13 +6727,27 @@ function displayResults(results, system) {
         html += '<div class="charts-container">';
         html += '<canvas id="votesChart" width="400" height="400"></canvas>';
         html += '<canvas id="seatsChart" width="400" height="400"></canvas>';
-        html += '<canvas id="comparisonChart" width="600" height="400"></canvas>';
+        // Add checkbox container for party filtering
+        html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        html += '<div id="comparisonChartFilters" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; max-height: 150px; overflow-y: auto;">';
+        html += '<div style="width: 100%; font-weight: 600; margin-bottom: 5px; color: #667eea;">Filter Parties:</div>';
+        // Checkboxes will be added dynamically after chart creation
+        html += '</div>';
+        html += '<canvas id="comparisonChart" width="800" height="600"></canvas>';
+        html += '</div>';
         html += '</div>';
     } else if (results.type === 'party') {
         // Add charts section
         html += '<div class="charts-container">';
         html += '<canvas id="votesChart" width="400" height="400"></canvas>';
-        html += '<canvas id="comparisonChart" width="600" height="400"></canvas>';
+        // Add checkbox container for party filtering
+        html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        html += '<div id="comparisonChartFilters" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; max-height: 150px; overflow-y: auto;">';
+        html += '<div style="width: 100%; font-weight: 600; margin-bottom: 5px; color: #667eea;">Filter Parties:</div>';
+        // Checkboxes will be added dynamically after chart creation
+        html += '</div>';
+        html += '<canvas id="comparisonChart" width="800" height="600"></canvas>';
+        html += '</div>';
         html += '</div>';
         
         // Show disproportionality index if available
@@ -6987,7 +7001,14 @@ function displayResults(results, system) {
         // Top row: Party votesChart and comparisonChart
         html += '<div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px;">';
         html += '<canvas id="votesChart" width="400" height="400"></canvas>';
-        html += '<canvas id="comparisonChart" width="600" height="400"></canvas>';
+        // Add checkbox container for party filtering
+        html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        html += '<div id="comparisonChartFilters" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; max-height: 150px; overflow-y: auto;">';
+        html += '<div style="width: 100%; font-weight: 600; margin-bottom: 5px; color: #667eea;">Filter Parties:</div>';
+        // Checkboxes will be added dynamically after chart creation
+        html += '</div>';
+        html += '<canvas id="comparisonChart" width="800" height="600"></canvas>';
+        html += '</div>';
         html += '</div>';
         // Bottom row: candidateVotesChart and seatsChart
         html += '<div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px;">';

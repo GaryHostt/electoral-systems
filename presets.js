@@ -505,7 +505,20 @@ const ELECTION_PRESETS = {
             { id: 3005, name: "Centre Party", color: "#006a35" },
             { id: 3006, name: "Christian Democrats", color: "#000077" },
             { id: 3007, name: "Green Party", color: "#83cf39" },
-            { id: 3008, name: "Liberals", color: "#0069b4" }
+            { id: 3008, name: "Liberals", color: "#0069b4" },
+            { id: 3009, name: "Nuance Party (PNy)", color: "#9B59B6" },
+            { id: 3010, name: "Alternative for Sweden (AfS)", color: "#8B4513" },
+            { id: 3011, name: "Citizens' Coalition (MED)", color: "#4682B4" },
+            { id: 3012, name: "Pirate Party (PP)", color: "#FF6600" },
+            { id: 3013, name: "Humanist Democracy [sv] (MD)", color: "#1ABC9C" },
+            { id: 3014, name: "Christian Values Party [sv] (KRVP)", color: "#4169E1" },
+            { id: 3015, name: "Knapptryckarna [sv] (Kn)", color: "#E67E22" },
+            { id: 3016, name: "Feminist Initiative (FI)", color: "#FF69B4" },
+            { id: 3017, name: "Independent Rural Party (LPo)", color: "#228B22" },
+            { id: 3018, name: "Direct Democrats (DD)", color: "#32CD32" },
+            { id: 3019, name: "Climate Alliance (KA)", color: "#00AA00" },
+            { id: 3020, name: "Unity (ENH)", color: "#DC143C" },
+            { id: 3021, name: "Communist Party of Sweden (SKP)", color: "#DC143C" }
         ],
         votes: {
             parties: { 
@@ -516,7 +529,20 @@ const ELECTION_PRESETS = {
                 3005: 434945,   // Centre Party
                 3006: 345712,   // Christian Democrats
                 3007: 329242,   // Green Party
-                3008: 298542    // Liberals
+                3008: 298542,   // Liberals
+                3009: 28352,    // Nuance Party (PNy)
+                3010: 16646,    // Alternative for Sweden (AfS)
+                3011: 12882,    // Citizens' Coalition (MED)
+                3012: 9135,     // Pirate Party (PP)
+                3013: 6077,     // Humanist Democracy [sv] (MD)
+                3014: 5983,     // Christian Values Party [sv] (KRVP)
+                3015: 5493,     // Knapptryckarna [sv] (Kn)
+                3016: 3157,     // Feminist Initiative (FI)
+                3017: 2215,     // Independent Rural Party (LPo)
+                3018: 1755,     // Direct Democrats (DD)
+                3019: 1702,     // Climate Alliance (KA)
+                3020: 1356,     // Unity (ENH)
+                3021: 1181      // Communist Party of Sweden (SKP)
             }
         },
         actualSeats: {
@@ -527,7 +553,20 @@ const ELECTION_PRESETS = {
             3005: 24,   // Centre Party
             3006: 19,   // Christian Democrats
             3007: 18,   // Green Party
-            3008: 16    // Liberals
+            3008: 16,   // Liberals
+            3009: 0,    // Nuance Party (PNy)
+            3010: 0,    // Alternative for Sweden (AfS)
+            3011: 0,    // Citizens' Coalition (MED)
+            3012: 0,    // Pirate Party (PP)
+            3013: 0,    // Humanist Democracy [sv] (MD)
+            3014: 0,    // Christian Values Party [sv] (KRVP)
+            3015: 0,    // Knapptryckarna [sv] (Kn)
+            3016: 0,    // Feminist Initiative (FI)
+            3017: 0,    // Independent Rural Party (LPo)
+            3018: 0,    // Direct Democrats (DD)
+            3019: 0,    // Climate Alliance (KA)
+            3020: 0,    // Unity (ENH)
+            3021: 0     // Communist Party of Sweden (SKP)
         },
         finalParliamentSize: 349
     },
@@ -546,7 +585,21 @@ const ELECTION_PRESETS = {
             { id: 3105, name: "Left Party", color: "#af0000" },
             { id: 3106, name: "Christian Democrats", color: "#000077" },
             { id: 3107, name: "Liberals", color: "#0069b4" },
-            { id: 3108, name: "Green Party", color: "#83cf39" }
+            { id: 3108, name: "Green Party", color: "#83cf39" },
+            { id: 3109, name: "Feminist Initiative", color: "#FF69B4" },
+            { id: 3110, name: "Alternative for Sweden", color: "#8B4513" },
+            { id: 3111, name: "Citizens' Coalition", color: "#4682B4" },
+            { id: 3112, name: "Pirate Party", color: "#FF6600" },
+            { id: 3113, name: "Direct Democrats", color: "#32CD32" },
+            { id: 3114, name: "Independent Rural Party", color: "#228B22" },
+            { id: 3115, name: "Enhet", color: "#DC143C" },
+            { id: 3116, name: "Animals' Party", color: "#00AA00" },
+            { id: 3117, name: "Christian Values Party [sv]", color: "#4169E1" },
+            { id: 3118, name: "Nordic Resistance Movement", color: "#2F4F4F" },
+            { id: 3119, name: "Classical Liberal Party", color: "#FFD700" },
+            { id: 3120, name: "Communist Party of Sweden", color: "#DC143C" },
+            { id: 3121, name: "Basic Income Party", color: "#9370DB" },
+            { id: 3122, name: "Initiative", color: "#20B2AA" }
         ],
         votes: {
             parties: { 
@@ -557,7 +610,21 @@ const ELECTION_PRESETS = {
                 3105: 518454,   // Left Party - 8.0%
                 3106: 409478,   // Christian Democrats - 6.32%
                 3107: 355546,   // Liberals - 5.49%
-                3108: 285899    // Green Party - 4.41%
+                3108: 285899,   // Green Party - 4.41%
+                3109: 29665,    // Feminist Initiative
+                3110: 20290,    // Alternative for Sweden
+                3111: 13056,    // Citizens' Coalition
+                3112: 7326,     // Pirate Party
+                3113: 5153,     // Direct Democrats
+                3114: 4962,     // Independent Rural Party
+                3115: 4647,     // Enhet
+                3116: 3648,     // Animals' Party
+                3117: 3202,     // Christian Values Party [sv]
+                3118: 2106,     // Nordic Resistance Movement
+                3119: 1504,     // Classical Liberal Party
+                3120: 702,      // Communist Party of Sweden
+                3121: 632,      // Basic Income Party
+                3122: 615       // Initiative
             }
         },
         actualSeats: {
@@ -568,7 +635,21 @@ const ELECTION_PRESETS = {
             3105: 28,   // Left Party
             3106: 22,   // Christian Democrats
             3107: 20,   // Liberals
-            3108: 16    // Green Party
+            3108: 16,   // Green Party
+            3109: 0,    // Feminist Initiative
+            3110: 0,    // Alternative for Sweden
+            3111: 0,    // Citizens' Coalition
+            3112: 0,    // Pirate Party
+            3113: 0,    // Direct Democrats
+            3114: 0,    // Independent Rural Party
+            3115: 0,    // Enhet
+            3116: 0,    // Animals' Party
+            3117: 0,    // Christian Values Party [sv]
+            3118: 0,    // Nordic Resistance Movement
+            3119: 0,    // Classical Liberal Party
+            3120: 0,    // Communist Party of Sweden
+            3121: 0,    // Basic Income Party
+            3122: 0     // Initiative
         },
         finalParliamentSize: 349
     },
