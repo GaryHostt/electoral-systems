@@ -6574,7 +6574,7 @@ function displayResults(results, system) {
     const aiAnalysisSection = document.getElementById('aiAnalysisSection');
     
     resultsSection.style.display = 'block';
-    aiAnalysisSection.style.display = 'block'; // Show AI analysis section
+    // aiAnalysisSection.style.display = 'block'; // Show AI analysis section - HIDDEN
     
     // Save election data to localStorage for AI analysis
     try {
