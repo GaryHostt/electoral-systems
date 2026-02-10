@@ -2016,6 +2016,7 @@ const ELECTION_PRESETS = {
         system: "stv",
         totalSeats: 6,
         quotaType: "droop",
+        totalVoters: 3000000,
         parties: [
             { id: 2201, name: "Liberal National Party", color: "#0047AB" },
             { id: 2202, name: "Labor Party", color: "#E4003B" },
@@ -2024,14 +2025,24 @@ const ELECTION_PRESETS = {
             { id: 2205, name: "Legalise Cannabis", color: "#4B2E83" },
             { id: 2206, name: "United Australia Party", color: "#FFFF00" }
         ],
+        candidates: [
+            { id: 22011, name: "LNP Candidate 1", partyId: 2201 },
+            { id: 22012, name: "LNP Candidate 2", partyId: 2201 },
+            { id: 22021, name: "Labor Candidate 1", partyId: 2202 },
+            { id: 22022, name: "Labor Candidate 2", partyId: 2202 },
+            { id: 22031, name: "Greens Candidate 1", partyId: 2203 },
+            { id: 22041, name: "One Nation Candidate 1", partyId: 2204 },
+            { id: 22051, name: "Cannabis Candidate 1", partyId: 2205 },
+            { id: 22061, name: "UAP Candidate 1", partyId: 2206 }
+        ],
         ballots: [
-            { preferences: [2201], percentage: 35.1, name: "LNP (2.4 quotas)" },
-            { preferences: [2202], percentage: 24.7, name: "Labor (1.7 quotas)" },
-            { preferences: [2203, 2202], percentage: 12.4, name: "Greens (Transfers to Labor)" },
-            { preferences: [2204, 2201], percentage: 7.4, name: "One Nation (Transfers to LNP)" },
-            { preferences: [2205, 2203], percentage: 5.4, name: "Cannabis (Transfers to Greens)" },
-            { preferences: [2206, 2204], percentage: 2.1, name: "UAP (Transfers to One Nation)" },
-            { preferences: [2201], percentage: 12.9, name: "Independents/Other" }
+            { preferences: ["2201"], percentage: 35.1, name: "LNP Core (2.4 quotas)" },
+            { preferences: ["2202"], percentage: 29.8, name: "Labor Core (2.1 quotas)" },
+            { preferences: ["2203"], percentage: 12.5, name: "Greens Core (0.9 quotas)" },
+            { preferences: ["2204"], percentage: 8.5, name: "One Nation Core (0.6 quotas)" },
+            { preferences: ["2205", "2203"], percentage: 5.5, name: "Legalise Cannabis (Flows to Greens)" },
+            { preferences: ["2206", "2204"], percentage: 3.1, name: "UAP (Flows to One Nation)" },
+            { preferences: ["2204", "2201"], percentage: 5.5, name: "Independents (One Nation leaning)" }
         ],
         actualSeats: {
             2201: 2,

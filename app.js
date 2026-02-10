@@ -3655,10 +3655,10 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
         const lockedBallotIds = new Set(); // Set of ballot IDs that are quota-locked
         const ballotLockMap = new Map(); // ballotId -> { candidateId, lockedWeight }
         
-        // Initialize party vote counts
+        // Initialize party vote counts (use string keys for consistency with eliminatedParties Set)
         parties.forEach(party => {
-            partyVoteCountsScaled[party.id] = 0;
-            partySeatsWon[party.id] = 0;
+            partyVoteCountsScaled[String(party.id)] = 0;
+            partySeatsWon[String(party.id)] = 0;
         });
         
         // Main STV loop - operate on parties
@@ -3673,8 +3673,8 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
             // ONLY count ballots that are NOT quota-locked
             const currentPartyVotesScaled = {};
             parties.forEach(party => {
-                if (!eliminatedParties.has(party.id)) {
-                    currentPartyVotesScaled[party.id] = 0;
+                if (!eliminatedParties.has(String(party.id))) { // Convert to string for consistent comparison
+                    currentPartyVotesScaled[String(party.id)] = 0;
                 }
             });
             exhaustedVotesScaled = 0;
@@ -3683,6 +3683,11 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 // CRITICAL: Skip ballots that are quota-locked to elected candidates
                 if (lockedBallotIds.has(ballot.id)) {
                     return; // This ballot's quota portion is already allocated
+                }
+                
+                // CRITICAL: Skip ballots with zero weight (fully consumed or exhausted)
+                if (ballot.weight === 0 || ballot.weight === undefined) {
+                    return; // This ballot has no remaining weight to count
                 }
                 
                 // Handle empty ballots
@@ -3696,7 +3701,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 let assigned = false;
                 
                 for (let i = startIndex; i < ballot.preferences.length; i++) {
-                    const partyId = ballot.preferences[i];
+                    const partyId = String(ballot.preferences[i]); // Convert to string for consistent comparison
                     if (!eliminatedParties.has(partyId)) {
                         // Count the ballot's current weight
                         currentPartyVotesScaled[partyId] = (currentPartyVotesScaled[partyId] || 0) + ballot.weight;
@@ -3712,7 +3717,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 }
             });
             
-            // Update running tally
+            // Update running tally (partyId is already a string from currentPartyVotesScaled keys)
             Object.keys(currentPartyVotesScaled).forEach(partyId => {
                 runningTally[partyId] = currentPartyVotesScaled[partyId];
                 partyVoteCountsScaled[partyId] = currentPartyVotesScaled[partyId];
@@ -3733,21 +3738,22 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
             
             // Check if any party meets quota
             const activeParties = parties.filter(p => 
-                !eliminatedParties.has(p.id)
+                !eliminatedParties.has(String(p.id)) // Convert to string for consistent comparison
             );
             const partiesAboveQuota = activeParties.filter(p => 
-                (partyVoteCountsScaled[p.id] || 0) >= quotaScaled
+                (partyVoteCountsScaled[String(p.id)] || 0) >= quotaScaled
             );
             
             if (partiesAboveQuota.length > 0) {
                 // Elect party with most votes
                 const winnerParty = partiesAboveQuota.reduce((a, b) => 
-                    (partyVoteCountsScaled[a.id] || 0) > (partyVoteCountsScaled[b.id] || 0) ? a : b
+                    (partyVoteCountsScaled[String(a.id)] || 0) > (partyVoteCountsScaled[String(b.id)] || 0) ? a : b
                 );
                 
                 // Determine candidate to elect
-                partySeatsWon[winnerParty.id] = (partySeatsWon[winnerParty.id] || 0) + 1;
-                const seatNumber = partySeatsWon[winnerParty.id];
+                const winnerPartyIdStr = String(winnerParty.id);
+                partySeatsWon[winnerPartyIdStr] = (partySeatsWon[winnerPartyIdStr] || 0) + 1;
+                const seatNumber = partySeatsWon[winnerPartyIdStr];
                 const electedCandidate = getNextCandidateForParty(winnerParty, seatNumber);
                 
                 if (!allCandidates.find(c => c.id === electedCandidate.id)) {
@@ -3757,7 +3763,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 electedCandidates.push(electedCandidate.id);
                 
                 // CRITICAL: Lock ballots that contribute to this candidate's quota
-                const totalVotesForWinner = partyVoteCountsScaled[winnerParty.id];
+                const totalVotesForWinner = partyVoteCountsScaled[winnerPartyIdStr];
                 let weightToLock = quotaScaled;
                 let weightLocked = 0;
                 const ballotsContributing = [];
@@ -3765,14 +3771,15 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 // Identify ballots currently supporting winner party
                 scaledBallots.forEach((ballot, index) => {
                     if (lockedBallotIds.has(ballot.id)) return; // Already locked
+                    if (ballot.weight === 0 || ballot.weight === undefined) return; // No weight to contribute
                     if (ballot.preferences.length === 0) return;
                     
                     const currentPrefIndex = ballot.currentPreference !== undefined ? ballot.currentPreference : 0;
                     if (currentPrefIndex >= ballot.preferences.length) return;
                     
-                    const currentPref = ballot.preferences[currentPrefIndex];
+                    const currentPref = String(ballot.preferences[currentPrefIndex]); // Convert to string for consistent comparison
                     
-                    if (currentPref == winnerParty.id) {  // Use == for type-coercion comparison (string vs number)
+                    if (currentPref === String(winnerParty.id)) {  // Compare as strings for consistency
                         ballotsContributing.push({
                             id: ballot.id,
                             weight: ballot.weight,
@@ -3832,7 +3839,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                         let movedToNext = false;
                         const currentPrefIndex = surplusBallot.currentPreference !== undefined ? surplusBallot.currentPreference : 0;
                         for (let i = currentPrefIndex + 1; i < surplusBallot.preferences.length; i++) {
-                            const nextPartyId = surplusBallot.preferences[i];
+                            const nextPartyId = String(surplusBallot.preferences[i]); // Convert to string for consistent comparison
                             if (!eliminatedParties.has(nextPartyId)) {
                                 surplusBallot.currentPreference = i;
                                 scaledBallots.push(surplusBallot); // Add as new ballot with unique ID
@@ -3857,7 +3864,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 // Record round data
                 const voteCounts = {};
                 parties.forEach(party => {
-                    voteCounts[party.id] = (partyVoteCountsScaled[party.id] || 0) / SCALE_FACTOR;
+                    voteCounts[party.id] = (partyVoteCountsScaled[String(party.id)] || 0) / SCALE_FACTOR;
                 });
                 
                 roundsData.push({
@@ -3881,8 +3888,8 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 continue; // Start next round
             } else {
                 // Eliminate party with fewest votes
-                const minVotesScaled = Math.min(...activeParties.map(p => partyVoteCountsScaled[p.id] || 0));
-                const toEliminate = activeParties.find(p => partyVoteCountsScaled[p.id] === minVotesScaled);
+                const minVotesScaled = Math.min(...activeParties.map(p => partyVoteCountsScaled[String(p.id)] || 0));
+                const toEliminate = activeParties.find(p => partyVoteCountsScaled[String(p.id)] === minVotesScaled);
                 
                 if (toEliminate) {
                     eliminatedParties.add(String(toEliminate.id));  // Store as string to match ballot preferences
@@ -3890,12 +3897,12 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                     // Transfer eliminated party's ballots to next preferences
                     scaledBallots.forEach(ballot => {
                         if (ballot.preferences.length === 0) return;
-                        const currentPref = ballot.preferences[ballot.currentPreference];
-                        if (currentPref == toEliminate.id) {  // Use == for type-coercion comparison (string vs number)
+                        const currentPref = String(ballot.preferences[ballot.currentPreference]); // Convert to string for consistent comparison
+                        if (currentPref === String(toEliminate.id)) {  // Compare as strings for consistency
                             // Find next valid preference
                             let nextPrefFound = false;
                             for (let i = ballot.currentPreference + 1; i < ballot.preferences.length; i++) {
-                                const nextPref = ballot.preferences[i];
+                                const nextPref = String(ballot.preferences[i]); // Convert to string for consistent comparison
                                 if (!eliminatedParties.has(nextPref)) {
                                     ballot.currentPreference = i;
                                     nextPrefFound = true;
@@ -3913,7 +3920,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                     // Convert to display values
                     const voteCounts = {};
                     parties.forEach(party => {
-                        voteCounts[party.id] = (partyVoteCountsScaled[party.id] || 0) / SCALE_FACTOR;
+                        voteCounts[party.id] = (partyVoteCountsScaled[String(party.id)] || 0) / SCALE_FACTOR;
                     });
                     
                     roundsData.push({
@@ -3941,6 +3948,21 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
         const exhaustedVotes = exhaustedVotesScaled / SCALE_FACTOR;
         const exhaustedPercentage = totalVotes > 0 ? (exhaustedVotes / totalVotes * 100) : 0;
         
+        // Calculate first-preference votes for each party (for accurate percentage display)
+        const firstPreferenceVotes = {};
+        parties.forEach(party => {
+            firstPreferenceVotes[String(party.id)] = 0;
+        });
+        
+        // Count first preferences from original ballots (before any transfers)
+        ballots.forEach(ballot => {
+            if (ballot.preferences && ballot.preferences.length > 0) {
+                const firstPref = String(ballot.preferences[0]);
+                const count = ballot.count || 0;
+                firstPreferenceVotes[firstPref] = (firstPreferenceVotes[firstPref] || 0) + count;
+            }
+        });
+        
         const results = allCandidates.map(candidate => {
             const party = parties.find(p => p.id.toString() === candidate.partyId.toString());
             const isElected = electedCandidates.includes(candidate.id);
@@ -3959,13 +3981,18 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
                 voteStatus = 'Active Remainder';
             }
             
+            // Use first-preference votes for party percentage calculation
+            const partyFirstPrefVotes = firstPreferenceVotes[String(party.id)] || 0;
+            const partyPercentage = totalVotes > 0 ? (partyFirstPrefVotes / totalVotes * 100) : 0;
+            
             return {
                 id: candidate.id,
                 name: candidate.displayName || candidate.name, // Use displayName to prevent ID display
                 party: party.name,
                 color: party.color,
                 votes: candidateVotes,
-                percentage: totalVotes > 0 ? (candidateVotes / totalVotes * 100) : 0,
+                percentage: partyPercentage, // Use first-preference party votes for percentage
+                partyFirstPrefVotes: partyFirstPrefVotes, // Store for aggregation
                 elected: isElected,
                 meetsQuota: isElected,
                 voteStatus: voteStatus, // For debugging/transparency
@@ -4053,6 +4080,7 @@ function calculateSTV(votes, seats, totalVoters, ballots, numBallotTypes) {
             surplusLoss: exhaustedVotes,
             rounds: roundsData,
             ballots: resultBallots,
+            firstPreferenceVotes: firstPreferenceVotes, // Store first-preference votes for accurate display
             otherNotes: [], // Will be populated in displayResults
             disproportionality: disproportionality,  // NEW
             gallagher: gallagher,  // NEW
@@ -7368,6 +7396,21 @@ function displayResults(results, system) {
             html += '<h3 style="margin-top: 30px;">Party Seat Distribution</h3>';
             html += '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">';
             
+            // Calculate party vote percentages from first-preference votes if available
+            const partyVotePercentages = {};
+            if (results.firstPreferenceVotes) {
+                const totalFirstPrefVotes = Object.values(results.firstPreferenceVotes).reduce((sum, v) => sum + v, 0);
+                Object.keys(partySeats).forEach(partyName => {
+                    // Find party ID from party name
+                    const party = parties.find(p => p.name === partyName);
+                    if (party && results.firstPreferenceVotes[String(party.id)]) {
+                        partyVotePercentages[partyName] = totalFirstPrefVotes > 0 
+                            ? (results.firstPreferenceVotes[String(party.id)] / totalFirstPrefVotes * 100) 
+                            : 0;
+                    }
+                });
+            }
+            
             // Sort parties by seats (descending)
             const sortedParties = Object.keys(partySeats).sort((a, b) => partySeats[b] - partySeats[a]);
             
@@ -7375,7 +7418,10 @@ function displayResults(results, system) {
             
             sortedParties.forEach(partyName => {
                 const seats = partySeats[partyName];
-                const percentage = ((seats / totalSeats) * 100).toFixed(1);
+                const seatPercentage = ((seats / totalSeats) * 100).toFixed(1);
+                const votePercentage = partyVotePercentages[partyName] !== undefined 
+                    ? partyVotePercentages[partyName].toFixed(1) 
+                    : 'N/A';
                 const color = partyColors[partyName];
                 
                 html += `
@@ -7385,7 +7431,7 @@ function displayResults(results, system) {
                             <strong style="font-size: 1.1em;">${partyName}</strong>
                         </div>
                         <div style="display: flex; align-items: center; gap: 20px;">
-                            <span style="font-size: 1.1em; color: #666;">${percentage}%</span>
+                            <span style="font-size: 1.1em; color: #666;">${votePercentage}%</span>
                             <span style="font-size: 1.2em; font-weight: bold; color: #333; min-width: 80px; text-align: right;">${seats} seat${seats !== 1 ? 's' : ''}</span>
                         </div>
                     </div>
