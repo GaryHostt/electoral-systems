@@ -1531,5 +1531,34 @@ const ELECTION_PRESETS = {
             9118: 0    // Others
         },
         finalParliamentSize: 150
+    },
+    "maine_2018_cd2": {
+        name: "2018 Maine 2nd District Election",
+        description: "The first federal election decided by RCV. Bruce Poliquin (R) led in the first round (46.3% vs 45.6%), but Jared Golden (D) won after the redistribution of votes from independent candidates Bond and Hoar.",
+        system: "irv",
+        totalSeats: 1,
+        totalVoters: 289604,
+        parties: [
+            { id: 5201, name: "Democratic", color: "#0015BC" },
+            { id: 5202, name: "Republican", color: "#E81B23" },
+            { id: 5203, name: "Independent (Bond)", color: "#999999" },
+            { id: 5204, name: "Independent (Hoar)", color: "#666666" }
+        ],
+        candidates: [
+            { id: 5201, name: "Jared Golden", partyId: 5201 },
+            { id: 5202, name: "Bruce Poliquin", partyId: 5202 },
+            { id: 5203, name: "Tiffany Bond", partyId: 5203 },
+            { id: 5204, name: "Will Hoar", partyId: 5204 }
+        ],
+        ballots: [
+            { preferences: [5201], percentage: 45.58, name: "Golden core" },
+            { preferences: [5202], percentage: 46.33, name: "Poliquin core" },
+            { preferences: [5203, 5201], percentage: 4.10, name: "Bond to Golden" },
+            { preferences: [5203, 5202], percentage: 1.00, name: "Bond to Poliquin" },
+            { preferences: [5203], percentage: 0.61, name: "Bond exhausted" },
+            { preferences: [5204, 5201], percentage: 1.20, name: "Hoar to Golden" },
+            { preferences: [5204, 5202], percentage: 0.80, name: "Hoar to Poliquin" },
+            { preferences: [5204], percentage: 0.38, name: "Hoar exhausted" }
+        ]
     }
 };
