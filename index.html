@@ -30,222 +30,368 @@
                 <div id="presetsPanel" class="country-import-panel" style="display: none;">
                     <p style="margin-bottom: 15px; color: #666;">Load real-world election data to see actual results or run counterfactual analyses by switching electoral systems:</p>
                     
-                    <div class="country-grid">
-                        <!-- Germany (newest first) -->
-                        <button onclick="importElectionPreset('germany_2021')" class="country-btn">
-                            <span class="country-flag">🇩🇪</span>
-                            <span class="country-name">Germany 2021</span>
-                            <span class="country-count">MMP • 598 seats • 5% threshold • Sainte-Laguë</span>
+                    <!-- Germany -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('germany')" class="country-group-toggle">
+                            <span id="countryGroupIcon-germany">▶</span> 🇩🇪 Germany
                         </button>
-                        <button onclick="importElectionPreset('germany_2017')" class="country-btn">
-                            <span class="country-flag">🇩🇪</span>
-                            <span class="country-name">Germany 2017</span>
-                            <span class="country-count">MMP • 598 seats • 5% threshold • Sainte-Laguë</span>
+                        <div id="countryGroupPanel-germany" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('germany_2021')" class="country-btn">
+                                    <span class="country-flag">🇩🇪</span>
+                                    <span class="country-name">Germany 2021</span>
+                                    <span class="country-count">MMP • 598 seats • 5% threshold • Sainte-Laguë</span>
+                                </button>
+                                <button onclick="importElectionPreset('germany_2017')" class="country-btn">
+                                    <span class="country-flag">🇩🇪</span>
+                                    <span class="country-name">Germany 2017</span>
+                                    <span class="country-count">MMP • 598 seats • 5% threshold • Sainte-Laguë</span>
+                                </button>
+                                <button onclick="importElectionPreset('germany_2013')" class="country-btn">
+                                    <span class="country-flag">🇩🇪</span>
+                                    <span class="country-name">Germany 2013</span>
+                                    <span class="country-count">MMP • 598 seats • 5% threshold • Sainte-Laguë</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Japan -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('japan')" class="country-group-toggle">
+                            <span id="countryGroupIcon-japan">▶</span> 🇯🇵 Japan
                         </button>
-                        <button onclick="importElectionPreset('germany_2013')" class="country-btn">
-                            <span class="country-flag">🇩🇪</span>
-                            <span class="country-name">Germany 2013</span>
-                            <span class="country-count">MMP • 598 seats • 5% threshold • Sainte-Laguë</span>
+                        <div id="countryGroupPanel-japan" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('japan_2024')" class="country-btn">
+                                    <span class="country-flag">🇯🇵</span>
+                                    <span class="country-name">Japan 2024</span>
+                                    <span class="country-count">Parallel • 465 seats • No threshold • D'Hondt</span>
+                                </button>
+                                <button onclick="importElectionPreset('japan_2021')" class="country-btn">
+                                    <span class="country-flag">🇯🇵</span>
+                                    <span class="country-name">Japan 2021</span>
+                                    <span class="country-count">Parallel • 465 seats • No threshold • D'Hondt</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Taiwan -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('taiwan')" class="country-group-toggle">
+                            <span id="countryGroupIcon-taiwan">▶</span> 🇹🇼 Taiwan
                         </button>
-                        
-                        <!-- Japan (newest first) -->
-                        <button onclick="importElectionPreset('japan_2024')" class="country-btn">
-                            <span class="country-flag">🇯🇵</span>
-                            <span class="country-name">Japan 2024</span>
-                            <span class="country-count">Parallel • 465 seats • No threshold • D'Hondt</span>
+                        <div id="countryGroupPanel-taiwan" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('taiwan_2024')" class="country-btn">
+                                    <span class="country-flag">🇹🇼</span>
+                                    <span class="country-name">Taiwan 2024</span>
+                                    <span class="country-count">Parallel • 113 seats • 5% threshold • D'Hondt</span>
+                                </button>
+                                <button onclick="importElectionPreset('taiwan_2020')" class="country-btn">
+                                    <span class="country-flag">🇹🇼</span>
+                                    <span class="country-name">Taiwan 2020</span>
+                                    <span class="country-count">Parallel • 113 seats • 5% threshold • D'Hondt</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Italy -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('italy')" class="country-group-toggle">
+                            <span id="countryGroupIcon-italy">▶</span> 🇮🇹 Italy
                         </button>
-                        <button onclick="importElectionPreset('japan_2021')" class="country-btn">
-                            <span class="country-flag">🇯🇵</span>
-                            <span class="country-name">Japan 2021</span>
-                            <span class="country-count">Parallel • 465 seats • No threshold • D'Hondt</span>
+                        <div id="countryGroupPanel-italy" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('italy_2022')" class="country-btn">
+                                    <span class="country-flag">🇮🇹</span>
+                                    <span class="country-name">Italy 2022</span>
+                                    <span class="country-count">Parallel • 400 seats • 3% threshold • D'Hondt</span>
+                                </button>
+                                <button onclick="importElectionPreset('italy_2018')" class="country-btn">
+                                    <span class="country-flag">🇮🇹</span>
+                                    <span class="country-name">Italy 2018</span>
+                                    <span class="country-count">Parallel • 630 seats • 3% threshold • D'Hondt</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- New Zealand -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('newzealand')" class="country-group-toggle">
+                            <span id="countryGroupIcon-newzealand">▶</span> 🇳🇿 New Zealand
                         </button>
-                        
-                        <!-- Taiwan (newest first) -->
-                        <button onclick="importElectionPreset('taiwan_2024')" class="country-btn">
-                            <span class="country-flag">🇹🇼</span>
-                            <span class="country-name">Taiwan 2024</span>
-                            <span class="country-count">Parallel • 113 seats • 5% threshold • D'Hondt</span>
+                        <div id="countryGroupPanel-newzealand" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('new_zealand_2023')" class="country-btn">
+                                    <span class="country-flag">🇳🇿</span>
+                                    <span class="country-name">New Zealand 2023</span>
+                                    <span class="country-count">MMP • 120 seats • 5% threshold • Sainte-Laguë</span>
+                                </button>
+                                <button onclick="importElectionPreset('new_zealand_2020')" class="country-btn">
+                                    <span class="country-flag">🇳🇿</span>
+                                    <span class="country-name">New Zealand 2020</span>
+                                    <span class="country-count">MMP • 120 seats • 5% threshold • Sainte-Laguë</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Netherlands -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('netherlands')" class="country-group-toggle">
+                            <span id="countryGroupIcon-netherlands">▶</span> 🇳🇱 Netherlands
                         </button>
-                        <button onclick="importElectionPreset('taiwan_2020')" class="country-btn">
-                            <span class="country-flag">🇹🇼</span>
-                            <span class="country-name">Taiwan 2020</span>
-                            <span class="country-count">Parallel • 113 seats • 5% threshold • D'Hondt</span>
+                        <div id="countryGroupPanel-netherlands" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('netherlands_2023')" class="country-btn">
+                                    <span class="country-flag">🇳🇱</span>
+                                    <span class="country-name">Netherlands 2023</span>
+                                    <span class="country-count">Party-List • 150 seats • 0.67% threshold • Hare Quota</span>
+                                </button>
+                                <button onclick="importElectionPreset('netherlands_2021')" class="country-btn">
+                                    <span class="country-flag">🇳🇱</span>
+                                    <span class="country-name">Netherlands 2021</span>
+                                    <span class="country-count">Party-List • 150 seats • 0.67% threshold • Hare Quota</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sweden -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('sweden')" class="country-group-toggle">
+                            <span id="countryGroupIcon-sweden">▶</span> 🇸🇪 Sweden
                         </button>
-                        
-                        <!-- Italy -->
-                        <button onclick="importElectionPreset('italy_2022')" class="country-btn">
-                            <span class="country-flag">🇮🇹</span>
-                            <span class="country-name">Italy 2022</span>
-                            <span class="country-count">Parallel • 400 seats • 3% threshold • D'Hondt</span>
+                        <div id="countryGroupPanel-sweden" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('sweden_2022')" class="country-btn">
+                                    <span class="country-flag">🇸🇪</span>
+                                    <span class="country-name">Sweden 2022</span>
+                                    <span class="country-count">Party-List • 349 seats • 4% threshold • Sainte-Laguë</span>
+                                </button>
+                                <button onclick="importElectionPreset('sweden_2018')" class="country-btn">
+                                    <span class="country-flag">🇸🇪</span>
+                                    <span class="country-name">Sweden 2018</span>
+                                    <span class="country-count">Party-List • 349 seats • 4% threshold • Sainte-Laguë</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- United States -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('usa')" class="country-group-toggle">
+                            <span id="countryGroupIcon-usa">▶</span> 🇺🇸 United States
                         </button>
-                        <button onclick="importElectionPreset('italy_2018')" class="country-btn">
-                            <span class="country-flag">🇮🇹</span>
-                            <span class="country-name">Italy 2018</span>
-                            <span class="country-count">Parallel • 630 seats • 3% threshold • D'Hondt</span>
+                        <div id="countryGroupPanel-usa" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('alaska_2022')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">Alaska 2022</span>
+                                    <span class="country-count">IRV • U.S. House</span>
+                                </button>
+                                <button onclick="importElectionPreset('us_house_2012')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">US House 2012</span>
+                                    <span class="country-count">FPTP • 435 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('us_house_1952')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">US House 1952</span>
+                                    <span class="country-count">FPTP • 435 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('us_house_1942')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">US House 1942</span>
+                                    <span class="country-count">FPTP • 435 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('us_house_1916')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">US House 1916</span>
+                                    <span class="country-count">FPTP • 435 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('us_house_1888')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">US House 1888</span>
+                                    <span class="country-count">FPTP • 325 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('us_house_1848')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">US House 1848</span>
+                                    <span class="country-count">FPTP • 231 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('us_house_1842')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">US House 1842</span>
+                                    <span class="country-count">FPTP • 223 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('maine_2018_cd2')" class="country-btn">
+                                    <span class="country-flag">🇺🇸</span>
+                                    <span class="country-name">Maine 2018 CD2</span>
+                                    <span class="country-count">IRV • 1 seat</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- United Kingdom -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('uk')" class="country-group-toggle">
+                            <span id="countryGroupIcon-uk">▶</span> 🇬🇧 United Kingdom
                         </button>
-                        
-                        <!-- New Zealand (newest first) -->
-                        <button onclick="importElectionPreset('new_zealand_2023')" class="country-btn">
-                            <span class="country-flag">🇳🇿</span>
-                            <span class="country-name">New Zealand 2023</span>
-                            <span class="country-count">MMP • 120 seats • 5% threshold • Sainte-Laguë</span>
+                        <div id="countryGroupPanel-uk" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('uk_2024')" class="country-btn">
+                                    <span class="country-flag">🇬🇧</span>
+                                    <span class="country-name">United Kingdom 2024</span>
+                                    <span class="country-count">FPTP • 650 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('uk_2019')" class="country-btn">
+                                    <span class="country-flag">🇬🇧</span>
+                                    <span class="country-name">United Kingdom 2019</span>
+                                    <span class="country-count">FPTP • 650 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('uk_2017')" class="country-btn">
+                                    <span class="country-flag">🇬🇧</span>
+                                    <span class="country-name">United Kingdom 2017</span>
+                                    <span class="country-count">FPTP • 650 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('uk_2015')" class="country-btn">
+                                    <span class="country-flag">🇬🇧</span>
+                                    <span class="country-name">United Kingdom 2015</span>
+                                    <span class="country-count">FPTP • 650 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('uk_2010')" class="country-btn">
+                                    <span class="country-flag">🇬🇧</span>
+                                    <span class="country-name">United Kingdom 2010</span>
+                                    <span class="country-count">FPTP • 650 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('uk_1974_feb')" class="country-btn">
+                                    <span class="country-flag">🇬🇧</span>
+                                    <span class="country-name">UK 1974 (Feb)</span>
+                                    <span class="country-count">FPTP • 635 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('uk_1951')" class="country-btn">
+                                    <span class="country-flag">🇬🇧</span>
+                                    <span class="country-name">UK 1951</span>
+                                    <span class="country-count">FPTP • 625 seats</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Canada -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('canada')" class="country-group-toggle">
+                            <span id="countryGroupIcon-canada">▶</span> 🇨🇦 Canada
                         </button>
-                        <button onclick="importElectionPreset('new_zealand_2020')" class="country-btn">
-                            <span class="country-flag">🇳🇿</span>
-                            <span class="country-name">New Zealand 2020</span>
-                            <span class="country-count">MMP • 120 seats • 5% threshold • Sainte-Laguë</span>
+                        <div id="countryGroupPanel-canada" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('canada_2025')" class="country-btn">
+                                    <span class="country-flag">🇨🇦</span>
+                                    <span class="country-name">Canada 2025</span>
+                                    <span class="country-count">FPTP • 343 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('canada_2021')" class="country-btn">
+                                    <span class="country-flag">🇨🇦</span>
+                                    <span class="country-name">Canada 2021</span>
+                                    <span class="country-count">FPTP • 338 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('canada_2019')" class="country-btn">
+                                    <span class="country-flag">🇨🇦</span>
+                                    <span class="country-name">Canada 2019</span>
+                                    <span class="country-count">FPTP • 338 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('canada_2011')" class="country-btn">
+                                    <span class="country-flag">🇨🇦</span>
+                                    <span class="country-name">Canada 2011</span>
+                                    <span class="country-count">FPTP • 308 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('canada_2008')" class="country-btn">
+                                    <span class="country-flag">🇨🇦</span>
+                                    <span class="country-name">Canada 2008</span>
+                                    <span class="country-count">FPTP • 308 seats</span>
+                                </button>
+                                <button onclick="importElectionPreset('canada_1979')" class="country-btn">
+                                    <span class="country-flag">🇨🇦</span>
+                                    <span class="country-name">Canada 1979</span>
+                                    <span class="country-count">FPTP • 282 seats</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Australia -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('australia')" class="country-group-toggle">
+                            <span id="countryGroupIcon-australia">▶</span> 🇦🇺 Australia
                         </button>
-                        
-                        <!-- Netherlands (newest first) -->
-                        <button onclick="importElectionPreset('netherlands_2023')" class="country-btn">
-                            <span class="country-flag">🇳🇱</span>
-                            <span class="country-name">Netherlands 2023</span>
-                            <span class="country-count">Party-List • 150 seats • 0.67% threshold • Hare Quota</span>
+                        <div id="countryGroupPanel-australia" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('australia_senate_qld_2022')" class="country-btn">
+                                    <span class="country-flag">🇦🇺</span>
+                                    <span class="country-name">Queensland Senate 2022</span>
+                                    <span class="country-count">STV • 6 seats</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Iceland -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('iceland')" class="country-group-toggle">
+                            <span id="countryGroupIcon-iceland">▶</span> 🇮🇸 Iceland
                         </button>
-                        <button onclick="importElectionPreset('netherlands_2021')" class="country-btn">
-                            <span class="country-flag">🇳🇱</span>
-                            <span class="country-name">Netherlands 2021</span>
-                            <span class="country-count">Party-List • 150 seats • 0.67% threshold • Hare Quota</span>
+                        <div id="countryGroupPanel-iceland" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('iceland_2024')" class="country-btn">
+                                    <span class="country-flag">🇮🇸</span>
+                                    <span class="country-name">Iceland 2024</span>
+                                    <span class="country-count">Party-List • 63 seats • 5% threshold</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Israel -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('israel')" class="country-group-toggle">
+                            <span id="countryGroupIcon-israel">▶</span> 🇮🇱 Israel
                         </button>
-                        
-                        <!-- Sweden (newest first) -->
-                        <button onclick="importElectionPreset('sweden_2022')" class="country-btn">
-                            <span class="country-flag">🇸🇪</span>
-                            <span class="country-name">Sweden 2022</span>
-                            <span class="country-count">Party-List • 349 seats • 4% threshold • Sainte-Laguë</span>
+                        <div id="countryGroupPanel-israel" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('israel_2022')" class="country-btn">
+                                    <span class="country-flag">🇮🇱</span>
+                                    <span class="country-name">Israel 2022</span>
+                                    <span class="country-count">Party-List • 120 seats • 3.25% threshold • D'Hondt</span>
+                                </button>
+                                <button onclick="importElectionPreset('israel_2021')" class="country-btn">
+                                    <span class="country-flag">🇮🇱</span>
+                                    <span class="country-name">Israel 2021</span>
+                                    <span class="country-count">Party-List • 120 seats • 3.25% threshold • D'Hondt</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ireland -->
+                    <div class="country-group">
+                        <button onclick="toggleCountryGroup('ireland')" class="country-group-toggle">
+                            <span id="countryGroupIcon-ireland">▶</span> 🇮🇪 Ireland
                         </button>
-                        <button onclick="importElectionPreset('sweden_2018')" class="country-btn">
-                            <span class="country-flag">🇸🇪</span>
-                            <span class="country-name">Sweden 2018</span>
-                            <span class="country-count">Party-List • 349 seats • 4% threshold • Sainte-Laguë</span>
-                        </button>
-                        
-                        <!-- Single elections (by year, newest first) -->
-                        <button onclick="importElectionPreset('alaska_2022')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">Alaska 2022</span>
-                            <span class="country-count">IRV • U.S. House</span>
-                        </button>
-                        <button onclick="importElectionPreset('us_house_2012')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">US House 2012</span>
-                            <span class="country-count">FPTP • 435 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('us_house_1952')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">US House 1952</span>
-                            <span class="country-count">FPTP • 435 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('us_house_1942')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">US House 1942</span>
-                            <span class="country-count">FPTP • 435 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('us_house_1916')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">US House 1916</span>
-                            <span class="country-count">FPTP • 435 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('us_house_1888')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">US House 1888</span>
-                            <span class="country-count">FPTP • 325 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('us_house_1848')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">US House 1848</span>
-                            <span class="country-count">FPTP • 231 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('us_house_1842')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">US House 1842</span>
-                            <span class="country-count">FPTP • 223 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('maine_2018_cd2')" class="country-btn">
-                            <span class="country-flag">🇺🇸</span>
-                            <span class="country-name">Maine 2018 CD2</span>
-                            <span class="country-count">IRV • 1 seat</span>
-                        </button>
-                        <button onclick="importElectionPreset('uk_2024')" class="country-btn">
-                            <span class="country-flag">🇬🇧</span>
-                            <span class="country-name">United Kingdom 2024</span>
-                            <span class="country-count">FPTP • 650 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('uk_2019')" class="country-btn">
-                            <span class="country-flag">🇬🇧</span>
-                            <span class="country-name">United Kingdom 2019</span>
-                            <span class="country-count">FPTP • 650 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('uk_2017')" class="country-btn">
-                            <span class="country-flag">🇬🇧</span>
-                            <span class="country-name">United Kingdom 2017</span>
-                            <span class="country-count">FPTP • 650 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('uk_2015')" class="country-btn">
-                            <span class="country-flag">🇬🇧</span>
-                            <span class="country-name">United Kingdom 2015</span>
-                            <span class="country-count">FPTP • 650 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('uk_2010')" class="country-btn">
-                            <span class="country-flag">🇬🇧</span>
-                            <span class="country-name">United Kingdom 2010</span>
-                            <span class="country-count">FPTP • 650 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('uk_1974_feb')" class="country-btn">
-                            <span class="country-flag">🇬🇧</span>
-                            <span class="country-name">UK 1974 (Feb)</span>
-                            <span class="country-count">FPTP • 635 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('uk_1951')" class="country-btn">
-                            <span class="country-flag">🇬🇧</span>
-                            <span class="country-name">UK 1951</span>
-                            <span class="country-count">FPTP • 625 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('canada_2025')" class="country-btn">
-                            <span class="country-flag">🇨🇦</span>
-                            <span class="country-name">Canada 2025</span>
-                            <span class="country-count">FPTP • 343 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('canada_2021')" class="country-btn">
-                            <span class="country-flag">🇨🇦</span>
-                            <span class="country-name">Canada 2021</span>
-                            <span class="country-count">FPTP • 338 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('canada_2019')" class="country-btn">
-                            <span class="country-flag">🇨🇦</span>
-                            <span class="country-name">Canada 2019</span>
-                            <span class="country-count">FPTP • 338 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('canada_2011')" class="country-btn">
-                            <span class="country-flag">🇨🇦</span>
-                            <span class="country-name">Canada 2011</span>
-                            <span class="country-count">FPTP • 308 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('canada_2008')" class="country-btn">
-                            <span class="country-flag">🇨🇦</span>
-                            <span class="country-name">Canada 2008</span>
-                            <span class="country-count">FPTP • 308 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('canada_1979')" class="country-btn">
-                            <span class="country-flag">🇨🇦</span>
-                            <span class="country-name">Canada 1979</span>
-                            <span class="country-count">FPTP • 282 seats</span>
-                        </button>
-                        <button onclick="importElectionPreset('israel_2022')" class="country-btn">
-                            <span class="country-flag">🇮🇱</span>
-                            <span class="country-name">Israel 2022</span>
-                            <span class="country-count">Party-List • 120 seats • 3.25% threshold • D'Hondt</span>
-                        </button>
-                        <button onclick="importElectionPreset('israel_2021')" class="country-btn">
-                            <span class="country-flag">🇮🇱</span>
-                            <span class="country-name">Israel 2021</span>
-                            <span class="country-count">Party-List • 120 seats • 3.25% threshold • D'Hondt</span>
-                        </button>
-                        <button onclick="importElectionPreset('ireland_pres_2011')" class="country-btn">
-                            <span class="country-flag">🇮🇪</span>
-                            <span class="country-name">Ireland 2011</span>
-                            <span class="country-count">IRV • Presidential</span>
-                        </button>
+                        <div id="countryGroupPanel-ireland" class="country-group-panel" style="display: none;">
+                            <div class="country-grid">
+                                <button onclick="importElectionPreset('ireland_pres_2011')" class="country-btn">
+                                    <span class="country-flag">🇮🇪</span>
+                                    <span class="country-name">Ireland 2011</span>
+                                    <span class="country-count">IRV • Presidential</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     
                     <div style="margin-top: 15px; padding: 12px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px;">

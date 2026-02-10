@@ -2009,5 +2009,78 @@ const ELECTION_PRESETS = {
             7904: 6
         },
         finalParliamentSize: 282
+    },
+    "australia_senate_qld_2022": {
+        name: "2022 Australian Senate - Queensland (STV)",
+        description: "A 6-seat multi-member district using Single Transferable Vote. This election illustrates the 'Droop Quota' (approx. 14.3%). The Liberal National Party and Labor each secured enough quotas for 2 seats, while the Greens and One Nation won the final two through preference flows.",
+        system: "stv",
+        totalSeats: 6,
+        quotaType: "droop",
+        parties: [
+            { id: 2201, name: "Liberal National Party", color: "#0047AB" },
+            { id: 2202, name: "Labor Party", color: "#E4003B" },
+            { id: 2203, name: "The Greens", color: "#009C3D" },
+            { id: 2204, name: "One Nation", color: "#F58220" },
+            { id: 2205, name: "Legalise Cannabis", color: "#4B2E83" },
+            { id: 2206, name: "United Australia Party", color: "#FFFF00" }
+        ],
+        ballots: [
+            { preferences: [2201], percentage: 35.1, name: "LNP (2.4 quotas)" },
+            { preferences: [2202], percentage: 24.7, name: "Labor (1.7 quotas)" },
+            { preferences: [2203, 2202], percentage: 12.4, name: "Greens (Transfers to Labor)" },
+            { preferences: [2204, 2201], percentage: 7.4, name: "One Nation (Transfers to LNP)" },
+            { preferences: [2205, 2203], percentage: 5.4, name: "Cannabis (Transfers to Greens)" },
+            { preferences: [2206, 2204], percentage: 2.1, name: "UAP (Transfers to One Nation)" },
+            { preferences: [2201], percentage: 12.9, name: "Independents/Other" }
+        ],
+        actualSeats: {
+            2201: 2,
+            2202: 2,
+            2203: 1,
+            2204: 1
+        }
+    },
+    "iceland_2024": {
+        name: "2024 Icelandic Parliamentary Election",
+        description: "A demonstration of the 5% threshold and multi-member districts with leveling seats. The incumbent coalition collapsed, leading to a surge for the Social Democrats and the Liberal Reform Party. The Left-Green Movement, previously holding the Prime Ministership, fell below the threshold.",
+        system: "party-list",
+        totalSeats: 63,
+        threshold: 5,
+        allocationMethod: "dhondt",
+        parties: [
+            { id: 2401, name: "Social Democratic Alliance (S)", color: "#ed1b34" },
+            { id: 2402, name: "Independence Party (D)", color: "#005ea1" },
+            { id: 2403, name: "Liberal Reform Party (C)", color: "#ff7d00" },
+            { id: 2404, name: "People's Party (F)", color: "#ffcc00" },
+            { id: 2405, name: "Centre Party (M)", color: "#002d5e" },
+            { id: 2406, name: "Progressive Party (B)", color: "#009c3d" },
+            { id: 2407, name: "Left-Green Movement (V)", color: "#487005" },
+            { id: 2408, name: "Pirate Party (P)", color: "#000000" },
+            { id: 2409, name: "Socialist Party (J)", color: "#af0000" }
+        ],
+        votes: {
+            parties: {
+                2401: 42423, // 20.8%
+                2402: 39635, // 19.4%
+                2403: 32135, // 15.8%
+                2404: 28140, // 13.8%
+                2405: 25750, // 12.6%
+                2406: 11833, // 5.8%
+                2407: 7103,  // 3.5% (Failed threshold)
+                2408: 6703,  // 3.3% (Failed threshold)
+                2409: 6634   // 3.3% (Failed threshold)
+            }
+        },
+        actualSeats: {
+            2401: 15,
+            2402: 14,
+            2403: 11,
+            2404: 10,
+            2405: 9,
+            2406: 4,
+            2407: 0,
+            2408: 0,
+            2409: 0
+        }
     }
 };

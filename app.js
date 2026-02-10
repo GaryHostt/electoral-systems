@@ -7841,3 +7841,19 @@ window.togglePresetsPanel = function() {
         }
     }
 };
+
+// Toggle function for country groups
+window.toggleCountryGroup = function(countryId) {
+    const panel = document.getElementById(`countryGroupPanel-${countryId}`);
+    const icon = document.getElementById(`countryGroupIcon-${countryId}`);
+    
+    if (panel && icon) {
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            icon.textContent = '▼';
+        } else {
+            panel.style.display = 'none';
+            icon.textContent = '▶';
+        }
+    }
+};
