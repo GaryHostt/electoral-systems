@@ -12,8 +12,11 @@ let electionState = {
     districtSeats: 0,         // NEW: For MMP/MMM district tier
     baseListSeats: 0,         // NEW: For MMP/MMM list tier
     threshold: 5,
+    bypassThreshold: 1,              // NEW: Minimum electorate seats to bypass threshold
+    enableOverhangSeats: true,        // NEW: Allow overhang seats (NZ style)
+    enableFullCompensation: false,    // NEW: Enable leveling seats (German style)
     allocationMethod: 'dhondt',
-    levelingEnabled: false,
+    levelingEnabled: false,           // Keep for backward compatibility
     isManualSeatMode: false,  // NEW: Tracks if manual mode is active
     manualSeats: {},          // NEW: Stores user-entered seats {partyId: seatCount}
     calculatedSeats: {}       // NEW: Stores system-calculated seats for comparison
@@ -53,9 +56,17 @@ function resetState() {
         system: null,
         raceType: 'single',
         totalSeats: 100,
+        districtSeats: 0,
+        baseListSeats: 0,
         threshold: 5,
+        bypassThreshold: 1,
+        enableOverhangSeats: true,
+        enableFullCompensation: false,
         allocationMethod: 'dhondt',
-        levelingEnabled: false
+        levelingEnabled: false,
+        isManualSeatMode: false,
+        manualSeats: {},
+        calculatedSeats: {}
     };
     // Update backward compatibility aliases
     parties = electionState.parties;
@@ -74,18 +85,26 @@ function updateUI() {
 
 // Historical Election Preset Import Functions
 function importElectionPreset(presetKey) {
-    if (!presetKey) return; // Empty selection
-    
-    const preset = ELECTION_PRESETS[presetKey];
-    if (!preset) {
-        console.error(`Preset ${presetKey} not found`);
-        return;
-    }
-    
-    console.log(`Loading preset: ${preset.name}`);
-    
-    // Reset current state
-    resetState();
+    try {
+        if (!presetKey) return; // Empty selection
+        
+        if (typeof ELECTION_PRESETS === 'undefined') {
+            console.error('ELECTION_PRESETS is not defined. Make sure presets.js is loaded.');
+            alert('Error: Election presets data not loaded. Please refresh the page.');
+            return;
+        }
+        
+        const preset = ELECTION_PRESETS[presetKey];
+        if (!preset) {
+            console.error(`Preset ${presetKey} not found`);
+            alert(`Preset "${presetKey}" not found.`);
+            return;
+        }
+        
+        console.log(`Loading preset: ${preset.name}`);
+        
+        // Reset current state
+        resetState();
     
     // Inject preset data into state
     setState({
@@ -154,17 +173,68 @@ function importElectionPreset(presetKey) {
         if (seatsInput) seatsInput.value = preset.totalSeats;
     }
     
-    // Update threshold (if visible)
-    const thresholdInput = document.getElementById('electoralThreshold');
+    // Update threshold (if visible) - sync both inputs
+    const electoralThreshold = document.getElementById('electoralThreshold');
+    const thresholdInput = document.getElementById('thresholdInput');
+    if (electoralThreshold) electoralThreshold.value = preset.threshold || 0;
     if (thresholdInput) thresholdInput.value = preset.threshold || 0;
     
     // Update allocation method (if visible)
     const allocationSelect = document.getElementById('allocationMethod');
     if (allocationSelect) allocationSelect.value = preset.allocationMethod || 'dhondt';
     
-    // Update MMP leveling toggle (if visible)
+    // Update MMP leveling toggle (if visible) - keep for backward compatibility
     const levelingToggle = document.getElementById('mmpLevelingToggle');
     if (levelingToggle) levelingToggle.checked = preset.levelingEnabled || false;
+    
+    // NEW: Set bypass threshold and overhang/compensation settings for MMP presets
+    if (preset.system === 'mmp') {
+        try {
+            // Set bypass threshold based on country/system
+            if (presetKey.includes('germany')) {
+                electionState.bypassThreshold = preset.bypassThreshold || 3;
+            } else if (presetKey.includes('new_zealand')) {
+                electionState.bypassThreshold = preset.bypassThreshold || 1;
+            } else {
+                electionState.bypassThreshold = preset.bypassThreshold || 1;  // Default
+            }
+            
+            // Set overhang enabled (default true for MMP)
+            electionState.enableOverhangSeats = preset.enableOverhangSeats !== undefined 
+                ? preset.enableOverhangSeats 
+                : true;
+            
+            // Map levelingEnabled to enableFullCompensation
+            electionState.enableFullCompensation = preset.levelingEnabled || false;
+            
+            // Update UI controls (onSystemChange should have created them)
+            // Use a small delay to ensure onSystemChange has completed
+            requestAnimationFrame(() => {
+                const bypassThresholdInput = document.getElementById('bypassThresholdInput');
+                if (bypassThresholdInput) {
+                    bypassThresholdInput.value = electionState.bypassThreshold;
+                }
+                
+                const enableOverhangToggle = document.getElementById('enableOverhangToggle');
+                if (enableOverhangToggle) {
+                    enableOverhangToggle.checked = electionState.enableOverhangSeats;
+                    // Trigger change event to update full compensation toggle state
+                    try {
+                        enableOverhangToggle.dispatchEvent(new Event('change'));
+                    } catch (e) {
+                        console.warn('Could not dispatch change event on overhang toggle:', e);
+                    }
+                }
+                
+                const enableFullCompensationToggle = document.getElementById('enableFullCompensationToggle');
+                if (enableFullCompensationToggle) {
+                    enableFullCompensationToggle.checked = electionState.enableFullCompensation;
+                }
+            });
+        } catch (e) {
+            console.error('Error setting MMP preset options:', e);
+        }
+    }
     
     // NEW: If preset includes actual seats, automatically enable manual mode
     if (preset.actualSeats) {
@@ -210,6 +280,10 @@ function importElectionPreset(presetKey) {
             alert(`✅ Loaded: ${preset.name}\n\n${preset.description || ''}\n\nYou can now:\n• Click "Calculate" to see results\n• Change the electoral system to run counterfactual analysis\n• Edit vote counts before calculating`);
         }, 500); // Wait for ballot population to complete
     }, 800); // Increased from 500ms to 800ms for more stability
+    } catch (error) {
+        console.error('Error loading preset:', error);
+        alert(`Error loading preset: ${error.message}\n\nPlease check the browser console for details.`);
+    }
 }
 
 function populateVotingBoxes(voteData, preset) {
@@ -964,6 +1038,62 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // NEW: Setup threshold input (sync with electoralThreshold)
+    const thresholdInput = document.getElementById('thresholdInput');
+    const electoralThreshold = document.getElementById('electoralThreshold');
+    if (thresholdInput) {
+        thresholdInput.addEventListener('change', (e) => {
+            const value = parseFloat(e.target.value) || 5;
+            electionState.threshold = value;
+            // Sync with existing electoralThreshold input
+            if (electoralThreshold) {
+                electoralThreshold.value = value;
+            }
+        });
+    }
+    // Also sync electoralThreshold to thresholdInput
+    if (electoralThreshold && thresholdInput) {
+        electoralThreshold.addEventListener('change', (e) => {
+            const value = parseFloat(e.target.value) || 5;
+            electionState.threshold = value;
+            thresholdInput.value = value;
+        });
+    }
+    
+    // NEW: Setup bypass threshold input
+    const bypassThresholdInput = document.getElementById('bypassThresholdInput');
+    if (bypassThresholdInput) {
+        bypassThresholdInput.addEventListener('change', (e) => {
+            electionState.bypassThreshold = parseInt(e.target.value) || 1;
+        });
+    }
+    
+    // NEW: Setup overhang toggle
+    const enableOverhangToggle = document.getElementById('enableOverhangToggle');
+    if (enableOverhangToggle) {
+        enableOverhangToggle.addEventListener('change', (e) => {
+            electionState.enableOverhangSeats = e.target.checked;
+            // Enable/disable full compensation toggle based on overhang
+            const fullCompensationToggle = document.getElementById('enableFullCompensationToggle');
+            const fullCompensationLabel = document.getElementById('fullCompensationLabel');
+            if (fullCompensationToggle && fullCompensationLabel) {
+                fullCompensationToggle.disabled = !e.target.checked;
+                if (!e.target.checked) {
+                    fullCompensationToggle.checked = false;
+                    electionState.enableFullCompensation = false;
+                }
+            }
+        });
+    }
+    
+    // NEW: Setup full compensation toggle
+    const enableFullCompensationToggle = document.getElementById('enableFullCompensationToggle');
+    if (enableFullCompensationToggle) {
+        enableFullCompensationToggle.addEventListener('change', (e) => {
+            electionState.enableFullCompensation = e.target.checked;
+        });
+    }
+    
     // Setup color picker
     setupColorPicker();
     
@@ -1180,6 +1310,52 @@ function onSystemChange() {
             const toggle = document.getElementById('manualSeatOverrideToggle');
             if (toggle) toggle.checked = false;
         }
+    }
+    
+    // NEW: Show/hide threshold & bypass container (MMP only)
+    try {
+        const thresholdBypassContainer = document.getElementById('thresholdBypassContainer');
+        if (thresholdBypassContainer) {
+            if (system === 'mmp') {
+                thresholdBypassContainer.style.display = 'block';
+                // Initialize threshold input from electoralThreshold
+                const electoralThreshold = document.getElementById('electoralThreshold');
+                const thresholdInput = document.getElementById('thresholdInput');
+                if (electoralThreshold && thresholdInput) {
+                    thresholdInput.value = electoralThreshold.value || 5;
+                }
+                // Initialize bypass threshold from state
+                const bypassThresholdInput = document.getElementById('bypassThresholdInput');
+                if (bypassThresholdInput) {
+                    bypassThresholdInput.value = electionState.bypassThreshold || 1;
+                }
+            } else {
+                thresholdBypassContainer.style.display = 'none';
+            }
+        }
+    } catch (e) {
+        console.warn('Error updating thresholdBypassContainer:', e);
+    }
+    
+    // NEW: Show/hide overhang & compensation container (MMP only)
+    try {
+        const overhangCompensationContainer = document.getElementById('overhangCompensationContainer');
+        if (overhangCompensationContainer) {
+            if (system === 'mmp') {
+                overhangCompensationContainer.style.display = 'block';
+                // Initialize full compensation toggle state based on overhang
+                const enableOverhangToggle = document.getElementById('enableOverhangToggle');
+                const enableFullCompensationToggle = document.getElementById('enableFullCompensationToggle');
+                const fullCompensationLabel = document.getElementById('fullCompensationLabel');
+                if (enableOverhangToggle && enableFullCompensationToggle && fullCompensationLabel) {
+                    enableFullCompensationToggle.disabled = !enableOverhangToggle.checked;
+                }
+            } else {
+                overhangCompensationContainer.style.display = 'none';
+            }
+        }
+    } catch (e) {
+        console.warn('Error updating overhangCompensationContainer:', e);
     }
     
     // Auto-generate candidates for MMP/MMM if needed
@@ -1800,11 +1976,15 @@ function updateManualSeatInputs() {
     
     parties.forEach(party => {
         const currentValue = electionState.manualSeats[party.id] || 0;
+        const hasDirectMandate = currentValue > 0;
+        const directMandateIndicator = hasDirectMandate 
+            ? '<span title="Direct Mandate: Party has won electorate seats and bypasses threshold requirement" style="color: #28a745; font-weight: bold; margin-left: 8px;">✓ Direct Mandate</span>'
+            : '';
         html += `
             <div class="vote-input-row">
                 <label>
                     <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
-                    ${party.name}
+                    ${party.name}${directMandateIndicator}
                 </label>
                 <input type="number" min="0" max="1000" value="${currentValue}" 
                        id="manual-seats-${party.id}" 
@@ -2276,8 +2456,13 @@ function adaptUIStateToCalculationParams() {
     const threshold = parseFloat(document.getElementById('electoralThreshold')?.value) || 0;
     const allocationMethod = document.getElementById('allocationMethod')?.value || 'dhondt';
     
-    // Get MMP leveling toggle (if exists)
+    // Get MMP leveling toggle (if exists) - keep for backward compatibility
     const levelingEnabled = document.getElementById('mmpLevelingToggle')?.checked || false;
+    
+    // NEW: Get bypass threshold, overhang, and full compensation settings
+    const bypassThreshold = parseInt(document.getElementById('bypassThresholdInput')?.value) || electionState.bypassThreshold || 1;
+    const enableOverhang = document.getElementById('enableOverhangToggle')?.checked ?? electionState.enableOverhangSeats ?? true;
+    const enableFullCompensation = document.getElementById('enableFullCompensationToggle')?.checked || electionState.enableFullCompensation || false;
     
     // Get total voters and ballots (for ranking systems)
     const totalVotersInput = document.getElementById('totalVoters');
@@ -2295,6 +2480,9 @@ function adaptUIStateToCalculationParams() {
         threshold: threshold,
         allocationMethod: allocationMethod,
         levelingEnabled: levelingEnabled,
+        bypassThreshold: bypassThreshold,  // NEW: Bypass threshold for MMP
+        enableOverhang: enableOverhang,    // NEW: Enable overhang seats
+        enableFullCompensation: enableFullCompensation,  // NEW: Enable full compensation
         totalVoters: totalVoters,
         ballots: ballots,
         numBallotTypes: numBallotTypes
@@ -2428,7 +2616,19 @@ function calculateResults() {
             });
             
             try {
-                results = calculateMMP(params.votes, params.districtSeats, params.baseListSeats, params.threshold, params.allocationMethod, params.levelingEnabled);
+                // Use enableFullCompensation instead of levelingEnabled for new logic
+                const levelingEnabled = params.enableFullCompensation !== undefined ? params.enableFullCompensation : params.levelingEnabled;
+                results = calculateMMP(
+                    params.votes, 
+                    params.districtSeats, 
+                    params.baseListSeats, 
+                    params.threshold, 
+                    params.allocationMethod, 
+                    levelingEnabled,
+                    null,  // forcedDistrictWins
+                    params.bypassThreshold || 1,  // NEW: bypass threshold
+                    params.enableOverhang !== undefined ? params.enableOverhang : true  // NEW: enable overhang
+                );
                 
                 if (!results) {
                     console.error('MMP calculation returned null');
@@ -4168,10 +4368,10 @@ function calculateIterativeLeveling(districtWins, targets, partyVotes, baseParli
     };
 }
 
-function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins = null) {
+function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins = null, bypassThreshold = 1, enableOverhang = true) {
     // CHECK: If manual seat mode is active, use manual seats
     if (electionState.isManualSeatMode && Object.keys(electionState.manualSeats).length > 0) {
-        return calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins);
+        return calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins, bypassThreshold, enableOverhang);
     }
     
     // Pure function - no DOM access
@@ -4184,26 +4384,66 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     const partyDistrictWins = forcedDistrictWins || simulateDistricts(votes.candidates, districtSeats);
     
     // ============================================
-    // Step B: Calculate Proportional Target Seats
+    // Step B: Filter Qualifying Parties and Calculate Qualifying Vote Total
     // ============================================
+    // First calculate total votes for percentage calculation
     const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
-    // allocationMethod now comes from parameter
     
-    // Filter eligible parties (meet threshold OR won a district - Double Gate)
-    const eligiblePartyVotes = {};
-    parties.forEach(party => {
-        const voteShare = votes.parties[party.id] || 0;
-        const percentage = totalPartyVotes > 0 ? (voteShare / totalPartyVotes * 100) : 0;
-        const wonADistrict = (partyDistrictWins[party.id] || 0) > 0;
+    // Filter qualifying parties (meet threshold OR bypass via electorate seats)
+    // CRITICAL: In normal calculation mode, use districtWins for bypass check, NOT manualSeats
+    const qualifyingParties = parties.filter(p => {
+        const partyVotes = votes.parties[p.id] || 0;
+        const votePercentage = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
+        const districtWins = partyDistrictWins[p.id] || 0;
         
-        // DOUBLE GATE: Meet threshold OR win at least one district (Germany/New Zealand rule)
-        // When forcedDistrictWins is provided (from STV comparison), use those for Double-Gate
-        if ((percentage >= threshold || wonADistrict) && voteShare > 0) {
-            eligiblePartyVotes[party.id] = voteShare;
-        }
+        const meetsThreshold = votePercentage >= threshold;
+        const meetsBypass = districtWins >= bypassThreshold;
+        return (meetsThreshold || meetsBypass) && partyVotes > 0;
     });
     
+    // Calculate qualifying vote total (denominator for allocation)
+    const qualifyingVoteTotal = qualifyingParties.reduce((sum, p) => {
+        return sum + (votes.parties[p.id] || 0);
+    }, 0);
+    
+    // DEBUG: Log qualifying parties and vote total for debugging
+    console.log('MMP Qualifying Parties Debug:', {
+        totalPartyVotes: totalPartyVotes,
+        qualifyingVoteTotal: qualifyingVoteTotal,
+        qualifyingParties: qualifyingParties.map(p => ({
+            name: p.name,
+            votes: votes.parties[p.id] || 0,
+            percentage: totalPartyVotes > 0 ? ((votes.parties[p.id] || 0) / totalPartyVotes * 100).toFixed(2) + '%' : '0%',
+            districtWins: partyDistrictWins[p.id] || 0,
+            meetsThreshold: (votes.parties[p.id] || 0) / totalPartyVotes * 100 >= threshold,
+            meetsBypass: (partyDistrictWins[p.id] || 0) >= bypassThreshold
+        })),
+        threshold: threshold,
+        bypassThreshold: bypassThreshold
+    });
+    
+    // Build eligible party votes object for allocation functions
+    const eligiblePartyVotes = {};
+    let sumOfEligibleVotes = 0;
+    qualifyingParties.forEach(p => {
+        const partyVotes = votes.parties[p.id] || 0;
+        eligiblePartyVotes[p.id] = partyVotes;
+        sumOfEligibleVotes += partyVotes;
+    });
+    
+    // VALIDATION: Ensure sum of eligible votes matches qualifying vote total
+    if (Math.abs(sumOfEligibleVotes - qualifyingVoteTotal) > 1) {
+        console.error('MMP ERROR: Sum of eligible votes does not match qualifying vote total!', {
+            sumOfEligibleVotes: sumOfEligibleVotes,
+            qualifyingVoteTotal: qualifyingVoteTotal,
+            difference: sumOfEligibleVotes - qualifyingVoteTotal
+        });
+    }
+    
     // Calculate proportional targets based on TOTAL parliament size (district + list)
+    // CRITICAL: The allocation functions allocate seats proportionally based on the votes passed.
+    // Since we only pass qualifying parties' votes, they will allocate proportionally among qualifying parties.
+    // The functions will ensure the total seats allocated equals totalParliamentSeats.
     const totalParliamentSeats = districtSeats + baseListSeats;
     const proportionalTargets = allocationMethod === 'sainte-lague'
         ? allocateSeats_SainteLague(eligiblePartyVotes, totalParliamentSeats)
@@ -4216,6 +4456,31 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
         }
     });
     
+    // VALIDATION: Ensure total target seats equals expected parliament size
+    const totalTargetSeats = Object.values(proportionalTargets).reduce((sum, s) => sum + s, 0);
+    if (totalTargetSeats !== totalParliamentSeats) {
+        console.error('MMP ERROR: Total target seats does not match expected parliament size!', {
+            totalTargetSeats: totalTargetSeats,
+            expectedTotal: totalParliamentSeats,
+            difference: totalTargetSeats - totalParliamentSeats
+        });
+    }
+    
+    // DEBUG: Log proportional targets (after initializing all parties)
+    console.log('MMP Proportional Targets Debug:', {
+        totalParliamentSeats: totalParliamentSeats,
+        totalTargetSeats: totalTargetSeats,
+        targets: Object.entries(proportionalTargets).map(([id, seats]) => {
+            const party = parties.find(p => p.id === parseInt(id));
+            return {
+                name: party ? party.name : `Party ${id}`,
+                targetSeats: seats,
+                votes: eligiblePartyVotes[id] || 0,
+                voteShare: qualifyingVoteTotal > 0 ? ((eligiblePartyVotes[id] || 0) / qualifyingVoteTotal * 100).toFixed(2) + '%' : '0%'
+            };
+        })
+    });
+    
     // ============================================
     // Step C: Calculate Initial Top-Up (List Seats = Target - District)
     // ============================================
@@ -4225,11 +4490,23 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     parties.forEach(party => {
         const districtWon = partyDistrictWins[party.id] || 0;
         const target = proportionalTargets[party.id] || 0;
+        const partyVotes = votes.parties[party.id] || 0;
         
-        if (districtWon > target) {
-            // OVERHANG: Party keeps all district seats (expands parliament)
+        // CRITICAL: If party has votes but entitlement rounds to 0, they only get district seats
+        // This prevents tiny parties with 1 electorate from getting list seats
+        if (target === 0 && districtWon > 0 && partyVotes > 0) {
+            // Party bypassed threshold but has no proportional entitlement
+            // They only get their district seats, no list seats
             baseSeats[party.id] = districtWon;
-            overhangTotal += (districtWon - target);
+        } else if (districtWon > target) {
+            // OVERHANG: Party keeps all district seats (if enabled)
+            if (enableOverhang) {
+                baseSeats[party.id] = districtWon;
+                overhangTotal += (districtWon - target);
+            } else {
+                // NO OVERHANG: Cap at proportional entitlement
+                baseSeats[party.id] = target;
+            }
         } else {
             // NORMAL: Award list seats to reach target (already an integer from allocateSeats)
             baseSeats[party.id] = target;
@@ -4239,26 +4516,78 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     // Calculate base parliament size
     const baseParliamentSize = Object.values(baseSeats).reduce((sum, s) => sum + s, 0);
     
+    // DEBUG: Log base seats and overhang
+    console.log('MMP Base Seats Debug:', {
+        baseParliamentSize: baseParliamentSize,
+        expectedParliamentSize: totalParliamentSeats,
+        overhangTotal: overhangTotal,
+        baseSeats: Object.entries(baseSeats).map(([id, seats]) => {
+            const party = parties.find(p => p.id === parseInt(id));
+            const districtWon = partyDistrictWins[id] || 0;
+            const target = proportionalTargets[id] || 0;
+            return {
+                name: party ? party.name : `Party ${id}`,
+                baseSeats: seats,
+                districtWon: districtWon,
+                target: target,
+                isOverhang: districtWon > target
+            };
+        })
+    });
+    
     // ============================================
     // Step D: Handle Overhang - Basic or Full Compensation
     // ============================================
     let finalSeats = { ...baseSeats };
     let finalParliamentSize = baseParliamentSize;
     
+    // CRITICAL: Ensure total house size is strictly totalParliamentSeats unless actual overhang
+    // If no overhang and baseParliamentSize doesn't match, there's a calculation error
+    if (overhangTotal === 0 && baseParliamentSize !== totalParliamentSeats) {
+        console.warn('MMP Warning: Base parliament size does not match expected total. Adjusting...', {
+            baseParliamentSize: baseParliamentSize,
+            expectedTotal: totalParliamentSeats,
+            difference: baseParliamentSize - totalParliamentSeats
+        });
+        // This shouldn't happen, but if it does, we need to investigate
+    }
+    
     if (levelingEnabled && overhangTotal > 0) {
         // Perform iterative leveling (German Ausgleichsmandate)
+        // Use qualifyingVoteTotal for leveling calculations
         const levelingResult = calculateIterativeLeveling(
             partyDistrictWins,
             proportionalTargets,
             eligiblePartyVotes,
             baseParliamentSize,
-            totalPartyVotes
+            qualifyingVoteTotal  // Use qualifying votes instead of total votes
         );
         finalSeats = levelingResult.finalSeats;
         finalParliamentSize = levelingResult.finalParliamentSize;
     }
     
     const actualTotalSeats = finalParliamentSize;
+    
+    // DEBUG: Log final seat allocation
+    console.log('MMP Final Seats Debug:', {
+        actualTotalSeats: actualTotalSeats,
+        expectedTotal: totalParliamentSeats,
+        overhangTotal: overhangTotal,
+        levelingEnabled: levelingEnabled,
+        finalSeats: Object.entries(finalSeats).map(([id, seats]) => {
+            const party = parties.find(p => p.id === parseInt(id));
+            const partyVotes = votes.parties[id] || 0;
+            const voteShare = qualifyingVoteTotal > 0 ? ((partyVotes / qualifyingVoteTotal) * 100).toFixed(2) + '%' : '0%';
+            const seatShare = actualTotalSeats > 0 ? ((seats / actualTotalSeats) * 100).toFixed(2) + '%' : '0%';
+            return {
+                name: party ? party.name : `Party ${id}`,
+                votes: partyVotes,
+                voteShare: voteShare,
+                seats: seats,
+                seatShare: seatShare
+            };
+        }).filter(p => p.seats > 0 || p.votes > 0)
+    });
     
     // Format results using final seats
     const results = parties.map(party => {
@@ -4267,6 +4596,8 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
         const totalSeatsWon = finalSeats[party.id] || 0;
         const listSeatsWon = totalSeatsWon - districtWon;
         const percentage = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
+        // Calculate qualifying percentage (share of qualifying votes)
+        const qualifyingPercentage = qualifyingVoteTotal > 0 ? (partyVotes / qualifyingVoteTotal * 100) : 0;
         
         return {
             id: party.id,
@@ -4274,13 +4605,15 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
             color: party.color,
             votes: partyVotes,
             percentage: percentage,
+            qualifyingPercentage: qualifyingPercentage,  // NEW: Share of qualifying votes
             seats: totalSeatsWon,
             districtSeats: districtWon,
             listSeats: listSeatsWon,
             targetSeats: proportionalTargets[party.id] || 0,
             meetsThreshold: percentage >= threshold,
             belowThreshold: percentage < threshold && partyVotes > 0,
-            hasOverhang: districtWon > (proportionalTargets[party.id] || 0)
+            hasOverhang: districtWon > (proportionalTargets[party.id] || 0),
+            isQualifying: qualifyingParties.some(p => p.id === party.id)  // NEW: Track if party qualifies
         };
     });
     
@@ -4331,15 +4664,24 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
 }
 
 // Manual seat calculation for MMP
-function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins) {
+function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins, bypassThreshold = 1, enableOverhang = true) {
     // Ensure calculatedSeats object exists
     if (!electionState.calculatedSeats || typeof electionState.calculatedSeats !== 'object') {
         electionState.calculatedSeats = {};
     }
     
     // First, run normal calculation to get what SHOULD have happened
+    // CRITICAL: For the "calculated" comparison, we need to use the actual district wins
+    // from manual seats to determine qualification, not simulated district wins
+    // Build forcedDistrictWins from manual seats for accurate qualification check
+    const forcedDistrictWinsForCalculation = {};
+    parties.forEach(p => {
+        // Use manual seats as district wins for the bypass check in calculated mode
+        forcedDistrictWinsForCalculation[p.id] = electionState.manualSeats[p.id] || 0;
+    });
+    
     electionState.isManualSeatMode = false; // Temporarily disable
-    const calculatedResults = calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWins);
+    const calculatedResults = calculateMMP(votes, districtSeats, baseListSeats, threshold, allocationMethod, levelingEnabled, forcedDistrictWinsForCalculation, bypassThreshold, enableOverhang);
     electionState.isManualSeatMode = true; // Re-enable
     
     // Store calculated seats for comparison
@@ -4352,9 +4694,25 @@ function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, thresh
     
     // Build results using manual seats
     const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+    
+    // Calculate qualifying parties and qualifying vote total (same logic as main function)
+    const qualifyingParties = parties.filter(p => {
+        const partyVotes = votes.parties[p.id] || 0;
+        const votePercentage = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
+        const manualSeats = electionState.manualSeats[p.id] || 0;
+        const meetsThreshold = votePercentage >= threshold;
+        const meetsBypass = manualSeats >= bypassThreshold;
+        return (meetsThreshold || meetsBypass) && partyVotes > 0;
+    });
+    
+    const qualifyingVoteTotal = qualifyingParties.reduce((sum, p) => {
+        return sum + (votes.parties[p.id] || 0);
+    }, 0);
+    
     const manualResults = parties.map(party => {
         const voteCount = votes.parties[party.id] || 0;
         const votePercentage = totalPartyVotes > 0 ? (voteCount / totalPartyVotes * 100) : 0;
+        const qualifyingPercentage = qualifyingVoteTotal > 0 ? (voteCount / qualifyingVoteTotal * 100) : 0;
         const manualSeats = electionState.manualSeats[party.id] || 0;
         const calculatedSeats = electionState.calculatedSeats[party.id] || 0;
         const seatDifference = manualSeats - calculatedSeats;
@@ -4364,10 +4722,12 @@ function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, thresh
             color: party.color,
             votes: voteCount,
             percentage: votePercentage,
+            qualifyingPercentage: qualifyingPercentage,  // NEW: Share of qualifying votes
             seats: manualSeats,
             calculatedSeats: calculatedSeats,
             seatDifference: seatDifference,
-            isManualOverride: true
+            isManualOverride: true,
+            isQualifying: qualifyingParties.some(p => p.id === party.id)  // NEW: Track if party qualifies
         };
     }).filter(r => r.votes > 0 || r.seats > 0);
     
@@ -6098,12 +6458,23 @@ function displayResults(results, system) {
                 statusBadge = '<span style="background: #e74c3c; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-left: 8px;">Below Threshold</span>';
             }
             
+            // Show dual percentage if different (for qualifying vote share)
+            const percentageDisplay = r.qualifyingPercentage !== undefined && 
+                                    Math.abs(r.percentage - r.qualifyingPercentage) > 0.1
+                ? `${r.percentage.toFixed(1)}% of total (${r.qualifyingPercentage.toFixed(1)}% of qualifying votes)`
+                : `${r.percentage.toFixed(1)}%`;
+            
+            // Show "wasted votes" indicator for non-qualifying parties
+            const wastedVotesIndicator = r.isQualifying === false && r.votes > 0
+                ? ' <span style="color: #e74c3c; font-size: 0.9em;">(wasted votes)</span>'
+                : '';
+            
             html += `
                 <div class="result-item" style="border-left-color: ${r.color}; ${r.belowThreshold ? 'opacity: 0.6;' : ''}">
                     <div class="result-info">
                         <div class="result-name">${r.name}${statusBadge}</div>
                         <div class="result-stats">
-                            ${formatNumber(r.votes)} votes (${r.percentage.toFixed(1)}%) • ${r.seats} seats (${seatPercentage.toFixed(1)}%)
+                            ${formatNumber(r.votes)} votes (${percentageDisplay})${wastedVotesIndicator} • ${r.seats} seats (${seatPercentage.toFixed(1)}%)
                         </div>
                     </div>
                     <div class="result-bar">
