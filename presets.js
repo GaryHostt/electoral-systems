@@ -102,6 +102,118 @@ const ELECTION_PRESETS = {
         },
         finalParliamentSize: 650
     },
+    "uk_2024": {
+        name: "2024 UK General Election",
+        description: "Landslide Labour victory despite only 33.7% of the vote. Reform UK wins 14% of votes but only 5 seats (0.8% of seats).",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 650,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 14001, name: "Labour Party", color: "#DC241F" },
+            { id: 14002, name: "Conservative Party", color: "#0087DC" },
+            { id: 14003, name: "Reform UK", color: "#12B6CF" },
+            { id: 14004, name: "Liberal Democrats", color: "#FDBB30" },
+            { id: 14005, name: "Green Party", color: "#6AB023" },
+            { id: 14006, name: "SNP", color: "#FDF38E" }
+        ],
+        votes: {
+            parties: {
+                14001: 9708716,  // 33.7%
+                14002: 6828925,  // 23.7%
+                14003: 4117221,  // 14.3%
+                14004: 3519199,  // 12.2%
+                14005: 1944501,  // 6.8%
+                14006: 724758    // 2.5%
+            }
+        },
+        seats: {
+            14001: 412,
+            14002: 121,
+            14004: 72,
+            14006: 9,
+            14003: 5,
+            14005: 4
+        },
+        specialSeats: {
+            others: 27
+        },
+        finalParliamentSize: 650
+    },
+    "uk_2019": {
+        name: "2019 UK General Election",
+        description: "Boris Johnson's 'Get Brexit Done' victory. The Conservatives swept the 'Red Wall' to secure an 80-seat majority.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 650,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 15001, name: "Conservative Party", color: "#0087DC" },
+            { id: 15002, name: "Labour Party", color: "#DC241F" },
+            { id: 15003, name: "Liberal Democrats", color: "#FDBB30" },
+            { id: 15004, name: "SNP", color: "#FDF38E" },
+            { id: 15005, name: "Green Party", color: "#6AB023" },
+            { id: 15006, name: "Brexit Party", color: "#12B6CF" }
+        ],
+        votes: {
+            parties: {
+                15001: 13966454, // 43.6%
+                15002: 10269051, // 32.1%
+                15003: 3696419,  // 11.5%
+                15004: 1242380,  // 3.9%
+                15005: 865715,   // 2.7%
+                15006: 644257    // 2.0%
+            }
+        },
+        seats: {
+            15001: 365,
+            15002: 202,
+            15004: 48,
+            15003: 11,
+            15005: 1
+        },
+        specialSeats: {
+            others: 23
+        },
+        finalParliamentSize: 650
+    },
+    "uk_2010": {
+        name: "2010 UK General Election",
+        description: "The first hung parliament since 1974. Lead to the Conservative-Liberal Democrat coalition. Liberal Democrats won 23% of votes but only 8.8% of seats.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 650,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 16001, name: "Conservative Party", color: "#0087DC" },
+            { id: 16002, name: "Labour Party", color: "#DC241F" },
+            { id: 16003, name: "Liberal Democrats", color: "#FDBB30" },
+            { id: 16004, name: "SNP", color: "#FDF38E" },
+            { id: 16005, name: "UKIP", color: "#70147A" }
+        ],
+        votes: {
+            parties: {
+                16001: 10703654, // 36.1%
+                16002: 8609527,  // 29.0%
+                16003: 6836824,  // 23.0%
+                16004: 491386,   // 1.7%
+                16005: 919471    // 3.1%
+            }
+        },
+        seats: {
+            16001: 306,
+            16002: 258,
+            16003: 57,
+            16004: 6
+        },
+        specialSeats: {
+            others: 23
+        },
+        finalParliamentSize: 650
+    },
     "canada_2008": {
         name: "2008 Canadian Federal Election",
         description: "40th Canadian General Election. Conservative minority government. Green Party won 6.78% but zero seats, highlighting FPTP's disproportionality. Bloc Québécois regional concentration secured 49 seats with just 9.98%.",
@@ -182,6 +294,116 @@ const ELECTION_PRESETS = {
             independents: 0
         },
         finalParliamentSize: 343
+    },
+    "canada_2021": {
+        name: "2021 Canadian Federal Election",
+        description: "Trudeau's second minority government. Conservatives won the popular vote but fewer seats. The PPC took 5% of the vote but won zero seats.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 338,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 11001, name: "Liberal Party", color: "#D71920" },
+            { id: 11002, name: "Conservative Party", color: "#004770" },
+            { id: 11003, name: "New Democratic Party", color: "#F37021" },
+            { id: 11004, name: "Bloc Québécois", color: "#0080C4" },
+            { id: 11005, name: "People's Party (PPC)", color: "#1F2742" },
+            { id: 11006, name: "Green Party", color: "#3D9B35" }
+        ],
+        votes: {
+            parties: {
+                11001: 5556629, // 32.6%
+                11002: 5747410, // 33.7%
+                11003: 3036348, // 17.8%
+                11004: 1301615, // 7.6%
+                11005: 840993,  // 4.9%
+                11006: 396988   // 2.3%
+            }
+        },
+        seats: {
+            11001: 160,
+            11002: 119,
+            11004: 32,
+            11003: 25,
+            11006: 2
+        },
+        specialSeats: {
+            independents: 0
+        },
+        finalParliamentSize: 338
+    },
+    "canada_2019": {
+        name: "2019 Canadian Federal Election",
+        description: "Liberals lose their majority but remain the largest party. Bloc Québécois experiences a major resurgence in Quebec.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 338,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 12001, name: "Liberal Party", color: "#D71920" },
+            { id: 12002, name: "Conservative Party", color: "#004770" },
+            { id: 12003, name: "New Democratic Party", color: "#F37021" },
+            { id: 12004, name: "Bloc Québécois", color: "#0080C4" },
+            { id: 12005, name: "Green Party", color: "#3D9B35" }
+        ],
+        votes: {
+            parties: {
+                12001: 5915950, // 33.1%
+                12002: 6239227, // 34.3%
+                12003: 2903722, // 16.0%
+                12004: 1387030, // 7.6%
+                12005: 1189631  // 6.5%
+            }
+        },
+        seats: {
+            12001: 157,
+            12002: 121,
+            12004: 32,
+            12003: 24,
+            12005: 3
+        },
+        specialSeats: {
+            independents: 1
+        },
+        finalParliamentSize: 338
+    },
+    "canada_2011": {
+        name: "2011 Canadian Federal Election",
+        description: "Stephen Harper's first majority. The 'Orange Crush' saw the NDP become Official Opposition for the first time, while the Liberals fell to third place.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 308,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 13001, name: "Conservative Party", color: "#004770" },
+            { id: 13002, name: "New Democratic Party", color: "#F37021" },
+            { id: 13003, name: "Liberal Party", color: "#D71920" },
+            { id: 13004, name: "Bloc Québécois", color: "#0080C4" },
+            { id: 13005, name: "Green Party", color: "#3D9B35" }
+        ],
+        votes: {
+            parties: {
+                13001: 5835270, // 39.6%
+                13002: 4508474, // 30.6%
+                13003: 2783175, // 18.9%
+                13004: 889788,  // 6.0%
+                13005: 576221   // 3.9%
+            }
+        },
+        seats: {
+            13001: 166,
+            13002: 103,
+            13003: 34,
+            13004: 4,
+            13005: 1
+        },
+        specialSeats: {
+            independents: 0
+        },
+        finalParliamentSize: 308
     },
     "sweden_2022": {
         name: "2022 Swedish General Election",
@@ -764,6 +986,55 @@ const ELECTION_PRESETS = {
         specialSeats: { others: 5 }, // 5 Independents (mostly caucusing with DPP)
         finalParliamentSize: 113
     },
+    "germany_2013": {
+        name: "2013 German Federal Election",
+        description: "Angela Merkel's best result. The FDP (4.8%) fell just short of the 5% threshold, resulting in 15% of the total vote being 'wasted'.",
+        system: "mmp",
+        districtSeats: 299,
+        baseListSeats: 299,
+        threshold: 5,
+        bypassThreshold: 3,
+        allocationMethod: "sainte-lague",
+        enableOverhangSeats: true,
+        enableFullCompensation: true,
+        parties: [
+            { id: 18001, name: "CDU/CSU", color: "#000000" },
+            { id: 18002, name: "SPD", color: "#E3000F" },
+            { id: 18003, name: "The Left", color: "#BE3075" },
+            { id: 18004, name: "Greens", color: "#64A12D" },
+            { id: 18005, name: "FDP", color: "#FFED00" },
+            { id: 18006, name: "AfD", color: "#009EE0" }
+        ],
+        candidates: [
+            { id: 18001, name: "CDU/CSU Candidate", partyId: 18001 },
+            { id: 18002, name: "SPD Candidate", partyId: 18002 },
+            { id: 18003, name: "The Left Candidate", partyId: 18003 },
+            { id: 18004, name: "Greens Candidate", partyId: 18004 }
+        ],
+        votes: {
+            parties: {
+                18001: 18165446, // 41.5%
+                18002: 11252215, // 25.7%
+                18003: 3755699,  // 8.6%
+                18004: 3694057,  // 8.4%
+                18005: 2083533,  // 4.8% (Failed threshold)
+                18006: 2056985   // 4.7% (Failed threshold)
+            },
+            candidates: {
+                18001: 19777721,
+                18002: 12843458,
+                18003: 3585178,
+                18004: 3180299
+            }
+        },
+        actualSeats: {
+            18001: 311,
+            18002: 193,
+            18003: 64,
+            18004: 63
+        },
+        finalParliamentSize: 631
+    },
     "italy_2022": {
         name: "2022 Italian Legislative Election",
         description: "Right-wing coalition victory under the 'Rosatellum' parallel system. Absolute majority achieved despite 44% vote share due to dominant SMD performance. Total 400 seats.",
@@ -841,6 +1112,52 @@ const ELECTION_PRESETS = {
             aosta: 1 
         },
         finalParliamentSize: 400
+    },
+    "italy_2018": {
+        name: "2018 Italian Legislative Election",
+        description: "Inaugural election for the Rosatellum system. The Five Star Movement was the largest single party, while the Center-Right was the largest coalition.",
+        system: "parallel",
+        districtSeats: 232,
+        baseListSeats: 386,
+        threshold: 3,
+        allocationMethod: "dhondt",
+        parties: [
+            { id: 17001, name: "Five Star Movement", color: "#FEE000" },
+            { id: 17002, name: "Lega", color: "#008000" },
+            { id: 17003, name: "Democratic Party", color: "#EF3E3E" },
+            { id: 17004, name: "Forza Italia", color: "#007FFF" },
+            { id: 17005, name: "Brothers of Italy", color: "#0047AB" },
+            { id: 17006, name: "Free and Equal", color: "#A73F24" }
+        ],
+        votes: {
+            parties: {
+                17001: 10732066, // 32.7%
+                17002: 5698687,  // 17.4%
+                17003: 6161896,  // 18.8%
+                17004: 4596956,  // 14.0%
+                17005: 1429550,  // 4.4%
+                17006: 1114799   // 3.4%
+            }
+        },
+        actualDistrictWins: {
+            17001: 93,
+            17002: 73,
+            17003: 21,
+            17004: 46,
+            17005: 12
+        },
+        actualSeats: {
+            17001: 227,
+            17002: 125,
+            17003: 112,
+            17004: 104,
+            17005: 32,
+            17006: 14
+        },
+        specialSeats: {
+            others: 16
+        },
+        finalParliamentSize: 630
     },
     "israel_2022": {
         name: "2022 Israeli Legislative Election",
@@ -940,7 +1257,7 @@ const ELECTION_PRESETS = {
         system: "party-list",
         totalSeats: 150,
         threshold: 0.67,
-        allocationMethod: "dhondt",
+        allocationMethod: "hare",
         parties: [
             { id: 9001, name: "Party for Freedom (PVV)", color: "#1C4788" },
             { id: 9002, name: "GroenLinks-PvdA", color: "#B40D1E" },
@@ -964,7 +1281,7 @@ const ELECTION_PRESETS = {
         system: "party-list",
         totalSeats: 150,
         threshold: 0.67,
-        allocationMethod: "dhondt",
+        allocationMethod: "hare",
         parties: [
             { id: 9101, name: "People's Party for Freedom (VVD)", color: "#FF7F00" },
             { id: 9102, name: "Democrats 66 (D66)", color: "#00A7E1" },

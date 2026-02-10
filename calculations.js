@@ -62,6 +62,49 @@ function allocateSeats_SainteLague(partyVotes, totalSeats) {
     return seats;
 }
 
+// Hare Quota with Largest Remainder Method - most proportional to small parties
+function allocateSeats_HareLR(partyVotes, totalSeats) {
+    const allocatedSeats = {};
+    const remainders = {};
+    const totalVotes = Object.values(partyVotes).reduce((sum, v) => sum + v, 0);
+    
+    if (totalVotes === 0) return allocatedSeats;
+
+    // 1. Calculate the Hare Quota (Q = V / S)
+    const quota = totalVotes / totalSeats;
+
+    // 2. First Pass: Automatic seats (Integer part of Votes / Quota)
+    let seatsAlreadyAllocated = 0;
+    
+    Object.entries(partyVotes).forEach(([id, votes]) => {
+        const exactShare = votes / quota;
+        const automaticSeats = Math.floor(exactShare);
+        
+        allocatedSeats[id] = automaticSeats;
+        seatsAlreadyAllocated += automaticSeats;
+        
+        // Store the remainder for the second pass
+        remainders[id] = exactShare - automaticSeats;
+    });
+
+    // 3. Second Pass: Allocate remaining seats based on Largest Remainder
+    let seatsRemaining = totalSeats - seatsAlreadyAllocated;
+    
+    // Sort parties by remainder descending
+    const sortedByRemainder = Object.keys(remainders).sort((a, b) => 
+        remainders[b] - remainders[a]
+    );
+
+    for (let i = 0; i < seatsRemaining; i++) {
+        const partyId = sortedByRemainder[i];
+        if (partyId) {
+            allocatedSeats[partyId]++;
+        }
+    }
+
+    return allocatedSeats;
+}
+
 /**
  * Calculate Loosemore-Hanby Index (measure of disproportionality)
  * Returns a value between 0 (perfectly proportional) and 100 (totally disproportional)

@@ -3186,6 +3186,8 @@ function calculatePartyListPR(votes, totalSeats, threshold, allocationMethod) {
     let allocatedSeats;
     if (allocationMethod === 'sainte-lague') {
         allocatedSeats = allocateSeats_SainteLague(partyVotes, seats);
+    } else if (allocationMethod === 'hare') {
+        allocatedSeats = allocateSeats_HareLR(partyVotes, seats);
     } else {
         allocatedSeats = allocateSeats_DHondt(partyVotes, seats);
     }
@@ -4536,7 +4538,9 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     const totalParliamentSeats = districtSeats + baseListSeats;
     const proportionalTargets = allocationMethod === 'sainte-lague'
         ? allocateSeats_SainteLague(eligiblePartyVotes, totalParliamentSeats)
-        : allocateSeats_DHondt(eligiblePartyVotes, totalParliamentSeats);
+        : allocationMethod === 'hare'
+            ? allocateSeats_HareLR(eligiblePartyVotes, totalParliamentSeats)
+            : allocateSeats_DHondt(eligiblePartyVotes, totalParliamentSeats);
     
     // Initialize parties not meeting threshold
     parties.forEach(party => {
@@ -5026,10 +5030,12 @@ function calculateParallel(votes, districtSeats, listSeats, threshold, allocatio
         }
     });
     
-    // Allocate list seats using D'Hondt or Sainte-Laguë
+    // Allocate list seats using D'Hondt, Sainte-Laguë, or Hare Quota
     const partyListSeats = allocationMethod === 'sainte-lague'
         ? allocateSeats_SainteLague(eligiblePartyVotes, listSeats)
-        : allocateSeats_DHondt(eligiblePartyVotes, listSeats);
+        : allocationMethod === 'hare'
+            ? allocateSeats_HareLR(eligiblePartyVotes, listSeats)
+            : allocateSeats_DHondt(eligiblePartyVotes, listSeats);
     
     // Ensure all parties initialized
     parties.forEach(p => {
