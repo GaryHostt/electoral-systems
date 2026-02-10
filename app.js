@@ -326,8 +326,8 @@ function importElectionPreset(presetKey) {
         }
         electionState.calculatedSeats = {};  // Reset calculated seats
         
-        // Show manual seat section if MMP/MMM
-        if (preset.system === 'mmp' || preset.system === 'parallel') {
+        // Show manual seat section if MMP/MMM/Party-List
+        if (preset.system === 'mmp' || preset.system === 'parallel' || preset.system === 'party-list') {
             const manualToggle = document.getElementById('manualSeatOverrideToggle');
             if (manualToggle) {
                 manualToggle.checked = true;
@@ -408,12 +408,13 @@ function populateVotingBoxes(voteData, preset) {
     }
     
     // NEW: Populate manual seats if provided
-    if (preset && preset.actualSeats && (preset.system === 'mmp' || preset.system === 'parallel')) {
+    if (preset && preset.actualSeats && (preset.system === 'mmp' || preset.system === 'parallel' || preset.system === 'party-list')) {
         setTimeout(() => {
             updateManualSeatInputs(); // Generate inputs first
             
             const system = preset.system || electionState.system;
             const isParallel = system === 'parallel';
+            const isPartyList = system === 'party-list';
             
             if (isParallel && preset.actualDistrictWins) {
                 // For Parallel voting, populate district and list inputs separately
@@ -442,17 +443,31 @@ function populateVotingBoxes(voteData, preset) {
                     // Ensure manualSeats is set to total
                     electionState.manualSeats[partyIdInt] = totalSeats;
                 });
+            } else if (isPartyList) {
+                // For Party-List PR, use single total seats input (similar to MMP)
+                Object.entries(preset.actualSeats).forEach(([partyId, seatCount]) => {
+                    const partyIdInt = normalizePartyId(partyId);
+                    const seatsInput = document.getElementById(`manual-seats-${partyIdInt}`);
+                    if (seatsInput) {
+                        seatsInput.value = seatCount;
+                    }
+                    electionState.manualSeats[partyIdInt] = seatCount;
+                });
             } else {
                 // For MMP, use single total seats input
                 Object.entries(preset.actualSeats).forEach(([partyId, seatCount]) => {
-                    const seatsInput = document.getElementById(`manual-seats-${partyId}`);
+                    const partyIdInt = normalizePartyId(partyId);
+                    const seatsInput = document.getElementById(`manual-seats-${partyIdInt}`);
                     if (seatsInput) {
                         seatsInput.value = seatCount;
                     }
                 });
             }
             
-            updateManualSeatTotal(); // Update validation
+            // Update validation - use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+                updateManualSeatTotal();
+            });
         }, 150);
     }
 }
@@ -1405,7 +1420,7 @@ function onSystemChange() {
     // NEW: Show/hide manual seat override section
     const manualSeatSection = document.getElementById('manualSeatOverrideSection');
     if (manualSeatSection) {
-        if (system === 'mmp' || system === 'parallel') {
+        if (system === 'mmp' || system === 'parallel' || system === 'party-list') {
             manualSeatSection.style.display = 'block';
         } else {
             manualSeatSection.style.display = 'none';
@@ -2088,6 +2103,7 @@ function updateManualSeatInputs() {
     
     const system = document.getElementById('electoralSystem')?.value || electionState.system;
     const isParallel = system === 'parallel';
+    const isPartyList = system === 'party-list';
     
     let html = '<h4 style="margin: 0 0 15px 0;">Seats Won by Party</h4>';
     
@@ -2121,6 +2137,23 @@ function updateManualSeatInputs() {
                 </div>
             `;
         });
+    } else if (isPartyList) {
+        // For Party-List PR, show simple seat inputs (no direct mandate indicator)
+        parties.forEach(party => {
+            const currentValue = electionState.manualSeats[party.id] || 0;
+            html += `
+                <div class="vote-input-row">
+                    <label>
+                        <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
+                        ${party.name}
+                    </label>
+                    <input type="number" min="0" max="1000" value="${currentValue}" 
+                           id="manual-seats-${party.id}" 
+                           class="number-input"
+                           oninput="updateManualSeatTotal()" />
+                </div>
+            `;
+        });
     } else {
         // For MMP, show single total seats input with direct mandate indicator
         parties.forEach(party => {
@@ -2145,12 +2178,30 @@ function updateManualSeatInputs() {
     }
     
     container.innerHTML = html;
+    
+    // Hide seat total container for party-list systems
+    const totalContainer = document.getElementById('manualSeatsTotalContainer');
+    if (totalContainer) {
+        if (isPartyList) {
+            totalContainer.style.display = 'none';
+        } else {
+            totalContainer.style.display = 'block';
+        }
+    }
 }
 
 // Real-time validation of manual seat total
 function updateManualSeatTotal() {
     const currentSystem = document.getElementById('electoralSystem')?.value || electionState.system;
     const isParallel = currentSystem === 'parallel';
+    const isPartyList = currentSystem === 'party-list';
+    
+    // Hide seat total container for party-list systems
+    const totalContainer = document.getElementById('manualSeatsTotalContainer');
+    if (totalContainer && isPartyList) {
+        totalContainer.style.display = 'none';
+        return; // Early return for party-list - no need to calculate totals
+    }
     
     let total = 0;
     parties.forEach(party => {
@@ -2166,7 +2217,7 @@ function updateManualSeatTotal() {
             electionState.manualSeats[party.id] = totalValue;
             total += totalValue;
         } else {
-            // For MMP, use single total seats input
+            // For MMP and Party-List, use single total seats input
             const input = document.getElementById(`manual-seats-${party.id}`);
             if (input) {
                 const value = parseInt(input.value) || 0;
@@ -2177,9 +2228,19 @@ function updateManualSeatTotal() {
     });
     
     const system = document.getElementById('electoralSystem').value;
-    const districtSeats = parseInt(document.getElementById('districtSeatsInput')?.value) || 0;
-    const listSeats = parseInt(document.getElementById('listSeatsInput')?.value) || 0;
-    const expectedTotal = districtSeats + listSeats;
+    let expectedTotal;
+    if (isPartyList) {
+        // For Party-List, use totalSeats from totalLegislatureSeats input
+        const totalSeatsInput = document.getElementById('totalLegislatureSeats');
+        const inputValue = totalSeatsInput ? (parseInt(totalSeatsInput.value) || 0) : 0;
+        // Fallback to electionState.totalSeats if input is empty or 0
+        expectedTotal = inputValue > 0 ? inputValue : (electionState.totalSeats || 0);
+    } else {
+        // For MMP/MMM, use districtSeats + baseListSeats
+        const districtSeats = parseInt(document.getElementById('districtSeatsInput')?.value) || 0;
+        const listSeats = parseInt(document.getElementById('listSeatsInput')?.value) || 0;
+        expectedTotal = districtSeats + listSeats;
+    }
     
     // Update display
     const totalDisplay = document.getElementById('manualSeatsTotal');
@@ -2729,7 +2790,11 @@ function calculateResults() {
             }
             break;
         case 'party-list':
-            results = calculatePartyListPR(params.votes, params.totalSeats, params.threshold, params.allocationMethod);
+            if (electionState.isManualSeatMode) {
+                results = calculatePartyListPRWithManualSeats(params.votes, params.totalSeats, params.threshold, params.allocationMethod);
+            } else {
+                results = calculatePartyListPR(params.votes, params.totalSeats, params.threshold, params.allocationMethod);
+            }
             break;
         case 'stv':
             if (params.totalVoters === 0) {
@@ -3279,6 +3344,80 @@ function calculatePartyListPR(votes, totalSeats, threshold, allocationMethod) {
         allocationMethod: allocationMethod,
         disproportionality: disproportionality,
         gallagher: gallagher  // NEW: Gallagher Index
+    };
+}
+
+// Manual seat calculation for Party-List PR
+function calculatePartyListPRWithManualSeats(votes, totalSeats, threshold, allocationMethod) {
+    // Ensure calculatedSeats object exists
+    if (!electionState.calculatedSeats || typeof electionState.calculatedSeats !== 'object') {
+        electionState.calculatedSeats = {};
+    }
+    
+    // First, run normal calculation to get what SHOULD have happened
+    const calculatedResults = withManualModeDisabled(() => {
+        return calculatePartyListPR(votes, totalSeats, threshold, allocationMethod);
+    });
+    
+    // Store calculated seats for comparison
+    calculatedResults.results.forEach(party => {
+        const partyObj = parties.find(p => p.id === party.id);
+        if (partyObj) {
+            electionState.calculatedSeats[partyObj.id] = party.seats;
+        }
+    });
+    
+    // Build results using manual seats
+    const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+    
+    const manualResults = parties.map(party => {
+        const voteCount = votes.parties[party.id] || 0;
+        const votePercentage = totalPartyVotes > 0 ? (voteCount / totalPartyVotes * 100) : 0;
+        const meetsThreshold = votePercentage >= threshold;
+        const manualSeats = electionState.manualSeats[party.id] || 0;
+        const calculatedSeats = electionState.calculatedSeats[party.id] || 0;
+        const seatDifference = manualSeats - calculatedSeats;
+        
+        return {
+            id: party.id,
+            name: party.name,
+            color: party.color,
+            votes: voteCount,
+            percentage: votePercentage,
+            seats: manualSeats,
+            calculatedSeats: calculatedSeats,
+            seatDifference: seatDifference,
+            meetsThreshold: meetsThreshold,
+            belowThreshold: !meetsThreshold && voteCount > 0,
+            isManualOverride: true
+        };
+    }).filter(r => r.votes > 0 || r.seats > 0);
+    
+    manualResults.sort((a, b) => b.seats - a.seats || b.votes - a.votes);
+    
+    // Calculate disproportionality using manual seats
+    const totalManualSeats = manualResults.reduce((sum, r) => sum + r.seats, 0);
+    const voteShares = {};
+    const seatShares = {};
+    manualResults.forEach(r => {
+        voteShares[r.id] = r.percentage;
+        seatShares[r.id] = totalManualSeats > 0 ? (r.seats / totalManualSeats * 100) : 0;
+    });
+    const disproportionality = calculateLoosemoreHanby(voteShares, seatShares);
+    const gallagher = calculateGallagher(voteShares, seatShares);
+    
+    return {
+        type: 'party',
+        results: manualResults,
+        totalVotes: totalPartyVotes,
+        totalSeats: totalManualSeats,
+        threshold: threshold,
+        allocationMethod: allocationMethod,
+        disproportionality: disproportionality,
+        gallagher: gallagher,
+        isManualMode: true,
+        calculatedResults: calculatedResults,
+        note: `Party-List Proportional Representation: ${totalManualSeats} seats allocated proportionally using ${allocationMethod === 'sainte-lague' ? 'Sainte-Laguë' : allocationMethod === 'hare' ? 'Hare Quota' : 'D\'Hondt'} method${threshold > 0 ? ` with ${threshold}% threshold` : ''}.`
     };
 }
 
@@ -6671,6 +6810,62 @@ function displayResults(results, system) {
         
         html += '<h3>Seat Allocation by Party</h3>';
         
+        // For party-list manual mode, show table with calculated, manual, and difference
+        if (results.isManualMode && results.type === 'party') {
+            html += `
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
+                    <strong style="color: #1565c0;">🔧 Manual Entry Mode Active</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #1976d2;">
+                        Comparing calculated proportional allocation with manually entered actual results.
+                    </p>
+                </div>
+            `;
+            
+            html += `
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <thead>
+                        <tr style="background: #667eea; color: white;">
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Party</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Votes</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Vote %</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Calculated Seats</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Manual Seats</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            results.results.forEach(r => {
+                const calculatedSeats = r.calculatedSeats !== undefined ? r.calculatedSeats : 0;
+                const manualSeats = r.seats;
+                const difference = manualSeats - calculatedSeats;
+                const diffColor = difference > 0 ? '#2ecc71' : (difference < 0 ? '#e74c3c' : '#666');
+                const diffSign = difference > 0 ? '+' : '';
+                const diffText = difference !== 0 ? `${diffSign}${difference}` : '—';
+                
+                html += `
+                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 12px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; background-color: ${r.color}; border-radius: 50%; margin-right: 8px; vertical-align: middle;"></span>
+                            ${r.name}
+                            ${r.belowThreshold ? '<span style="background: #e74c3c; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 8px;">Below Threshold</span>' : ''}
+                        </td>
+                        <td style="padding: 12px; text-align: center;">${formatNumber(r.votes)}</td>
+                        <td style="padding: 12px; text-align: center;">${r.percentage.toFixed(1)}%</td>
+                        <td style="padding: 12px; text-align: center; font-weight: 600;">${calculatedSeats}</td>
+                        <td style="padding: 12px; text-align: center; font-weight: 600; color: #667eea;">${manualSeats}</td>
+                        <td style="padding: 12px; text-align: center; font-weight: 600; color: ${diffColor};">${diffText}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+        }
+        
         // Prepare comparison data for bar chart
         const comparisonData = [];
         
@@ -6692,22 +6887,25 @@ function displayResults(results, system) {
                 ? ' <span style="color: #e74c3c; font-size: 0.9em;">(wasted votes)</span>'
                 : '';
             
-            html += `
-                <div class="result-item" style="border-left-color: ${r.color}; ${r.belowThreshold ? 'opacity: 0.6;' : ''}">
-                    <div class="result-info">
-                        <div class="result-name">${r.name}${statusBadge}</div>
-                        <div class="result-stats">
-                            ${formatNumber(r.votes)} votes (${percentageDisplay})${wastedVotesIndicator} • ${r.seats} seats (${seatPercentage.toFixed(1)}%)
+            // Only show the result-item div if not in manual mode (manual mode uses table above)
+            if (!results.isManualMode || results.type !== 'party') {
+                html += `
+                    <div class="result-item" style="border-left-color: ${r.color}; ${r.belowThreshold ? 'opacity: 0.6;' : ''}">
+                        <div class="result-info">
+                            <div class="result-name">${r.name}${statusBadge}</div>
+                            <div class="result-stats">
+                                ${formatNumber(r.votes)} votes (${percentageDisplay})${wastedVotesIndicator} • ${r.seats} seats (${seatPercentage.toFixed(1)}%)
+                            </div>
+                        </div>
+                        <div class="result-bar">
+                            <div class="result-bar-fill" style="width: ${seatPercentage}%;">
+                            </div>
                         </div>
                     </div>
-                    <div class="result-bar">
-                        <div class="result-bar-fill" style="width: ${seatPercentage}%;">
-                        </div>
-                    </div>
-                </div>
-            `;
+                `;
+            }
             
-            // Collect data for charts
+            // Collect data for charts (always collect, even in manual mode)
             votesChartData.push({
                 label: r.name,
                 value: r.votes,

@@ -518,7 +518,18 @@ const ELECTION_PRESETS = {
                 3007: 329242,   // Green Party
                 3008: 298542    // Liberals
             }
-        }
+        },
+        actualSeats: {
+            3001: 107,  // Social Democrats
+            3002: 73,   // Sweden Democrats
+            3003: 68,   // Moderate Party
+            3004: 24,   // Left Party
+            3005: 24,   // Centre Party
+            3006: 19,   // Christian Democrats
+            3007: 18,   // Green Party
+            3008: 16    // Liberals
+        },
+        finalParliamentSize: 349
     },
     "sweden_2018": {
         name: "2018 Swedish General Election",
@@ -548,7 +559,18 @@ const ELECTION_PRESETS = {
                 3107: 355546,   // Liberals - 5.49%
                 3108: 285899    // Green Party - 4.41%
             }
-        }
+        },
+        actualSeats: {
+            3101: 100,  // Social Democrats
+            3102: 70,   // Moderate Party
+            3103: 62,   // Sweden Democrats
+            3104: 31,   // Centre Party
+            3105: 28,   // Left Party
+            3106: 22,   // Christian Democrats
+            3107: 20,   // Liberals
+            3108: 16    // Green Party
+        },
+        finalParliamentSize: 349
     },
     "germany_2021": {
         name: "2021 German Federal Election",
@@ -1354,7 +1376,23 @@ const ELECTION_PRESETS = {
                 8112: 202218,   // Meretz - 4.59%
                 8113: 167411    // United Arab List (Ra'am) - 3.79%
             }
-        }
+        },
+        actualSeats: {
+            8101: 30,  // Likud
+            8102: 17,  // Yesh Atid
+            8103: 9,   // Shas
+            8104: 8,   // Blue and White
+            8105: 7,   // Yamina
+            8106: 7,   // Labor Party
+            8107: 7,   // United Torah Judaism
+            8108: 7,   // Yisrael Beiteinu
+            8109: 6,   // Religious Zionist Party
+            8110: 6,   // Joint List
+            8111: 6,   // New Hope
+            8112: 6,   // Meretz
+            8113: 4    // United Arab List (Ra'am)
+        },
+        finalParliamentSize: 120
     },
     "netherlands_2023": {
         name: "2023 Netherlands General Election",
@@ -1425,32 +1463,73 @@ const ELECTION_PRESETS = {
     },
     "netherlands_2021": {
         name: "2021 Netherlands General Election",
-        description: "VVD remains largest party with 21.87%. Record 17 parties enter parliament. D66 gains significantly. Rutte forms fourth coalition government.",
+        description: "VVD remains largest party with 21.91%. Record 17 parties enter parliament. D66 gains significantly to become second-largest party. Rutte forms fourth coalition government.",
         system: "party-list",
         totalSeats: 150,
         threshold: 0.67,
         allocationMethod: "hare",
         parties: [
-            { id: 9101, name: "People's Party for Freedom (VVD)", color: "#FF7F00" },
+            { id: 9101, name: "People's Party for Freedom and Democracy (VVD)", color: "#FF7F00" },
             { id: 9102, name: "Democrats 66 (D66)", color: "#00A7E1" },
             { id: 9103, name: "Party for Freedom (PVV)", color: "#1C4788" },
             { id: 9104, name: "Christian Democratic Appeal (CDA)", color: "#00A651" },
             { id: 9105, name: "Socialist Party (SP)", color: "#FF0000" },
             { id: 9106, name: "Labour Party (PvdA)", color: "#B40D1E" },
-            { id: 9107, name: "GroenLinks (GL)", color: "#73BF43" },
-            { id: 9108, name: "Forum for Democracy (FvD)", color: "#800020" }
+            { id: 9107, name: "Green Left (GL)", color: "#73BF43" },
+            { id: 9108, name: "Forum for Democracy (FvD)", color: "#800020" },
+            { id: 9109, name: "Party for the Animals (PvdD)", color: "#8B4513" },
+            { id: 9110, name: "Christian Union (CU)", color: "#0066CC" },
+            { id: 9111, name: "Volt Nederland", color: "#502379" },
+            { id: 9112, name: "Juiste Antwoord 2021 (JA21)", color: "#1E3A8A" },
+            { id: 9113, name: "Political Reform Party (SGP)", color: "#0066CC" },
+            { id: 9114, name: "Denk", color: "#FFD700" },
+            { id: 9115, name: "50 Plus", color: "#FF6B6B" },
+            { id: 9116, name: "Farmers-Citizens' Movement (BBB)", color: "#92D050" },
+            { id: 9117, name: "Bij1", color: "#000000" },
+            { id: 9118, name: "Others", color: "#999999" }
         ],
         votes: {
             parties: {
-                9101: 2279130,  // VVD - 21.87%
-                9102: 1565861,  // D66 - 15.02%
-                9103: 1124285,  // PVV - 10.81%
-                9104: 990601,   // CDA - 9.5%
-                9105: 623371,   // SP - 5.98%
-                9106: 595393,   // PvdA - 5.71%
-                9107: 537178,   // GL - 5.16%
-                9108: 523083    // FvD - 5.02%
+                9101: 2249988,  // VVD - 21.91%
+                9102: 1535624,  // D66 - 14.95%
+                9103: 1116037,  // PVV - 10.87%
+                9104: 981867,   // CDA - 9.56%
+                9105: 617746,   // SP - 6.01%
+                9106: 585630,   // PvdA - 5.70%
+                9107: 520994,   // GL - 5.07%
+                9108: 516723,   // FvD - 5.03%
+                9109: 391166,   // PvdD - 3.81%
+                9110: 347898,   // CU - 3.39%
+                9111: 245632,   // Volt - 2.39%
+                9112: 243669,   // JA21 - 2.37%
+                9113: 214830,   // SGP - 2.09%
+                9114: 204969,   // Denk - 2.00%
+                9115: 105571,   // 50 Plus - 1.03%
+                9116: 103526,   // BBB - 1.01%
+                9117: 83601,    // Bij1 - 0.81%
+                9118: 204779    // Others - 1.99%
             }
-        }
+        },
+        actualSeats: {
+            9101: 34,  // VVD
+            9102: 24,  // D66
+            9103: 17,  // PVV
+            9104: 15,  // CDA
+            9105: 9,   // SP
+            9106: 9,   // PvdA
+            9107: 8,   // GL
+            9108: 8,   // FvD
+            9109: 6,   // PvdD
+            9110: 5,   // CU
+            9111: 3,   // Volt
+            9112: 3,   // JA21
+            9113: 3,   // SGP
+            9114: 3,   // Denk
+            9115: 1,   // 50 Plus
+            9116: 1,   // BBB
+            9117: 1,   // Bij1
+            9118: 0    // Others
+        },
+        finalParliamentSize: 150
     }
 };
