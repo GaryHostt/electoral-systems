@@ -252,7 +252,7 @@ window.createComparisonBarChart = function(canvasId, data, title) {
             checkbox.type = 'checkbox';
             checkbox.id = `party-filter-${canvasId}-${index}`;
             checkbox.className = 'party-filter-checkbox';
-            checkbox.checked = true;
+            checkbox.checked = party.seatPct > 0;
             checkbox.dataset.partyLabel = party.label;
             checkbox.dataset.canvasId = canvasId;
             
@@ -300,33 +300,36 @@ window.createComparisonBarChart = function(canvasId, data, title) {
         ).toString(16).slice(1);
     };
     
+    // Filter data to only include parties with seats for initial chart display
+    const filteredData = data.filter(d => d.seatPct > 0);
+    
     try {
-        console.log(`✨ Creating comparison chart with ${data.length} parties`);
+        console.log(`✨ Creating comparison chart with ${filteredData.length} parties (filtered from ${data.length} total)`);
         
-        // Calculate dynamic height based on number of parties (minimum 600, ~40px per party)
+        // Calculate dynamic height based on number of filtered parties (minimum 600, ~40px per party)
         const minHeight = 600;
         const heightPerParty = 40;
-        const calculatedHeight = Math.max(minHeight, data.length * heightPerParty + 150);
+        const calculatedHeight = Math.max(minHeight, filteredData.length * heightPerParty + 150);
         canvas.height = calculatedHeight;
         canvas.setAttribute('height', calculatedHeight);
         
         const newChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.map(d => d.label),
+                labels: filteredData.map(d => d.label),
                 datasets: [
                     {
                         label: 'Vote Share (%)',
-                        data: data.map(d => d.votePct),
-                        backgroundColor: data.map(d => d.color),
-                        borderColor: data.map(d => d.color),
+                        data: filteredData.map(d => d.votePct),
+                        backgroundColor: filteredData.map(d => d.color),
+                        borderColor: filteredData.map(d => d.color),
                         borderWidth: 1
                     },
                     {
                         label: 'Seat Share (%)',
-                        data: data.map(d => d.seatPct),
-                        backgroundColor: data.map(d => lightenColor(d.color, 40)),
-                        borderColor: data.map(d => d.color),
+                        data: filteredData.map(d => d.seatPct),
+                        backgroundColor: filteredData.map(d => lightenColor(d.color, 40)),
+                        borderColor: filteredData.map(d => d.color),
                         borderWidth: 1,
                         borderDash: [5, 5]
                     }
