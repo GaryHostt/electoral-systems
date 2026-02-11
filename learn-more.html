@@ -461,6 +461,9 @@
                             <strong>SILO 2 (Lists):</strong> Allocate list seats by party vote (D'Hondt/Sainte-Laguë)<br>
                             <strong>Final:</strong> DistrictSeats + ListSeats (simple addition, no compensation)<br>
                             <strong>Note:</strong> District performance does NOT affect list seat allocation
+                            <p style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
+                                <strong>📝 Taiwan Indigenous Seats:</strong> Taiwan reserves 6 seats (in 2020) and 19 seats (in 2024) for indigenous candidates, elected by Single Non-Transferable Vote (SNTV). In this calculator, these indigenous seats are treated as party-list seats for modeling purposes, as they are allocated separately from the general district seats.
+                            </p>
                         </td>
                     </tr>
                 </tbody>
@@ -1076,6 +1079,104 @@ Comparison: Shows REAL difference based on final round vs first choice!</code></
         </div>
     </div>
 
+        <!-- Modeling Majoritarian Shadows Section -->
+        <div class="table-section" id="shadow-comparison" style="margin-top: 50px; border-top: 3px solid #667eea; padding-top: 40px;">
+            <h2>🔄 Modeling Majoritarian Shadows: Proportional to FPTP</h2>
+            <p style="line-height: 1.6; font-size: 1.05em;">
+                The implementation in the Canvas enables a <strong>"Shadow Comparison"</strong> that projects how proportional results 
+                (MMP, MMM, or Party-List) would translate into a First-Past-The-Post (FPTP) environment. While mathematically 
+                straightforward, this translation faces significant theoretical hurdles.
+            </p>
+
+            <h3 style="margin-top: 30px; color: #667eea;">1. The Code Implementation</h3>
+            <p style="line-height: 1.6;">
+                The logic relies on the <code style="background: #f0f4ff; padding: 4px 8px; border-radius: 4px; font-family: 'Courier New', monospace;">simulateDistricts</code> 
+                function to bridge the gap between aggregate data and geographic outcomes.
+            </p>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #333;">For MMP/MMM</h4>
+                <p style="line-height: 1.6; margin: 0;">
+                    The system uses existing <strong>"Candidate Votes"</strong> (the Erststimme or personal vote). This provides a more 
+                    accurate geographic proxy than party votes, as it reflects local candidate popularity.
+                </p>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #333;">For Party-List</h4>
+                <p style="line-height: 1.6; margin: 0;">
+                    Since no candidate data exists, the code generates synthetic candidate shares by distributing national party votes 
+                    across a number of districts equal to the total seats.
+                </p>
+            </div>
+
+            <div style="background: #fff; border: 2px solid #667eea; border-radius: 8px; padding: 25px; margin: 25px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #667eea;">Deterministic Variance</h4>
+                <p style="line-height: 1.6; margin-bottom: 15px;">
+                    To avoid a perfectly flat distribution (which would simply award every seat to the national plurality winner), a 
+                    deterministic variance of <strong>0.8x to 1.2x</strong> is applied via a sine-wave seed. This simulates the "swing" 
+                    of marginal seats and the "safety" of others, ensuring the simulation is stable across renders.
+                </p>
+                <div style="background: #f0f4ff; padding: 15px; border-radius: 4px; margin: 15px 0;">
+                    <code style="font-size: 0.95em; line-height: 1.8;">
+                        <strong>Example:</strong><br>
+                        Without variance: Party A with 51% national vote → wins 100% of districts<br>
+                        With variance: Party A with 51% national vote → wins ~60-70% of districts (realistic swing)
+                    </code>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px; color: #667eea;">2. Why This is Difficult</h3>
+            <p style="line-height: 1.6;">
+                Simulating majoritarian outcomes using proportional data is a <strong>"lossy"</strong> conversion due to several factors:
+            </p>
+
+            <div style="background: #fff8e1; border-left: 4px solid #ffa000; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #f57c00;">A. Sincere vs. Tactical Voting</h4>
+                <p style="line-height: 1.6; margin: 0; color: #856404;">
+                    In proportional systems, voters are incentivized to vote sincerely because every vote contributes to the seat count. 
+                    In FPTP, voters often vote tactically to avoid "wasting" a vote on a third party. The data used in our simulation 
+                    (sincere PR votes) does not account for the consolidation that would occur if those same voters were faced with a 
+                    winner-take-all ballot.
+                </p>
+            </div>
+
+            <div style="background: #fff8e1; border-left: 4px solid #ffa000; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #f57c00;">B. Geographic Sorting (The "Urban Packing" Problem)</h4>
+                <p style="line-height: 1.6; margin: 0; color: #856404;">
+                    Proportional data often masks geographic concentration. A party might have 20% support nationally, but if that 20% is 
+                    spread evenly, they win 0 seats in FPTP. If it is concentrated in one region, they might sweep it. Our variance model 
+                    (0.8x-1.2x) is a mathematical abstraction; it cannot predict historical regionalisms like the "Solid South" in the US or 
+                    the Bloc Québécois in Canada.
+                </p>
+            </div>
+
+            <div style="background: #fff8e1; border-left: 4px solid #ffa000; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #f57c00;">C. The Sensitivity of the "Spoiler Effect"</h4>
+                <p style="line-height: 1.6; margin: 0; color: #856404;">
+                    In a 3-way or 4-way race, FPTP results are extremely sensitive to minor shifts. A 1% shift from Party A to Party B 
+                    doesn't just change the seat share (as in PR); it can flip a massive block of districts. This makes the simulation's 
+                    reliance on a variance seed a significant variable—different "seeds" could result in wildly different legislative 
+                    majorities even with identical national vote totals.
+                </p>
+            </div>
+
+            <div style="background: #fff8e1; border-left: 4px solid #ffa000; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; color: #f57c00;">D. Systemic Feedback Loops</h4>
+                <p style="line-height: 1.6; margin: 0; color: #856404;">
+                    The existence of an FPTP system changes party behavior, candidate recruitment, and platform positioning. We are 
+                    essentially simulating a "counterfactual world" using data generated by a different set of political incentives, which 
+                    remains the primary challenge for any electoral simulator.
+                </p>
+            </div>
+
+            <div class="info-box" style="background: #e8f5e9; border-left: 4px solid #4caf50; margin: 20px 0; padding: 15px;">
+                <strong>💡 Interpretation Guide:</strong> Shadow comparisons are best used as <strong>illustrative tools</strong> rather than 
+                precise predictions. They show the general direction of disproportionality (e.g., "MMP would be more proportional than FPTP") 
+                but cannot account for the behavioral changes that would occur if voters and parties adapted to a different system.
+            </div>
+        </div>
+
             </main>
 
             <nav class="table-of-contents">
@@ -1090,6 +1191,7 @@ Comparison: Shows REAL difference based on final round vs first choice!</code></
                     <li><a href="#glossary">📖 Glossary</a></li>
                     <li><a href="#quick-comparison">🔍 Quick Comparison</a></li>
                     <li><a href="#implementation">💻 Implementation</a></li>
+                    <li><a href="#shadow-comparison">🔄 Shadow Comparisons</a></li>
                 </ul>
             </nav>
         </div>

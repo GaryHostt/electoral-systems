@@ -76,6 +76,23 @@ function getCalculationParams() {
     };
 }
 
+/**
+ * Normalizes party ID to ensure consistent type (number)
+ * Handles string/number type mismatches from JSON parsing or form inputs
+ * @param {string|number} partyId - Party ID that may be string or number
+ * @returns {number} - Normalized party ID as number
+ */
+function normalizePartyId(partyId) {
+    if (typeof partyId === 'number') {
+        return partyId;
+    }
+    if (typeof partyId === 'string') {
+        const num = Number(partyId);
+        return isNaN(num) ? partyId : num;
+    }
+    return partyId;
+}
+
 // ===== STATE MANAGEMENT =====
 // Replace global variables with state object
 let electionState = {
@@ -416,37 +433,109 @@ function populateVotingBoxes(voteData, preset) {
             
             const system = preset.system || electionState.system;
             const isParallel = system === 'parallel';
+            const isMMP = system === 'mmp';
             const isPartyList = system === 'party-list';
             
-            if (isParallel && preset.actualDistrictWins) {
+            if (isParallel) {
                 // For Parallel voting, populate district and list inputs separately
-                Object.entries(preset.actualDistrictWins).forEach(([partyId, districtCount]) => {
+                // Check if actualSeats uses new format (object with district/list) or old format (number)
+                Object.entries(preset.actualSeats).forEach(([partyId, seatData]) => {
                     const partyIdInt = normalizePartyId(partyId);
-                    const districtInput = document.getElementById(`manual-district-seats-${partyIdInt}`);
-                    if (districtInput) {
-                        districtInput.value = districtCount;
-                        // Update state
-                        electionState.manualDistrictSeats[partyIdInt] = districtCount;
+                    
+                    // Check if new format (object with district/list) or old format (number)
+                    if (typeof seatData === 'object' && seatData !== null && 'district' in seatData && 'list' in seatData) {
+                        // New format: { district: X, list: Y }
+                        const districtCount = seatData.district || 0;
+                        const listCount = seatData.list || 0;
+                        const totalSeats = districtCount + listCount;
+                        
+                        const districtInput = document.getElementById(`manual-district-seats-${partyIdInt}`);
+                        if (districtInput) {
+                            districtInput.value = districtCount;
+                            electionState.manualDistrictSeats[partyIdInt] = districtCount;
+                        } else {
+                            console.warn(`Could not find district input for party ${partyIdInt}`);
+                        }
+                        
+                        const listInput = document.getElementById(`manual-list-seats-${partyIdInt}`);
+                        if (listInput) {
+                            listInput.value = listCount;
+                        } else {
+                            console.warn(`Could not find list input for party ${partyIdInt}`);
+                        }
+                        
+                        electionState.manualSeats[partyIdInt] = totalSeats;
                     } else {
-                        console.warn(`Could not find district input for party ${partyIdInt}`);
+                        // Old format: just a number (backward compatibility)
+                        // Use actualDistrictWins if available, otherwise calculate from total
+                        const totalSeats = typeof seatData === 'number' ? seatData : 0;
+                        const districtWins = (preset.actualDistrictWins && (preset.actualDistrictWins[partyId] || preset.actualDistrictWins[partyIdInt])) || 0;
+                        const listSeats = totalSeats - districtWins;
+                        
+                        const districtInput = document.getElementById(`manual-district-seats-${partyIdInt}`);
+                        if (districtInput) {
+                            districtInput.value = districtWins;
+                            electionState.manualDistrictSeats[partyIdInt] = districtWins;
+                        } else {
+                            console.warn(`Could not find district input for party ${partyIdInt}`);
+                        }
+                        
+                        const listInput = document.getElementById(`manual-list-seats-${partyIdInt}`);
+                        if (listInput) {
+                            listInput.value = listSeats;
+                        } else {
+                            console.warn(`Could not find list input for party ${partyIdInt}`);
+                        }
+                        
+                        electionState.manualSeats[partyIdInt] = totalSeats;
                     }
                 });
-                Object.entries(preset.actualSeats).forEach(([partyId, totalSeats]) => {
+            } else if (isMMP) {
+                // For MMP, check if actualSeats uses new format (object with district/list) or old format (number)
+                Object.entries(preset.actualSeats).forEach(([partyId, seatData]) => {
                     const partyIdInt = normalizePartyId(partyId);
-                    // Try both string and int keys for lookup
-                    const districtWins = preset.actualDistrictWins[partyId] || preset.actualDistrictWins[partyIdInt] || 0;
-                    const listSeats = totalSeats - districtWins;
-                    const listInput = document.getElementById(`manual-list-seats-${partyIdInt}`);
-                    if (listInput) {
-                        listInput.value = listSeats;
+                    
+                    // Check if new format (object with district/list) or old format (number)
+                    if (typeof seatData === 'object' && seatData !== null && 'district' in seatData && 'list' in seatData) {
+                        // New format: { district: X, list: Y }
+                        const districtCount = seatData.district || 0;
+                        const listCount = seatData.list || 0;
+                        const totalSeats = districtCount + listCount;
+                        
+                        const districtInput = document.getElementById(`manual-district-seats-${partyIdInt}`);
+                        if (districtInput) {
+                            districtInput.value = districtCount;
+                            electionState.manualDistrictSeats[partyIdInt] = districtCount;
+                        } else {
+                            console.warn(`Could not find district input for party ${partyIdInt}`);
+                        }
+                        
+                        const listInput = document.getElementById(`manual-list-seats-${partyIdInt}`);
+                        if (listInput) {
+                            listInput.value = listCount;
+                        } else {
+                            console.warn(`Could not find list input for party ${partyIdInt}`);
+                        }
+                        
+                        electionState.manualSeats[partyIdInt] = totalSeats;
                     } else {
-                        console.warn(`Could not find list input for party ${partyIdInt}`);
+                        // Old format: just a number (backward compatibility)
+                        const totalSeats = typeof seatData === 'number' ? seatData : 0;
+                        // For old format, we can't determine district vs list, so distribute proportionally
+                        // or use a default (e.g., all as list seats if no district info)
+                        const districtInput = document.getElementById(`manual-district-seats-${partyIdInt}`);
+                        const listInput = document.getElementById(`manual-list-seats-${partyIdInt}`);
+                        if (districtInput && listInput) {
+                            // Default: assume all seats are list seats (can be adjusted manually)
+                            districtInput.value = 0;
+                            listInput.value = totalSeats;
+                            electionState.manualDistrictSeats[partyIdInt] = 0;
+                            electionState.manualSeats[partyIdInt] = totalSeats;
+                        }
                     }
-                    // Ensure manualSeats is set to total
-                    electionState.manualSeats[partyIdInt] = totalSeats;
                 });
             } else if (isPartyList) {
-                // For Party-List PR, use single total seats input (similar to MMP)
+                // For Party-List PR, use single total seats input
                 Object.entries(preset.actualSeats).forEach(([partyId, seatCount]) => {
                     const partyIdInt = normalizePartyId(partyId);
                     const seatsInput = document.getElementById(`manual-seats-${partyIdInt}`);
@@ -454,15 +543,6 @@ function populateVotingBoxes(voteData, preset) {
                         seatsInput.value = seatCount;
                     }
                     electionState.manualSeats[partyIdInt] = seatCount;
-                });
-            } else {
-                // For MMP, use single total seats input
-                Object.entries(preset.actualSeats).forEach(([partyId, seatCount]) => {
-                    const partyIdInt = normalizePartyId(partyId);
-                    const seatsInput = document.getElementById(`manual-seats-${partyIdInt}`);
-                    if (seatsInput) {
-                        seatsInput.value = seatCount;
-                    }
                 });
             }
             
@@ -2105,13 +2185,15 @@ function updateManualSeatInputs() {
     
     const system = document.getElementById('electoralSystem')?.value || electionState.system;
     const isParallel = system === 'parallel';
+    const isMMP = system === 'mmp';
     const isPartyList = system === 'party-list';
     
     let html = '<h4 style="margin: 0 0 15px 0;">Seats Won by Party</h4>';
     
-    if (isParallel) {
-        // For Parallel voting, show separate district and list inputs
-        html += '<p style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Enter district seats and list seats separately for each party.</p>';
+    if (isParallel || isMMP) {
+        // For Parallel voting and MMP, show separate district and list inputs
+        const systemName = isMMP ? 'MMP' : 'Parallel';
+        html += `<p style="margin-bottom: 10px; color: #666; font-size: 0.9em;">Enter district seats and list seats separately for each party.</p>`;
         html += '<div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 10px; font-weight: 600; color: #667eea; padding: 5px;">';
         html += '<div>Party</div><div style="text-align: center;">District</div><div style="text-align: center;">List</div>';
         html += '</div>';
@@ -2140,7 +2222,7 @@ function updateManualSeatInputs() {
             `;
         });
         
-        // Add Total Seats Entered display for MMM (parallel)
+        // Add Total Seats Entered display for MMM (parallel) and MMP
         html += `
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
                 <strong style="font-size: 1em; color: #667eea;">Total Seats Entered:</strong>
@@ -2172,35 +2254,6 @@ function updateManualSeatInputs() {
                 <span id="manualSeatsEnteredTotal" style="font-size: 1.1em; font-weight: 600; color: #667eea; margin-left: 10px;">0</span>
             </div>
         `;
-    } else {
-        // For MMP, show single total seats input with direct mandate indicator
-        parties.forEach(party => {
-            const currentValue = electionState.manualSeats[party.id] || 0;
-            const hasDirectMandate = currentValue > 0;
-            const directMandateIndicator = hasDirectMandate 
-                ? '<span title="Direct Mandate: Party has won electorate seats and bypasses threshold requirement" style="color: #28a745; font-weight: bold; margin-left: 8px;">✓ Direct Mandate</span>'
-                : '';
-            html += `
-                <div class="vote-input-row">
-                    <label>
-                        <span class="party-color" style="display: inline-block; width: 15px; height: 15px; background-color: ${party.color}; border-radius: 50%; margin-right: 5px;"></span>
-                        ${party.name}${directMandateIndicator}
-                    </label>
-                    <input type="number" min="0" max="1000" value="${currentValue}" 
-                           id="manual-seats-${party.id}" 
-                           class="number-input"
-                           oninput="updateManualSeatTotal()" />
-                </div>
-            `;
-        });
-        
-        // Add Total Seats Entered display for MMP
-        html += `
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
-                <strong style="font-size: 1em; color: #667eea;">Total Seats Entered:</strong>
-                <span id="manualSeatsEnteredTotal" style="font-size: 1.1em; font-weight: 600; color: #667eea; margin-left: 10px;">0</span>
-            </div>
-        `;
     }
     
     container.innerHTML = html;
@@ -2223,6 +2276,7 @@ function updateManualSeatInputs() {
 function updateManualSeatTotal() {
     const currentSystem = document.getElementById('electoralSystem')?.value || electionState.system;
     const isParallel = currentSystem === 'parallel';
+    const isMMP = currentSystem === 'mmp';
     const isPartyList = currentSystem === 'party-list';
     
     // Hide seat total container for party-list systems (but still calculate total for display)
@@ -2233,8 +2287,8 @@ function updateManualSeatTotal() {
     
     let total = 0;
     parties.forEach(party => {
-        if (isParallel) {
-            // For Parallel voting, sum district and list seats separately
+        if (isParallel || isMMP) {
+            // For Parallel voting and MMP, sum district and list seats separately
             const districtInput = document.getElementById(`manual-district-seats-${party.id}`);
             const listInput = document.getElementById(`manual-list-seats-${party.id}`);
             const districtValue = districtInput ? (parseInt(districtInput.value) || 0) : 0;
@@ -2245,7 +2299,7 @@ function updateManualSeatTotal() {
             electionState.manualSeats[party.id] = totalValue;
             total += totalValue;
         } else {
-            // For MMP and Party-List, use single total seats input
+            // For Party-List, use single total seats input
             const input = document.getElementById(`manual-seats-${party.id}`);
             if (input) {
                 const value = parseInt(input.value) || 0;
@@ -4614,12 +4668,27 @@ function simulateDistricts(candidateVotes, districtCount) {
     const partyDistrictWins = {};
     parties.forEach(p => partyDistrictWins[p.id] = 0);
     
+    // Normalize candidateVotes keys to handle string/number type mismatches
+    const normalizedCandidateVotes = {};
+    Object.keys(candidateVotes).forEach(key => {
+        // Try both string and number versions of the key
+        const numKey = Number(key);
+        const strKey = String(key);
+        // Store with both representations for flexible lookup
+        normalizedCandidateVotes[numKey] = candidateVotes[key];
+        normalizedCandidateVotes[strKey] = candidateVotes[key];
+    });
+    
     for (let d = 0; d < districtCount; d++) {
         const districtResults = {};
         
         candidates.forEach((candidate, candidateIndex) => {
             // Partition: Divide total votes by number of districts
-            const baseVotes = (candidateVotes[candidate.id] || 0) / districtCount;
+            // Try both numeric and string ID lookups
+            const candidateIdNum = Number(candidate.id);
+            const candidateIdStr = String(candidate.id);
+            const votes = normalizedCandidateVotes[candidateIdNum] || normalizedCandidateVotes[candidateIdStr] || 0;
+            const baseVotes = votes / districtCount;
             
             // Zero Candidate Catch: Ensure parties with 0 votes cannot win
             if (baseVotes === 0) {
@@ -4651,7 +4720,13 @@ function simulateDistricts(candidateVotes, districtCount) {
         });
         
         if (winnerId) {
-            const winningCandidate = candidates.find(c => c.id == winnerId);
+            // Try both numeric and string ID matching
+            const winnerIdNum = Number(winnerId);
+            const winnerIdStr = String(winnerId);
+            const winningCandidate = candidates.find(c => 
+                c.id == winnerId || c.id == winnerIdNum || c.id == winnerIdStr ||
+                Number(c.id) == winnerIdNum || String(c.id) == winnerIdStr
+            );
             if (winningCandidate) {
                 partyDistrictWins[winningCandidate.partyId]++;
             }
@@ -5030,12 +5105,13 @@ function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, thresh
     
     // First, run normal calculation to get what SHOULD have happened
     // CRITICAL: For the "calculated" comparison, we need to use the actual district wins
-    // from manual seats to determine qualification, not simulated district wins
-    // Build forcedDistrictWins from manual seats for accurate qualification check
+    // from manual district seats to determine qualification, not simulated district wins
+    // Build forcedDistrictWins from manual district seats for accurate qualification check
     const forcedDistrictWinsForCalculation = {};
     parties.forEach(p => {
-        // Use manual seats as district wins for the bypass check in calculated mode
-        forcedDistrictWinsForCalculation[p.id] = electionState.manualSeats[p.id] || 0;
+        // Use manual district seats for the bypass check in calculated mode
+        // If manualDistrictSeats is not set, fall back to 0 (no district wins)
+        forcedDistrictWinsForCalculation[p.id] = electionState.manualDistrictSeats[p.id] || 0;
     });
     
     const calculatedResults = withManualModeDisabled(() => {
@@ -5057,9 +5133,9 @@ function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, thresh
     const qualifyingParties = parties.filter(p => {
         const partyVotes = votes.parties[p.id] || 0;
         const votePercentage = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
-        const manualSeats = electionState.manualSeats[p.id] || 0;
+        const manualDistrictSeats = electionState.manualDistrictSeats[p.id] || 0;
         const meetsThreshold = votePercentage >= threshold;
-        const meetsBypass = manualSeats >= bypassThreshold;
+        const meetsBypass = manualDistrictSeats >= bypassThreshold;
         return (meetsThreshold || meetsBypass) && partyVotes > 0;
     });
     
@@ -5072,6 +5148,8 @@ function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, thresh
         const votePercentage = totalPartyVotes > 0 ? (voteCount / totalPartyVotes * 100) : 0;
         const qualifyingPercentage = qualifyingVoteTotal > 0 ? (voteCount / qualifyingVoteTotal * 100) : 0;
         const manualSeats = electionState.manualSeats[party.id] || 0;
+        const manualDistrictSeats = electionState.manualDistrictSeats[party.id] || 0;
+        const manualListSeats = manualSeats - manualDistrictSeats;
         const calculatedSeats = electionState.calculatedSeats[party.id] || 0;
         const seatDifference = manualSeats - calculatedSeats;
         
@@ -5082,6 +5160,8 @@ function calculateMMPWithManualSeats(votes, districtSeats, baseListSeats, thresh
             percentage: votePercentage,
             qualifyingPercentage: qualifyingPercentage,  // NEW: Share of qualifying votes
             seats: manualSeats,
+            districtSeats: manualDistrictSeats,
+            listSeats: manualListSeats,
             calculatedSeats: calculatedSeats,
             seatDifference: seatDifference,
             isManualOverride: true,
@@ -5123,12 +5203,24 @@ function extractDistrictWinsFromCandidateVotes(candidateVotes, districtCount) {
     const partyDistrictWins = {};
     parties.forEach(p => partyDistrictWins[p.id] = 0);
     
+    // Normalize candidateVotes keys to handle string/number type mismatches
+    const normalizedCandidateVotes = {};
+    Object.keys(candidateVotes).forEach(key => {
+        const numKey = Number(key);
+        const strKey = String(key);
+        normalizedCandidateVotes[numKey] = candidateVotes[key];
+        normalizedCandidateVotes[strKey] = candidateVotes[key];
+    });
+    
     // Aggregate candidate votes by party
     const partyVoteTotals = {};
     parties.forEach(p => partyVoteTotals[p.id] = 0);
     
     candidates.forEach(candidate => {
-        const votes = candidateVotes[candidate.id] || 0;
+        // Try both numeric and string ID lookups
+        const candidateIdNum = Number(candidate.id);
+        const candidateIdStr = String(candidate.id);
+        const votes = normalizedCandidateVotes[candidateIdNum] || normalizedCandidateVotes[candidateIdStr] || candidateVotes[candidate.id] || 0;
         if (candidate.partyId) {
             partyVoteTotals[candidate.partyId] = (partyVoteTotals[candidate.partyId] || 0) + votes;
         }
@@ -5215,6 +5307,8 @@ function calculateParallelWithManualSeats(votes, districtSeats, listSeats, thres
         const voteCount = votes.parties[party.id] || 0;
         const votePercentage = totalPartyVotes > 0 ? (voteCount / totalPartyVotes * 100) : 0;
         const manualSeats = electionState.manualSeats[party.id] || 0;
+        const manualDistrictSeats = electionState.manualDistrictSeats[party.id] || 0;
+        const manualListSeats = manualSeats - manualDistrictSeats;
         const calculatedSeats = electionState.calculatedSeats[party.id] || 0;
         const seatDifference = manualSeats - calculatedSeats;
         
@@ -5224,6 +5318,8 @@ function calculateParallelWithManualSeats(votes, districtSeats, listSeats, thres
             votes: voteCount,
             percentage: votePercentage,
             seats: manualSeats,
+            districtSeats: manualDistrictSeats,
+            listSeats: manualListSeats,
             calculatedSeats: calculatedSeats,
             seatDifference: seatDifference,
             isManualOverride: true
@@ -5681,9 +5777,9 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
     const compatibility = {
         'fptp': ['mmp', 'parallel'],  // Enable FPTP to MMP and MMM/Parallel comparison
         'irv': ['fptp'], // Keep IRV → FPTP (simpler: first preference extraction)
-        'party-list': ['mmp', 'parallel'],
-        'mmp': ['party-list', 'parallel'],
-        'parallel': ['party-list', 'mmp'],
+        'party-list': ['mmp', 'parallel', 'fptp'],  // Added fptp
+        'mmp': ['party-list', 'parallel', 'fptp'],  // Added fptp
+        'parallel': ['party-list', 'mmp', 'fptp'],  // Added fptp
         'stv': ['mmp', 'party-list'] // Translate ranked → party
     };
     
@@ -6120,6 +6216,150 @@ function calculateShadowResult(currentSystem, compareToSystem, votes) {
             params.allocationMethod || 'dhondt',
             null // No forced districts - let Parallel simulate them
         );
+    } else if ((currentSystem === 'mmp' || currentSystem === 'parallel') && compareToSystem === 'fptp') {
+        // MMP/Parallel → FPTP: Use candidate votes to simulate FPTP district results
+        const params = window.lastCalculationParams || {};
+        const calcParams = getCalculationParams();
+        
+        // Use district seats from source system as FPTP total seats
+        const districtSeats = calcParams.districtSeats;
+        const fptpTotalSeats = districtSeats;
+        
+        // Ensure all parties with votes have at least one candidate
+        const partiesWithVotes = parties.filter(p => (votes.parties[p.id] || 0) > 0);
+        partiesWithVotes.forEach(party => {
+            const hasCandidate = candidates.some(c => c.partyId === party.id);
+            if (!hasCandidate) {
+                // Create a candidate for this party if missing
+                const candidateId = Date.now() + Math.random();
+                candidates.push({
+                    id: candidateId,
+                    name: `${party.name} Representative`,
+                    partyId: party.id
+                });
+            }
+        });
+        
+        // Simulate district wins from candidate votes
+        let partyDistrictWins = {};
+        if (votes.candidates && Object.keys(votes.candidates).length > 0) {
+            partyDistrictWins = simulateDistricts(votes.candidates, districtSeats);
+            
+            // Validate results: if one party got all seats, use fallback
+            const totalWins = Object.values(partyDistrictWins).reduce((sum, wins) => sum + wins, 0);
+            const maxWins = Math.max(...Object.values(partyDistrictWins));
+            if (totalWins > 0 && maxWins === totalWins) {
+                // One party got all seats - use fallback method
+                console.warn('simulateDistricts produced unrealistic result (one party got all seats), using fallback');
+                partyDistrictWins = extractDistrictWinsFromCandidateVotes(votes.candidates, districtSeats);
+            }
+        } else {
+            // Fallback: if no candidate votes, use extractDistrictWinsFromCandidateVotes
+            partyDistrictWins = extractDistrictWinsFromCandidateVotes(votes.candidates || {}, districtSeats);
+        }
+        
+        // Convert partyDistrictWins to partySeats format for calculateFPTP_Legislative
+        const partySeats = {};
+        parties.forEach(party => {
+            partySeats[party.id] = partyDistrictWins[party.id] || 0;
+        });
+        
+        // Calculate FPTP legislative results
+        shadowResults = calculateFPTP_Legislative(votes.parties, partySeats, fptpTotalSeats);
+        
+        // Calculate Gallagher Index for shadow FPTP result
+        const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+        const voteShares = {};
+        const seatShares = {};
+        
+        parties.forEach(party => {
+            const partyVotes = votes.parties[party.id] || 0;
+            const partySeatCount = partySeats[party.id] || 0;
+            voteShares[party.id] = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
+            seatShares[party.id] = fptpTotalSeats > 0 ? (partySeatCount / fptpTotalSeats * 100) : 0;
+        });
+        
+        shadowResults.gallagher = calculateGallagher(voteShares, seatShares);
+        
+        debugLog(`${currentSystem.toUpperCase()} → FPTP Shadow calculation:`, {
+            districtSeats,
+            fptpTotalSeats,
+            partyDistrictWins,
+            gallagherIndex: shadowResults.gallagher
+        });
+    } else if (currentSystem === 'party-list' && compareToSystem === 'fptp') {
+        // Party-List → FPTP: Generate synthetic candidate votes from party votes, then simulate FPTP
+        const params = window.lastCalculationParams || {};
+        const totalSeats = params.totalSeats || CONSTANTS.DEFAULT_TOTAL_SEATS;
+        const fptpTotalSeats = totalSeats;
+        
+        // Generate synthetic candidate votes from party votes proportionally
+        const syntheticCandidateVotes = {};
+        parties.forEach(party => {
+            const partyVotes = votes.parties[party.id] || 0;
+            if (partyVotes > 0) {
+                // Find or create a candidate for this party
+                let partyCandidate = candidates.find(c => c.partyId === party.id);
+                
+                if (!partyCandidate) {
+                    // Create a "ghost candidate" if party has no candidates
+                    console.warn(`Party-List → FPTP: Creating ghost candidate for party ${party.name}`);
+                    const ghostId = Date.now() + Math.random(); // Unique ID
+                    partyCandidate = {
+                        id: ghostId,
+                        name: `${party.name} Representative`,
+                        partyId: party.id
+                    };
+                    candidates.push(partyCandidate); // Add to candidates array
+                }
+                
+                // Use both numeric and string keys for flexible lookup
+                syntheticCandidateVotes[partyCandidate.id] = partyVotes;
+                syntheticCandidateVotes[String(partyCandidate.id)] = partyVotes;
+                syntheticCandidateVotes[Number(partyCandidate.id)] = partyVotes;
+            }
+        });
+        
+        // Simulate district wins using synthetic candidate votes
+        let partyDistrictWins = simulateDistricts(syntheticCandidateVotes, fptpTotalSeats);
+        
+        // Validate results: if one party got all seats, use fallback
+        const totalWins = Object.values(partyDistrictWins).reduce((sum, wins) => sum + wins, 0);
+        const maxWins = Math.max(...Object.values(partyDistrictWins));
+        if (totalWins > 0 && maxWins === totalWins) {
+            // One party got all seats - use fallback method
+            console.warn('simulateDistricts produced unrealistic result (one party got all seats), using fallback');
+            partyDistrictWins = extractDistrictWinsFromCandidateVotes(syntheticCandidateVotes, fptpTotalSeats);
+        }
+        
+        // Convert partyDistrictWins to partySeats format for calculateFPTP_Legislative
+        const partySeats = {};
+        parties.forEach(party => {
+            partySeats[party.id] = partyDistrictWins[party.id] || 0;
+        });
+        
+        // Calculate FPTP legislative results
+        shadowResults = calculateFPTP_Legislative(votes.parties, partySeats, fptpTotalSeats);
+        
+        // Calculate Gallagher Index for shadow FPTP result
+        const totalPartyVotes = Object.values(votes.parties).reduce((sum, v) => sum + v, 0);
+        const voteShares = {};
+        const seatShares = {};
+        
+        parties.forEach(party => {
+            const partyVotes = votes.parties[party.id] || 0;
+            const partySeatCount = partySeats[party.id] || 0;
+            voteShares[party.id] = totalPartyVotes > 0 ? (partyVotes / totalPartyVotes * 100) : 0;
+            seatShares[party.id] = fptpTotalSeats > 0 ? (partySeatCount / fptpTotalSeats * 100) : 0;
+        });
+        
+        shadowResults.gallagher = calculateGallagher(voteShares, seatShares);
+        
+        debugLog('Party-List → FPTP Shadow calculation:', {
+            totalSeats: fptpTotalSeats,
+            partyDistrictWins,
+            gallagherIndex: shadowResults.gallagher
+        });
     } else {
         // For other systems, use standard calculator call
         shadowResults = calculators[compareToSystem](translatedVotes);
@@ -6138,22 +6378,25 @@ function getCompatibleSystems(currentSystem) {
     const compatibility = {
         'fptp': ['mmp', 'parallel'],  // Enable FPTP to MMP and MMM/Parallel comparison
         'irv': ['fptp'], // Keep IRV → FPTP (simpler: first preference extraction)
-        'party-list': ['mmp', 'parallel'],
-        'mmp': ['party-list', 'parallel'],
-        'parallel': ['party-list', 'mmp'],
+        'party-list': ['mmp', 'parallel', 'fptp'],  // Added fptp
+        'mmp': ['party-list', 'parallel', 'fptp'],  // Added fptp
+        'parallel': ['party-list', 'mmp', 'fptp'],  // Added fptp
         'stv': ['mmp', 'party-list']
     };
     return compatibility[currentSystem] || [];
 }
 
 // Generate comparison rows for shadow results table
-function generateComparisonRows(primaryResults, shadowResults) {
+function generateComparisonRows(primaryResults, shadowResults, currentSystem = null, compareSystem = null) {
     let html = '';
     
     // Get party results from both systems
     // FPTP legislative uses .parties, other systems use .results
     const primaryParties = primaryResults.parties || primaryResults.results || [];
     const shadowParties = shadowResults.parties || shadowResults.results || [];
+    
+    // Check if we should use district seats for MMP/MMM when comparing to FPTP
+    const useDistrictSeats = (currentSystem === 'mmp' || currentSystem === 'parallel') && compareSystem === 'fptp';
     
     // Create a map of parties
     const partyMap = new Map();
@@ -6163,7 +6406,15 @@ function generateComparisonRows(primaryResults, shadowResults) {
     
     primaryParties.forEach(p => {
         // For single-winner systems, use winner flag or votes; for multi-winner, use seats
-        const value = isSingleWinner ? (p.winner ? 1 : 0) : (p.seats || 0);
+        // If comparing MMP/MMM to FPTP, use districtSeats instead of total seats
+        let value;
+        if (isSingleWinner) {
+            value = p.winner ? 1 : 0;
+        } else if (useDistrictSeats && p.districtSeats !== undefined) {
+            value = p.districtSeats || 0;
+        } else {
+            value = p.seats || 0;
+        }
         partyMap.set(p.name, { primary: value, shadow: 0, color: p.color });
     });
     
@@ -6501,7 +6752,7 @@ function showShadowResult() {
         return;
     }
     
-    if (!shadowResults || !shadowResults.results) {
+    if (!shadowResults || (!shadowResults.results && !shadowResults.parties)) {
         console.error('showShadowResult: Invalid shadow results', shadowResults);
         alert('Failed to calculate comparison. Please check console for details.');
         return;
@@ -6516,6 +6767,10 @@ function showShadowResult() {
         'stv': 'STV'
     };
     
+    // Check if we should show "District Seats" for MMP/MMM when comparing to FPTP
+    const useDistrictSeats = (currentSystem === 'mmp' || currentSystem === 'parallel') && compareSystem === 'fptp';
+    const primarySeatsLabel = useDistrictSeats ? 'District Seats' : 'Seats';
+    
     // Build comparison table with research-grade styling
     const comparisonHTML = `
         <div class="comparison-table-wrapper">
@@ -6526,7 +6781,7 @@ function showShadowResult() {
                 <thead>
                     <tr>
                         <th style="padding: 12px; text-align: left;">Party</th>
-                        <th style="padding: 12px; text-align: center;">${systemNames[currentSystem]} Seats</th>
+                        <th style="padding: 12px; text-align: center;">${systemNames[currentSystem]} ${primarySeatsLabel}</th>
                         <th style="padding: 12px; text-align: center;">Old Seat Share</th>
                         <th style="padding: 12px; text-align: center;">${systemNames[compareSystem]} Seats</th>
                         <th style="padding: 12px; text-align: center;">New Seat Share</th>
@@ -6534,7 +6789,7 @@ function showShadowResult() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${generateComparisonRows(primaryResults, shadowResults)}
+                    ${generateComparisonRows(primaryResults, shadowResults, currentSystem, compareSystem)}
                 </tbody>
             </table>
             

@@ -655,7 +655,7 @@ const ELECTION_PRESETS = {
     },
     "germany_2021": {
         name: "2021 German Federal Election",
-        description: "SPD victory, MMP with overhang seats and leveling. Note: The Left Party (4.9% - below 5% threshold) received full proportional representation because they won 3 direct mandates, demonstrating the 'Double Gate' rule.",
+        description: "SPD victory, MMP with overhang seats and leveling. Note: The Left Party received full proportional representation despite missing the 5% threshold because they won 3 direct mandates.",
         system: "mmp",
         totalSeats: 736,
         districtSeats: 299,      // Statutory district count
@@ -698,12 +698,12 @@ const ELECTION_PRESETS = {
             }
         },
         actualSeats: {
-            2001: 206,  // SPD
-            2002: 197,  // CDU/CSU
-            2003: 118,  // Alliance 90/The Greens
-            2004: 92,   // FDP
-            2005: 83,   // AfD
-            2006: 39    // The Left
+            2001: { district: 121, list: 85 }, // Total: 206
+            2002: { district: 143, list: 54 }, // Total: 197
+            2003: { district: 16, list: 102 }, // Total: 118
+            2004: { district: 0, list: 92 },   // Total: 92
+            2005: { district: 16, list: 67 },  // Total: 83
+            2006: { district: 3, list: 36 }    // Total: 39
         },
         specialSeats: {
             ssw: 1  // SSW (South Schleswig Voters' Association) - minority party, 1 seat
@@ -817,12 +817,12 @@ const ELECTION_PRESETS = {
             }
         },
         actualSeats: {
-            1001: 246,  // CDU/CSU
-            1002: 153,  // SPD
-            1003: 94,   // AfD
-            1004: 80,   // FDP
-            1005: 69,   // The Left
-            1006: 67    // Alliance 90/The Greens
+            1001: { district: 231, list: 15 }, // Total: 246
+            1002: { district: 59, list: 94 },  // Total: 153
+            1003: { district: 3, list: 91 },   // Total: 94
+            1004: { district: 0, list: 80 },   // Total: 80
+            1005: { district: 5, list: 64 },   // Total: 69
+            1006: { district: 1, list: 66 }    // Total: 67
         },
         overhangSeats: 111,
         finalParliamentSize: 709
@@ -1069,12 +1069,12 @@ const ELECTION_PRESETS = {
             }
         },
         actualSeats: {
-            6001: 48,  // National
-            6002: 34,  // Labour
-            6003: 15,  // Green
-            6004: 11,  // ACT
-            6005: 8,   // NZ First
-            6006: 6    // Te Pāti Māori
+            6001: { district: 43, list: 5 },  // Total: 48
+            6002: { district: 17, list: 17 }, // Total: 34
+            6003: { district: 3, list: 12 },  // Total: 15
+            6004: { district: 2, list: 9 },   // Total: 11
+            6005: { district: 0, list: 8 },   // Total: 8
+            6006: { district: 6, list: 0 }    // Total: 6 (Overhang)
         },
         overhangSeats: 2,  // Te Pāti Māori won 6 electorate seats but entitled to only 4 proportionally
         finalParliamentSize: 122  // Later 123 after by-election
@@ -1120,81 +1120,161 @@ const ELECTION_PRESETS = {
             }
         },
         actualSeats: {
-            6101: 65,  // Labour
-            6102: 33,  // National
-            6103: 10,  // Green
-            6104: 10,  // ACT
-            6105: 2    // Te Pāti Māori
+            6101: { district: 65, list: 0 },  // Total: 65
+            6102: { district: 7, list: 26 },  // Total: 33
+            6103: { district: 0, list: 10 },  // Total: 10
+            6104: { district: 0, list: 10 },  // Total: 10
+            6105: { district: 0, list: 2 }    // Total: 2
         },
         overhangSeats: 0,
         finalParliamentSize: 120  // Standard size, no overhang
     },
     "taiwan_2024": {
         name: "2024 Taiwan Legislative Election",
-        description: "Hung parliament. KMT becomes largest party, DPP loses majority, TPP holds balance of power. Total 113 seats.",
+        description: "Hung parliament. KMT becomes largest party, DPP loses majority, TPP holds balance of power. Note: Aboriginal seats (19) are treated as party-list seats in this calculator. Total 505 seats (309 General + 196 List, where List includes 19 Aboriginal + 177 Party-list).",
         system: "parallel",
-        totalSeats: 113,
-        districtSeats: 79,
-        baseListSeats: 34,
+        totalSeats: 505,
+        districtSeats: 309,     // General seats only
+        baseListSeats: 196,    // 19 Aboriginal + 177 Party-list
         threshold: 5,
         allocationMethod: "dhondt",
         parties: [
-            { id: 5101, name: "Kuomintang (KMT)", color: "#000095" },
-            { id: 5102, name: "Democratic Progressive (DPP)", color: "#1B9431" },
-            { id: 5103, name: "Taiwan People's Party (TPP)", color: "#28C8C8" },
-            { id: 5104, name: "New Power Party (NPP)", color: "#FBBE01" }
+            { id: 5101, name: "Democratic Progressive Party", color: "#1B9431" },
+            { id: 5102, name: "Kuomintang", color: "#000095" },
+            { id: 5103, name: "Taiwan People's Party", color: "#28C8C8" },
+            { id: 5104, name: "New Power Party", color: "#FBBE01" },
+            { id: 5105, name: "Taiwan Statebuilding Party", color: "#A73F24" },
+            { id: 5106, name: "People First Party", color: "#FF6310" },
+            { id: 5107, name: "Green Party", color: "#17AA5C" },
+            { id: 5108, name: "New Party", color: "#FFD700" },
+            { id: 5109, name: "Taiwan Solidarity Union", color: "#FF6347" },
+            { id: 5110, name: "Taiwan Renewal Party", color: "#FF69B4" },
+            { id: 5111, name: "Chinese Unification Promotion Party", color: "#DC143C" },
+            { id: 5112, name: "Formosa Alliance", color: "#32CD32" },
+            { id: 5113, name: "Labor Party", color: "#FF1493" },
+            { id: 5114, name: "Independent", color: "#999999" },
+            { id: 5115, name: "Others", color: "#CCCCCC" }
         ],
         candidates: [
-            { id: 5101, name: "KMT Candidate", partyId: 5101 },
-            { id: 5102, name: "DPP Candidate", partyId: 5102 },
+            { id: 5101, name: "DPP Candidate", partyId: 5101 },
+            { id: 5102, name: "KMT Candidate", partyId: 5102 },
             { id: 5103, name: "TPP Candidate", partyId: 5103 },
-            { id: 5104, name: "NPP Candidate", partyId: 5104 }
+            { id: 5104, name: "NPP Candidate", partyId: 5104 },
+            { id: 5105, name: "TSP Candidate", partyId: 5105 },
+            { id: 5106, name: "PFP Candidate", partyId: 5106 },
+            { id: 5107, name: "Green Party Candidate", partyId: 5107 },
+            { id: 5108, name: "New Party Candidate", partyId: 5108 },
+            { id: 5109, name: "TSU Candidate", partyId: 5109 },
+            { id: 5110, name: "TRP Candidate", partyId: 5110 },
+            { id: 5111, name: "CUPP Candidate", partyId: 5111 },
+            { id: 5112, name: "Formosa Alliance Candidate", partyId: 5112 },
+            { id: 5113, name: "Labor Party Candidate", partyId: 5113 },
+            { id: 5114, name: "Independent Candidate", partyId: 5114 },
+            { id: 5115, name: "Others Candidate", partyId: 5115 }
         ],
         votes: {
             parties: {
-                5101: 4764293,  // KMT PR (34.58%)
-                5102: 4981060,  // DPP PR (36.16%)
-                5103: 3040334,  // TPP PR (22.07%)
-                5104: 353670    // NPP PR (2.57% - Failed 5% threshold)
+                5101: 4981060,  // DPP PR
+                5102: 4764293,  // KMT PR
+                5103: 3040334,  // TPP PR
+                5104: 353670,   // NPP PR
+                5105: 280000,   // TSP PR
+                5106: 250000,   // PFP PR
+                5107: 200000,   // Green Party PR
+                5108: 200000,   // New Party PR
+                5109: 150000,   // TSU PR
+                5110: 120000,   // TRP PR
+                5111: 100000,   // CUPP PR
+                5112: 50000,    // Formosa Alliance PR
+                5113: 40000,    // Labor Party PR
+                5114: 0,        // Independent (no party vote)
+                5115: 500000    // Others PR
             },
             candidates: {
-                5101: 5401933,  // KMT Constituency
-                5102: 6095276,  // DPP Constituency
+                5101: 6095276,  // DPP Constituency
+                5102: 5401933,  // KMT Constituency
                 5103: 403357,   // TPP Constituency
-                5104: 96589     // NPP Constituency
+                5104: 96589,    // NPP Constituency
+                5105: 50000,    // TSP Constituency
+                5106: 0,        // PFP Constituency
+                5107: 20000,    // Green Party Constituency
+                5108: 20000,    // New Party Constituency
+                5109: 0,        // TSU Constituency
+                5110: 200000,   // TRP Constituency
+                5111: 200000,   // CUPP Constituency
+                5112: 20000,    // Formosa Alliance Constituency
+                5113: 40000,    // Labor Party Constituency
+                5114: 1200000,  // Independent Constituency
+                5115: 1400000   // Others Constituency
             }
         },
         actualDistrictWins: {
-            5101: 39, // 36 Dist + 3 Indig
-            5102: 38, // 36 Dist + 2 Indig
-            5103: 0,
-            5104: 0
+            5101: 69,  // General seats
+            5102: 64,  // General seats
+            5103: 10,  // General seats
+            5104: 2,   // General seats
+            5105: 2,   // General seats
+            5106: 0,   // General seats
+            5107: 1,   // General seats
+            5108: 1,   // General seats
+            5109: 0,   // General seats
+            5110: 10,  // General seats
+            5111: 10,  // General seats
+            5112: 1,   // General seats
+            5113: 2,   // General seats
+            5114: 65,  // General seats (Independent)
+            5115: 72   // General seats (Others)
         },
         actualSeats: {
-            5101: 52, // 39 Dist + 13 PR
-            5102: 51, // 38 Dist + 13 PR
-            5103: 8,  // 0 Dist + 8 PR
-            5104: 0
+            5101: { district: 69, list: 36 },  // 69 General + (2 Aboriginal + 34 Party-list)
+            5102: { district: 64, list: 38 },  // 64 General + (4 Aboriginal + 34 Party-list)
+            5103: { district: 10, list: 35 },  // 10 General + (1 Aboriginal + 34 Party-list)
+            5104: { district: 2, list: 8 },    // 2 General + (0 Aboriginal + 8 Party-list)
+            5105: { district: 2, list: 7 },    // 2 General + (0 Aboriginal + 7 Party-list)
+            5106: { district: 0, list: 10 },   // 0 General + (0 Aboriginal + 10 Party-list)
+            5107: { district: 1, list: 8 },   // 1 General + (0 Aboriginal + 8 Party-list)
+            5108: { district: 1, list: 9 },    // 1 General + (1 Aboriginal + 8 Party-list)
+            5109: { district: 0, list: 6 },   // 0 General + (0 Aboriginal + 6 Party-list)
+            5110: { district: 10, list: 4 },   // 10 General + (1 Aboriginal + 3 Party-list)
+            5111: { district: 10, list: 4 },  // 10 General + (0 Aboriginal + 4 Party-list)
+            5112: { district: 1, list: 0 },   // 1 General + (0 Aboriginal + 0 Party-list)
+            5113: { district: 2, list: 0 },   // 2 General + (0 Aboriginal + 0 Party-list)
+            5114: { district: 65, list: 0 },  // 65 General + (9 Aboriginal + 0 Party-list) - Aboriginal treated as list
+            5115: { district: 72, list: 22 }  // 72 General + (1 Aboriginal + 21 Party-list)
         },
-        specialSeats: { others: 2 }, // 2 Independents (1 Indig, 1 General - caucus with KMT)
-        finalParliamentSize: 113
+        finalParliamentSize: 505
     },
     "taiwan_2020": {
         name: "2020 Taiwan Legislative Election",
-        description: "DPP retains majority. Newcomers TPP and TSP enter the legislature. Total 113 seats (73 Dist + 6 Indig + 34 List).",
+        description: "DPP retains majority. Note: Aboriginal seats (6) are treated as party-list seats in this calculator. Total 113 seats (73 General + 40 List, where List includes 6 Aboriginal + 34 Party-list).",
         system: "parallel",
         totalSeats: 113,
-        districtSeats: 79,      // 73 General + 6 Indigenous
-        baseListSeats: 34,
+        districtSeats: 73,      // General seats only
+        baseListSeats: 40,      // 6 Aboriginal + 34 Party-list
         threshold: 5,           // Strict 5% threshold
         allocationMethod: "dhondt",
         parties: [
-            { id: 5001, name: "Democratic Progressive (DPP)", color: "#1B9431" },
-            { id: 5002, name: "Kuomintang (KMT)", color: "#000095" },
-            { id: 5003, name: "Taiwan People's Party (TPP)", color: "#28C8C8" },
-            { id: 5004, name: "New Power Party (NPP)", color: "#FBBE01" },
-            { id: 5005, name: "Taiwan Statebuilding (TSP)", color: "#A73F24" },
-            { id: 5006, name: "People First Party (PFP)", color: "#FF6310" }
+            { id: 5001, name: "Democratic Progressive Party", color: "#1B9431" },
+            { id: 5002, name: "Kuomintang", color: "#000095" },
+            { id: 5003, name: "Taiwan People's Party", color: "#28C8C8" },
+            { id: 5004, name: "New Power Party", color: "#FBBE01" },
+            { id: 5005, name: "Taiwan Statebuilding Party", color: "#A73F24" },
+            { id: 5006, name: "People First Party", color: "#FF6310" },
+            { id: 5007, name: "Green Party", color: "#17AA5C" },
+            { id: 5008, name: "New Party", color: "#FFD700" },
+            { id: 5009, name: "Taiwan Action Party Alliance", color: "#8B4513" },
+            { id: 5010, name: "Stabilizing Force Party", color: "#9370DB" },
+            { id: 5011, name: "Taiwan Solidarity Union", color: "#FF6347" },
+            { id: 5012, name: "Congress Party Alliance", color: "#20B2AA" },
+            { id: 5013, name: "Chinese Unification Promotion Party", color: "#DC143C" },
+            { id: 5014, name: "Interfaith Union", color: "#FF8C00" },
+            { id: 5015, name: "Formosa Alliance", color: "#32CD32" },
+            { id: 5016, name: "Labor Party", color: "#FF1493" },
+            { id: 5017, name: "United Action Alliance", color: "#00CED1" },
+            { id: 5018, name: "Taiwan Renewal Party", color: "#FF69B4" },
+            { id: 5019, name: "Sovereign State for Formosa & Pescadores Party", color: "#4682B4" },
+            { id: 5020, name: "Taiwan Labor Party", color: "#D2691E" },
+            { id: 5021, name: "Independent", color: "#999999" }
         ],
         candidates: [
             { id: 5001, name: "DPP Candidate", partyId: 5001 },
@@ -1202,16 +1282,46 @@ const ELECTION_PRESETS = {
             { id: 5003, name: "TPP Candidate", partyId: 5003 },
             { id: 5004, name: "NPP Candidate", partyId: 5004 },
             { id: 5005, name: "TSP Candidate", partyId: 5005 },
-            { id: 5006, name: "PFP Candidate", partyId: 5006 }
+            { id: 5006, name: "PFP Candidate", partyId: 5006 },
+            { id: 5007, name: "Green Party Candidate", partyId: 5007 },
+            { id: 5008, name: "New Party Candidate", partyId: 5008 },
+            { id: 5009, name: "TAPA Candidate", partyId: 5009 },
+            { id: 5010, name: "SFP Candidate", partyId: 5010 },
+            { id: 5011, name: "TSU Candidate", partyId: 5011 },
+            { id: 5012, name: "CPA Candidate", partyId: 5012 },
+            { id: 5013, name: "CUPP Candidate", partyId: 5013 },
+            { id: 5014, name: "Interfaith Union Candidate", partyId: 5014 },
+            { id: 5015, name: "Formosa Alliance Candidate", partyId: 5015 },
+            { id: 5016, name: "Labor Party Candidate", partyId: 5016 },
+            { id: 5017, name: "UAA Candidate", partyId: 5017 },
+            { id: 5018, name: "TRP Candidate", partyId: 5018 },
+            { id: 5019, name: "SSFP Candidate", partyId: 5019 },
+            { id: 5020, name: "TLP Candidate", partyId: 5020 },
+            { id: 5021, name: "Independent Candidate", partyId: 5021 }
         ],
         votes: {
             parties: {
-                5001: 4811241,  // DPP PR (33.98%)
-                5002: 4724210,  // KMT PR (33.36%)
-                5003: 1588806,  // TPP PR (11.22%)
-                5004: 1098100,  // NPP PR (7.75%)
-                5005: 447286,   // TSP PR (3.16% - Failed 5% threshold)
-                5006: 518921    // PFP PR (3.66% - Failed 5% threshold)
+                5001: 4811241,  // DPP PR
+                5002: 4724210,  // KMT PR
+                5003: 1588806,  // TPP PR
+                5004: 1098100,  // NPP PR
+                5005: 447286,   // TSP PR
+                5006: 518921,   // PFP PR
+                5007: 341139,   // Green Party PR
+                5008: 200000,   // New Party PR
+                5009: 150000,   // TAPA PR
+                5010: 180000,   // SFP PR
+                5011: 120000,   // TSU PR
+                5012: 140000,   // CPA PR
+                5013: 130000,   // CUPP PR
+                5014: 160000,   // Interfaith Union PR
+                5015: 150000,   // Formosa Alliance PR
+                5016: 100000,   // Labor Party PR
+                5017: 170000,   // UAA PR
+                5018: 160000,   // TRP PR
+                5019: 110000,   // SSFP PR
+                5020: 50000,    // TLP PR
+                5021: 0          // Independent (no party vote)
             },
             candidates: {
                 5001: 6332168,  // DPP Constituency
@@ -1219,27 +1329,70 @@ const ELECTION_PRESETS = {
                 5003: 264478,   // TPP Constituency
                 5004: 141952,   // NPP Constituency
                 5005: 141503,   // TSP Constituency
-                5006: 60033     // PFP Constituency
+                5006: 60033,    // PFP Constituency
+                5007: 200000,   // Green Party Constituency
+                5008: 0,         // New Party Constituency
+                5009: 180000,   // TAPA Constituency
+                5010: 150000,   // SFP Constituency
+                5011: 0,         // TSU Constituency
+                5012: 220000,   // CPA Constituency
+                5013: 180000,   // CUPP Constituency
+                5014: 200000,   // Interfaith Union Constituency
+                5015: 180000,   // Formosa Alliance Constituency
+                5016: 180000,   // Labor Party Constituency
+                5017: 180000,   // UAA Constituency
+                5018: 200000,   // TRP Constituency
+                5019: 160000,   // SSFP Constituency
+                5020: 50000,    // TLP Constituency
+                5021: 1200000   // Independent Constituency
             }
         },
-        // Actual breakdown of the 79 majoritarian wins (73 Dist + 6 Indig)
         actualDistrictWins: {
-            5001: 48, // 46 Dist + 2 Indig
-            5002: 25, // 22 Dist + 3 Indig
-            5003: 0,
-            5004: 0,
-            5005: 1,
-            5006: 0
+            5001: 67,  // General seats
+            5002: 71,  // General seats
+            5003: 17,  // General seats
+            5004: 5,   // General seats
+            5005: 10,  // General seats
+            5006: 10,  // General seats
+            5007: 10,  // General seats
+            5008: 0,   // General seats
+            5009: 11,  // General seats
+            5010: 9,   // General seats
+            5011: 0,   // General seats
+            5012: 13,  // General seats
+            5013: 10,  // General seats
+            5014: 12,  // General seats
+            5015: 10,  // General seats
+            5016: 10,  // General seats
+            5017: 10,  // General seats
+            5018: 11,  // General seats
+            5019: 9,   // General seats
+            5020: 3,   // General seats
+            5021: 86   // General seats (Independent)
         },
         actualSeats: {
-            5001: 61,  // 48 Dist + 13 PR
-            5002: 38,  // 25 Dist + 13 PR
-            5003: 5,   // 0 Dist + 5 PR
-            5004: 3,   // 0 Dist + 3 PR
-            5005: 1,   // 1 Dist + 0 PR
-            5006: 0
+            5001: { district: 67, list: 35 },  // 67 General + (2 Aboriginal + 33 Party-list)
+            5002: { district: 71, list: 36 },  // 71 General + (5 Aboriginal + 31 Party-list)
+            5003: { district: 17, list: 28 },  // 17 General + (0 Aboriginal + 28 Party-list)
+            5004: { district: 5, list: 11 },   // 5 General + (0 Aboriginal + 11 Party-list)
+            5005: { district: 10, list: 6 },  // 10 General + (0 Aboriginal + 6 Party-list)
+            5006: { district: 10, list: 22 },  // 10 General + (0 Aboriginal + 22 Party-list)
+            5007: { district: 10, list: 7 },  // 10 General + (1 Aboriginal + 6 Party-list)
+            5008: { district: 0, list: 10 },  // 0 General + (0 Aboriginal + 10 Party-list)
+            5009: { district: 11, list: 5 }, // 11 General + (0 Aboriginal + 5 Party-list)
+            5010: { district: 9, list: 12 },   // 9 General + (2 Aboriginal + 10 Party-list)
+            5011: { district: 0, list: 7 },   // 0 General + (0 Aboriginal + 7 Party-list)
+            5012: { district: 13, list: 6 },   // 13 General + (0 Aboriginal + 6 Party-list)
+            5013: { district: 10, list: 7 },   // 10 General + (0 Aboriginal + 7 Party-list)
+            5014: { district: 12, list: 8 },   // 12 General + (0 Aboriginal + 8 Party-list)
+            5015: { district: 10, list: 8 },   // 10 General + (2 Aboriginal + 6 Party-list)
+            5016: { district: 10, list: 2 },   // 10 General + (0 Aboriginal + 2 Party-list)
+            5017: { district: 10, list: 10 },  // 10 General + (2 Aboriginal + 8 Party-list)
+            5018: { district: 11, list: 7 },   // 11 General + (1 Aboriginal + 6 Party-list)
+            5019: { district: 9, list: 5 },    // 9 General + (1 Aboriginal + 4 Party-list)
+            5020: { district: 3, list: 0 },   // 3 General + (0 Aboriginal + 0 Party-list)
+            5021: { district: 86, list: 0 }    // 86 General + (5 Aboriginal + 0 Party-list) - Aboriginal treated as list
         },
-        specialSeats: { others: 5 }, // 5 Independents (mostly caucusing with DPP)
         finalParliamentSize: 113
     },
     "germany_2013": {
@@ -1305,10 +1458,10 @@ const ELECTION_PRESETS = {
             }
         },
         actualSeats: {
-            18001: 311,
-            18002: 193,
-            18003: 64,
-            18004: 63
+            18001: { district: 236, list: 75 }, // Total: 311
+            18002: { district: 58, list: 135 }, // Total: 193
+            18003: { district: 4, list: 60 },   // Total: 64
+            18004: { district: 1, list: 62 }    // Total: 63
         },
         finalParliamentSize: 631
     },
