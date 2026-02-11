@@ -211,9 +211,9 @@ function importElectionPreset(presetKey) {
     
     // Sync UI controls
     document.getElementById('electoralSystem').value = preset.system;
-    onSystemChange(); // Trigger system-specific UI updates
     
-    // For FPTP legislative mode presets, set the race type radio button
+    // For FPTP legislative mode presets, set the race type radio button BEFORE onSystemChange()
+    // This ensures updateVotingInputs() creates the correct FPTP legislative seats inputs
     if (preset.system === 'fptp' && preset.raceType === 'legislative') {
         const legislativeRadio = document.getElementById('legislativeRaceRadio');
         if (legislativeRadio) {
@@ -221,6 +221,8 @@ function importElectionPreset(presetKey) {
             updateRaceType(); // Trigger race type change to hide candidates section
         }
     }
+    
+    onSystemChange(); // Trigger system-specific UI updates
     
     // For ranking systems, set totalVoters AFTER onSystemChange creates the input
     if (preset.ballots && (preset.system === 'irv' || preset.system === 'stv')) {

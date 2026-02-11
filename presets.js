@@ -1901,19 +1901,25 @@ const ELECTION_PRESETS = {
         parties: [
             { id: 4201, name: "Whig Party", color: "#F5F5DC" },
             { id: 4202, name: "Democratic Party", color: "#0015BC" },
-            { id: 4203, name: "Liberty Party", color: "#FED105" }
+            { id: 4203, name: "Liberty Party", color: "#FED105" },
+            { id: 4204, name: "Law and Order", color: "#8B4513" },
+            { id: 4205, name: "Independent", color: "#808080" }
         ],
         votes: {
             parties: {
                 4201: 960000,  // ~48.7%
                 4202: 935000,  // ~47.5%
-                4203: 75000    // ~3.8%
+                4203: 75000,   // ~3.8%
+                4204: 7145,    // Law and Order
+                4205: 42236    // Independent
             }
         },
         seats: {
             4201: 72,
             4202: 147,
-            4203: 0
+            4203: 0,
+            4204: 2,  // Law and Order
+            4205: 2   // Independent
         },
         finalParliamentSize: 223
     },
