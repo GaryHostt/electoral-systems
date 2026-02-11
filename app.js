@@ -4737,65 +4737,72 @@ function simulateDistricts(candidateVotes, districtCount) {
 }
 
 // Calculate iterative leveling seats (German Ausgleichsmandate)
-function calculateIterativeLeveling(districtWins, targets, partyVotes, baseParliamentSize, totalVotes) {
-    // Start with basic overhang seats
-    let currentSeats = {};
-    Object.keys(districtWins).forEach(partyId => {
-        const target = targets[partyId] || 0;
-        const districtWon = districtWins[partyId] || 0;
-        const topUp = Math.max(0, target - districtWon);
-        currentSeats[partyId] = districtWon + topUp;
-    });
-    
-    let currentParliamentSize = baseParliamentSize;
-    const MAX_ITERATIONS = 100; // Safety limit
+// German Law Approach: Increment total parliament size and recalculate until no overhangs exist
+function calculateIterativeLeveling(districtWins, partyVotes, allocationMethod, minimumTotal, qualifyingVoteTotal) {
+    // Start with minimum total (statutory base, e.g., 598 for Germany)
+    let currentTotal = minimumTotal;
+    const MAX_ITERATIONS = 500; // Safety limit (German 2021 expanded from 598 to 736 = 138 iterations)
     let iterations = 0;
+    let hasOverhang = true;
     
-    // Iteratively add leveling seats until proportionality is restored
-    while (iterations < MAX_ITERATIONS) {
-        let needsLeveling = false;
-        const levelingSeats = {};
+    // Leveling Loop: If a party has an overhang, we increase the total house size 
+    // until every party's proportional share is at least equal to their district wins.
+    while (hasOverhang && iterations < MAX_ITERATIONS) {
+        hasOverhang = false;
         
-        // Check each party: if seat share > vote share, add leveling seats to others
-        Object.keys(partyVotes).forEach(partyId => {
-            const voteShare = partyVotes[partyId] / totalVotes;
-            const currentTotal = Object.values(currentSeats).reduce((sum, s) => sum + s, 0);
-            if (currentTotal === 0) return; // Safety check
+        // Calculate proportional entitlement for current total size using qualifying votes only
+        const proportionalTargets = allocationMethod === 'sainte-lague'
+            ? allocateSeats_SainteLague(partyVotes, currentTotal)
+            : allocationMethod === 'hare'
+                ? allocateSeats_HareLR(partyVotes, currentTotal)
+                : allocateSeats_DHondt(partyVotes, currentTotal);
+        
+        // Check each qualifying party: if district wins > proportional entitlement, we have an overhang
+        for (const partyId in partyVotes) {
+            const districtWon = districtWins[partyId] || 0;
+            const propEntitlement = proportionalTargets[partyId] || 0;
             
-            const seatShare = (currentSeats[partyId] || 0) / currentTotal;
-            
-            if (seatShare > voteShare + 0.001) { // Small tolerance for floating point
-                needsLeveling = true;
-                
-                // Add leveling seats to other parties proportionally
-                Object.keys(partyVotes).forEach(otherPartyId => {
-                    if (otherPartyId !== partyId) {
-                        const otherVoteShare = partyVotes[otherPartyId] / totalVotes;
-                        const otherSeatShare = (currentSeats[otherPartyId] || 0) / currentTotal;
-                        
-                        if (otherSeatShare < otherVoteShare) {
-                            // This party needs leveling seats
-                            levelingSeats[otherPartyId] = (levelingSeats[otherPartyId] || 0) + 1;
-                        }
-                    }
-                });
+            if (districtWon > propEntitlement) {
+                // We have an overhang! Increase total size and re-calculate
+                currentTotal++;
+                hasOverhang = true;
+                break; // Recalculate with new total
             }
-        });
-        
-        if (!needsLeveling) break; // Proportionality achieved
-        
-        // Apply leveling seats
-        Object.keys(levelingSeats).forEach(partyId => {
-            currentSeats[partyId] = (currentSeats[partyId] || 0) + (levelingSeats[partyId] || 0);
-            currentParliamentSize += (levelingSeats[partyId] || 0);
-        });
+        }
         
         iterations++;
     }
     
+    if (iterations >= MAX_ITERATIONS) {
+        console.warn('MMP Leveling Warning: Reached maximum iterations. Parliament size may not be fully proportional.');
+    }
+    
+    // Final calculation with the expanded total
+    const finalProportionalTargets = allocationMethod === 'sainte-lague'
+        ? allocateSeats_SainteLague(partyVotes, currentTotal)
+        : allocationMethod === 'hare'
+            ? allocateSeats_HareLR(partyVotes, currentTotal)
+            : allocateSeats_DHondt(partyVotes, currentTotal);
+    
+    // Build final seats: each party gets max(district wins, proportional entitlement)
+    const finalSeats = {};
+    Object.keys(partyVotes).forEach(partyId => {
+        const districtWon = districtWins[partyId] || 0;
+        const propEntitlement = finalProportionalTargets[partyId] || 0;
+        // Party gets at least their district wins, or their proportional entitlement (whichever is higher)
+        finalSeats[partyId] = Math.max(districtWon, propEntitlement);
+    });
+    
+    // Ensure all parties are initialized (even non-qualifying ones get 0)
+    Object.keys(districtWins).forEach(partyId => {
+        if (!(partyId in finalSeats)) {
+            finalSeats[partyId] = districtWins[partyId] || 0;
+        }
+    });
+    
     return {
-        finalSeats: currentSeats,
-        finalParliamentSize: currentParliamentSize
+        finalSeats: finalSeats,
+        finalParliamentSize: currentTotal
     };
 }
 
@@ -4987,13 +4994,14 @@ function calculateMMP(votes, districtSeats, baseListSeats, threshold, allocation
     
     if (levelingEnabled && overhangTotal > 0) {
         // Perform iterative leveling (German Ausgleichsmandate)
-        // Use qualifyingVoteTotal for leveling calculations
+        // German Law Approach: Increment total size and recalculate until no overhangs exist
+        // Use qualifying votes only (eligiblePartyVotes) for proportional allocation
         const levelingResult = calculateIterativeLeveling(
             partyDistrictWins,
-            proportionalTargets,
-            eligiblePartyVotes,
-            baseParliamentSize,
-            qualifyingVoteTotal  // Use qualifying votes instead of total votes
+            eligiblePartyVotes,  // Qualifying parties' votes only
+            allocationMethod,
+            totalParliamentSeats,  // Start with statutory minimum (e.g., 598 for Germany)
+            qualifyingVoteTotal  // Total qualifying votes (for reference)
         );
         finalSeats = levelingResult.finalSeats;
         finalParliamentSize = levelingResult.finalParliamentSize;
