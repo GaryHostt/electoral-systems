@@ -2099,5 +2099,113 @@ const ELECTION_PRESETS = {
             2408: 0,
             2409: 0
         }
+    },
+    "south_korea_1996": {
+        name: "1996 South Korean General Election",
+        description: "A demonstration of the Parallel (MMM) system's efficiency gap. The New Korea Party won a plurality of both votes and seats, but benefited immensely from rural efficiency, while the opposition NCNP saw millions of 'wasted' urban votes in Seoul.",
+        system: "parallel",
+        raceType: "legislative",
+        totalSeats: 299,
+        districtSeats: 253,
+        baseListSeats: 46,
+        threshold: 5,
+        allocationMethod: "dhondt",
+        parties: [
+            { id: 19601, name: "New Korea Party (NKP)", color: "#E61E2B" },
+            { id: 19602, name: "National Congress for New Politics (NCNP)", color: "#00A0E2" },
+            { id: 19603, name: "United Liberal Democrats (ULD)", color: "#00913E" },
+            { id: 19604, name: "Democratic Party (DP)", color: "#FFD700" },
+            { id: 19605, name: "Independents/Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                19601: 6730381, // 34.5%
+                19602: 4945622, // 25.3%
+                19603: 3170359, // 16.2%
+                19604: 2189341, // 11.2%
+                19605: 2470000  // ~12.8%
+            }
+        },
+        actualDistrictWins: {
+            19601: 121, // District seats
+            19602: 66,  // District seats
+            19603: 41,  // District seats
+            19604: 9,   // District seats
+            19605: 16   // District seats
+        },
+        actualSeats: {
+            19601: 139, // 121 District + 18 PR
+            19602: 79,  // 66 District + 13 PR
+            19603: 50,  // 41 District + 9 PR
+            19604: 15,  // 9 District + 6 PR
+            19605: 16   // District only
+        },
+        finalParliamentSize: 299
+    },
+    "new_zealand_1981": {
+        name: "1981 New Zealand General Election",
+        description: "The second of two consecutive 'wrong winner' elections in NZ under FPTP. Labour won the popular vote plurality for the second time in a row but was denied government, leading to the eventual movement for MMP.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 92,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 19801, name: "Labour Party", color: "#D82A20" },
+            { id: 19802, name: "National Party", color: "#00529F" },
+            { id: 19803, name: "Social Credit", color: "#28C8C8" },
+            { id: 19804, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                19801: 706688, // 39.0%
+                19802: 702630, // 38.8%
+                19803: 291118, // 16.1%
+                19804: 112000  // ~6.1%
+            }
+        },
+        seats: {
+            19801: 43,
+            19802: 47,
+            19803: 2,
+            19804: 0
+        },
+        finalParliamentSize: 92
+    },
+    "south_africa_1948": {
+        name: "1948 South African General Election",
+        description: "One of history's most consequential inversions. The United Party won nearly 50% of the vote, but the HNP/AP coalition won the majority of seats due to rural weighting and geographic concentration. This result enabled the implementation of Apartheid.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 150,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 19401, name: "United Party (UP)", color: "#FFD700" },
+            { id: 19402, name: "Herenigde Nasionale Party (HNP)", color: "#FF8000" },
+            { id: 19403, name: "Afrikaner Party (AP)", color: "#000000" },
+            { id: 19404, name: "Labour Party (LP)", color: "#CC0000" },
+            { id: 19405, name: "Others", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                19401: 524230, // 49.18%
+                19402: 401834, // 37.70%
+                19403: 41885,  // 3.93%
+                19404: 27360,  // 2.57%
+                19405: 70000   // ~6.6%
+            }
+        },
+        seats: {
+            19401: 65,
+            19402: 70,
+            19403: 9,
+            19404: 6,
+            19405: 0
+        },
+        specialSeats: {
+            nativeRepresentatives: 3 // Fixed seats for Native voters (not part of party list)
+        },
+        finalParliamentSize: 153
     }
 };
