@@ -371,6 +371,252 @@ const ELECTION_PRESETS = {
         },
         finalParliamentSize: 343
     },
+    "bc_2017": {
+        name: "2017 British Columbia General Election",
+        description: "One of the closest elections in BC history. The BC Liberals won the popular vote by a hair (0.08%) but the NDP and Greens formed a coalition to oust them, ending 16 years of Liberal rule. A classic example of a 'hung parliament' under FPTP.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 87,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 1, name: "BC Liberal Party", color: "#D71920", leader: "Christy Clark" },
+            { id: 2, name: "BC NDP", color: "#F58220", leader: "John Horgan" },
+            { id: 3, name: "BC Green Party", color: "#3D9B35", leader: "Andrew Weaver" },
+            { id: 4, name: "BC Conservative Party", color: "#1A3A6C", leader: "Dan Brooks" },
+            { id: 5, name: "Other / Independent", color: "#888888" }
+        ],
+        votes: {
+            parties: {
+                1: 796672,
+                2: 795106,
+                3: 332387,
+                4: 28506,
+                5: 21243
+            }
+        },
+        seats: {
+            1: 43,
+            2: 41,
+            3: 3,
+            4: 0,
+            5: 0
+        },
+        finalParliamentSize: 87
+    },
+    "bc_2020": {
+        name: "2020 British Columbia General Election",
+        description: "Held during the COVID-19 pandemic, Premier John Horgan called a snap election seeking a majority. The result was a historic NDP landslide, winning the highest seat count in the party's history. The BC Liberals suffered significant losses in the suburbs, leading to leader Andrew Wilkinson's resignation. The Greens maintained their 2-seat presence despite the NDP majority. Turnout was 54.5%, the lowest in BC history, largely attributed to the pandemic and a perceived 'non-contest' as the campaign progressed.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 87,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 1, name: "BC NDP", color: "#F58220", leader: "John Horgan" },
+            { id: 2, name: "BC Liberal Party", color: "#D71920", leader: "Andrew Wilkinson" },
+            { id: 3, name: "BC Green Party", color: "#3D9B35", leader: "Sonia Furstenau" },
+            { id: 4, name: "BC Conservative Party", color: "#1A3A6C", leader: "Trevor Bolin" },
+            { id: 5, name: "Other / Independent", color: "#888888" }
+        ],
+        votes: {
+            parties: {
+                1: 897287,
+                2: 636145,
+                3: 284151,
+                4: 35902,
+                5: 28110
+            }
+        },
+        seats: {
+            1: 57,
+            2: 28,
+            3: 2,
+            4: 0,
+            5: 0
+        },
+        finalParliamentSize: 87
+    },
+    "bc_2024": {
+        name: "2024 British Columbia General Election",
+        description: "A total realignment of BC politics. Following the collapse of the centrist BC United (formerly Liberals), the right-wing BC Conservatives surged from 2% in 2020 to 43% in 2024. The election was a statistical dead-heat between Premier David Eby's NDP and John Rustad's Conservatives. After a week of judicial recounts, the NDP secured the thinnest possible majority (47 of 93 seats). The BC Greens, while winning 2 seats, saw their leader Sonia Furstenau lose her own riding. This election highlighted extreme geographic polarization: the NDP dominated the coast and urban centers, while the Conservatives swept the rural interior and northern regions.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 93,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 1, name: "BC NDP", color: "#F58220", leader: "David Eby" },
+            { id: 2, name: "BC Conservative Party", color: "#1A3A6C", leader: "John Rustad" },
+            { id: 3, name: "BC Green Party", color: "#3D9B35", leader: "Sonia Furstenau" },
+            { id: 4, name: "Independent / Other", color: "#888888", leader: "N/A" }
+        ],
+        votes: {
+            parties: {
+                1: 936445,
+                2: 903131,
+                3: 171858,
+                4: 75571
+            }
+        },
+        seats: {
+            1: 47,
+            2: 44,
+            3: 2,
+            4: 0
+        },
+        finalParliamentSize: 93
+    },
+    "ab_2015": {
+        name: "2015 Alberta General Election",
+        description: "A political earthquake in Alberta. Rachel Notley's NDP ended 44 years of Progressive Conservative (PC) rule, the longest-running provincial government in Canadian history. Despite the PCs winning the second-highest popular vote share (27.8%), they fell to third place in seats due to the rise of the right-wing Wildrose Party, which split the conservative vote. This election demonstrated the 'spoiler effect' of FPTP in a three-way race, as the NDP secured a comfortable majority with only 40.6% of the vote.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 87,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 10, name: "Alberta NDP", color: "#F58220", leader: "Rachel Notley" },
+            { id: 11, name: "Wildrose Party", color: "#004810", leader: "Brian Jean" },
+            { id: 12, name: "Progressive Conservative", color: "#004770", leader: "Jim Prentice" },
+            { id: 13, name: "Alberta Liberal Party", color: "#D71920", leader: "David Swann" },
+            { id: 14, name: "Alberta Party", color: "#00AEEF", leader: "Greg Clark" }
+        ],
+        votes: {
+            parties: {
+                10: 603456,
+                11: 360185,
+                12: 413605,
+                13: 32580,
+                14: 33221
+            }
+        },
+        seats: {
+            10: 54,
+            11: 21,
+            12: 10,
+            13: 1,
+            14: 1
+        },
+        finalParliamentSize: 87
+    },
+    "ab_2019": {
+        name: "2019 Alberta General Election",
+        description: "The 'unification' election. After the split in 2015, the PC and Wildrose parties merged to form the United Conservative Party (UCP) under Jason Kenney. The UCP won a decisive majority, winning nearly 55% of the popular vote and reclaiming the province for the conservative movement. The NDP, despite increasing their raw vote count from 2015, were reduced to the Official Opposition. This cycle saw a return to a dominant two-party system in Alberta, as the Alberta Party and Liberals were shut out of the legislature despite the Alberta Party receiving over 9% of the vote.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 87,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 15, name: "United Conservative Party", color: "#004770", leader: "Jason Kenney" },
+            { id: 10, name: "Alberta NDP", color: "#F58220", leader: "Rachel Notley" },
+            { id: 14, name: "Alberta Party", color: "#00AEEF", leader: "Stephen Mandel" },
+            { id: 13, name: "Alberta Liberal Party", color: "#D71920", leader: "David Khan" }
+        ],
+        votes: {
+            parties: {
+                15: 1040563,
+                10: 619154,
+                14: 172203,
+                13: 18545
+            }
+        },
+        seats: {
+            15: 63,
+            10: 24,
+            14: 0,
+            13: 0
+        },
+        finalParliamentSize: 87
+    },
+    "sk_1986": {
+        name: "1986 Saskatchewan General Election",
+        description: "One of the most famous examples of a 'wrong-winner' inversion in Canadian history. The NDP, led by Allan Blakeney, won the popular vote with 45.2%, yet the Progressive Conservatives under Grant Devine won a large majority of seats (38 to 25) with only 44.6% of the vote. This was largely due to the PCs winning many rural seats with small margins, while the NDP 'wasted' thousands of votes in urban landslide victories.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 64,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 1, name: "Saskatchewan NDP", color: "#F58220", leader: "Allan Blakeney" },
+            { id: 2, name: "Progressive Conservative", color: "#004770", leader: "Grant Devine" },
+            { id: 3, name: "Saskatchewan Liberal Party", color: "#D71920", leader: "Ralph Goodale" }
+        ],
+        votes: {
+            parties: {
+                1: 247683,
+                2: 244381,
+                3: 54739
+            }
+        },
+        seats: {
+            1: 25,
+            2: 38,
+            3: 1
+        },
+        finalParliamentSize: 64
+    },
+    "qc_1998": {
+        name: "1998 Quebec General Election",
+        description: "A major seat/vote inversion. The Quebec Liberal Party won the popular vote (43.6% vs 42.9%), yet the Parti Québécois (PQ) won a commanding majority of 76 seats to the Liberals' 48. This discrepancy was caused by the high concentration of Liberal support in Montreal (efficiently 'packed' into a few ridings), while PQ support was spread more efficiently across the rest of the province. This election remains a primary argument for electoral reform advocates in Quebec.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 125,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 4, name: "Parti Québécois", color: "#004C9D", leader: "Lucien Bouchard" },
+            { id: 5, name: "Parti libéral du Québec", color: "#D71920", leader: "Jean Charest" },
+            { id: 6, name: "Action démocratique du Québec", color: "#00AEEF", leader: "Mario Dumont" }
+        ],
+        votes: {
+            parties: {
+                4: 1744240,
+                5: 1777323,
+                6: 480636
+            }
+        },
+        seats: {
+            4: 76,
+            5: 48,
+            6: 1
+        },
+        finalParliamentSize: 125
+    },
+    "qc_2022": {
+        name: "2022 Quebec General Election",
+        description: "A showcase of high disproportionality in a fragmented multi-party system. Francois Legault's CAQ won a massive 'super-majority' of 72% of seats with only 41% of the vote. Meanwhile, the opposition was split four ways; despite three parties (QS, PQ, and PCQ) receiving between 13% and 15% of the vote each, their seat counts ranged from 11 to 0. This election is often cited as the most disproportionate result in Quebec history, where the Liberal Party became the Official Opposition with the lowest popular vote share in its history (14.4%) simply due to geographic efficiency in Montreal.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 125,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 7, name: "Coalition Avenir Québec (CAQ)", color: "#00B2EE", leader: "François Legault" },
+            { id: 8, name: "Parti libéral du Québec (PLQ)", color: "#D71920", leader: "Dominique Anglade" },
+            { id: 9, name: "Québec Solidaire (QS)", color: "#FF8C00", leader: "G. Nadeau-Dubois" },
+            { id: 10, name: "Parti Québécois (PQ)", color: "#004C9D", leader: "Paul St-Pierre Plamondon" },
+            { id: 11, name: "Parti conservateur du Québec", color: "#002D5E", leader: "Éric Duhaime" }
+        ],
+        votes: {
+            parties: {
+                7: 1685146,
+                8: 591077,
+                9: 634535,
+                10: 600708,
+                11: 530786
+            }
+        },
+        seats: {
+            7: 90,
+            8: 21,
+            9: 11,
+            10: 3,
+            11: 0
+        },
+        finalParliamentSize: 125
+    },
     "canada_2021": {
         name: "2021 Canadian Federal Election",
         description: "Trudeau's second minority government. Conservatives won the popular vote but fewer seats. The PPC took 5% of the vote but won zero seats.",
