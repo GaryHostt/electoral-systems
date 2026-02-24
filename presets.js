@@ -2076,6 +2076,144 @@ const ELECTION_PRESETS = {
         },
         finalParliamentSize: 223
     },
+    "us_senate_2020": {
+        name: "2020 US Senate Elections",
+        description: "35 races (33 Class 2 regular + AZ & GA specials). Republicans won more aggregate votes (~49.5% vs 47.2%) and won 20 of 35 seats. Democrats won 15 seats. Despite high-profile Dem fundraising (Jaime Harrison raised record $130M in SC but lost by 10%), Republicans held the popular-vote advantage due to safe-state lopsidedness. Georgia's two races went to January 2021 runoffs; Democrats swept both (Ossoff & Warnock), giving them a 50-50 tie and the Senate majority via VP Harris's tiebreaker. Alabama flipped to Republicans after Doug Jones's 2017 upset was reversed by Tommy Tuberville. Note: Arkansas and Utah had no major Democratic general election opponent — those votes appear under 'Other/Libertarian'.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 35,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 21001, name: "Democratic Party", color: "#0015BC" },
+            { id: 21002, name: "Republican Party", color: "#E81B23" },
+            { id: 21003, name: "Independent / Third Party", color: "#808080" },
+            { id: 21004, name: "Libertarian Party", color: "#FED105" },
+            { id: 21005, name: "Other / Minor", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                21001: 38474000,
+                21002: 40344000,
+                21003: 1589000,
+                21004: 899000,
+                21005: 157000
+            }
+        },
+        seats: {
+            21001: 15,
+            21002: 20,
+            21003: 0,
+            21004: 0,
+            21005: 0
+        },
+        finalParliamentSize: 35
+    },
+    "us_senate_2022": {
+        name: "2022 US Senate Elections",
+        description: "35 races (34 Class 3 regular + Oklahoma Class 2 special). A feared 'red wave' failed to materialize: Republicans narrowly won the aggregate popular vote (~49.2% vs 48.2%) but Democrats gained a net +1 seat, flipping Pennsylvania while holding all incumbents. Republicans won 20 of 35 races, but Democrats won the most competitive swing seats. Georgia went to a runoff (Warnock vs Walker), with Democrats winning by 3 points in December 2022. The Utah race featured no Democratic candidate — Republican Lee faced only Independent Evan McMullin. Alaska used RCV; Republican Murkowski defeated fellow Republican Tshibaka in the final round. This was the first election since the 17th Amendment where no incumbent lost a Senate race.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 35,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 22001, name: "Democratic Party", color: "#0015BC" },
+            { id: 22002, name: "Republican Party", color: "#E81B23" },
+            { id: 22003, name: "Independent / Third Party", color: "#808080" },
+            { id: 22004, name: "Libertarian Party", color: "#FED105" },
+            { id: 22005, name: "Other / Minor", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                22001: 40596000,
+                22002: 41443000,
+                22003: 2178000,
+                22004: 0,
+                22005: 33000
+            }
+        },
+        seats: {
+            22001: 15,
+            22002: 20,
+            22003: 0,
+            22004: 0,
+            22005: 0
+        },
+        finalParliamentSize: 35
+    },
+    "us_senate_2024": {
+        name: "2024 US Senate Elections",
+        description: "34 races (33 regular Class 1 + Nebraska Class 2 special). Republicans won a 53-47 majority (net +4 seats), flipping Montana, Ohio, Pennsylvania, and West Virginia, while Democrats flipped Arizona. Despite Democrats winning more aggregate votes (~47.0M vs ~46.9M for Republicans — a margin of only ~86,000 votes), Republicans won 15 of 34 races to Democrats' 16, with 2 Independents (King ME, Sanders VT, both caucusing Democrat) completing the map. A textbook demonstration of FPTP geographic efficiency: Democrats piled up enormous margins in CA, NY, MA, and HI, while Republicans won efficiently across battleground and rural states. Pennsylvania was decided by 0.22%; Michigan by 0.34%. Nebraska's Class 1 race had no Democratic candidate (Fischer R vs Osborn I).",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 33,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 20001, name: "Democratic Party", color: "#0015BC" },
+            { id: 20002, name: "Republican Party", color: "#E81B23" },
+            { id: 20003, name: "Independent", color: "#808080" },
+            { id: 20004, name: "Libertarian Party", color: "#FED105" },
+            { id: 20005, name: "Green Party", color: "#17AA5C" },
+            { id: 20006, name: "Other / Minor", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                20001: 47019000,
+                20002: 46933000,
+                20003: 2705000,
+                20004: 850000,
+                20005: 270000,
+                20006: 977000
+            }
+        },
+        seats: {
+            20001: 16,
+            20002: 15,
+            20003: 2,
+            20004: 0,
+            20005: 0,
+            20006: 0
+        },
+        finalParliamentSize: 34
+    },
+    "us_senate_composite_2020_2024": {
+        name: "US Senate: Full Composition (2020–2024 Cycles)",
+        description: "The present 100-seat US Senate, built from three election cycles (2020 Class 2, 2022 Class 3, 2024 Class 1) representing approximately 263 million votes cast across 104 total races. Republicans hold 53 seats; Democrats hold 45 seats plus 2 Independents (Angus King ME, Bernie Sanders VT) who caucus with Democrats, giving an effective 47-53 minority. Across all three cycles combined, Democrats won more aggregate votes in two of three cycles — yet Republicans hold a 53-47 seat advantage. This reflects the structural efficiency advantage of the FPTP system in a geography-sorted electorate: Republican votes are geographically 'efficient' across many midsize states, while Democratic votes are heavily concentrated in high-population coastal states, producing large wasted-vote margins in safe races. The three-cycle popular vote aggregate: Republicans ~48.8%, Democrats ~47.8% — a 1-point margin producing a 6-seat Republican advantage in the 100-seat chamber.",
+        system: "fptp",
+        raceType: "legislative",
+        totalSeats: 100,
+        threshold: 0,
+        allocationMethod: "plurality",
+        parties: [
+            { id: 30001, name: "Democratic Party", color: "#0015BC" },
+            { id: 30002, name: "Republican Party", color: "#E81B23" },
+            { id: 30003, name: "Independent", color: "#808080" },
+            { id: 30004, name: "Libertarian / Third Party", color: "#FED105" },
+            { id: 30005, name: "Other / Minor", color: "#999999" }
+        ],
+        votes: {
+            parties: {
+                30001: 126089000,
+                30002: 128720000,
+                30003: 6472000,
+                30004: 1749000,
+                30005: 1246000
+            }
+        },
+        seats: {
+            30001: 45,
+            30002: 53,
+            30003: 2,
+            30004: 0,
+            30005: 0
+        },
+        specialSeats: {
+            independentsCaucusingDem: 2
+        },
+        finalParliamentSize: 100
+    },
     "uk_1951": {
         name: "1951 UK General Election",
         description: "The ultimate UK inversion. Labour won the highest popular vote share in its history (48.8%) but lost to Winston Churchill's Conservatives (48.0%), who won 26 more seats. Demonstrates how 'piling up' votes in safe industrial seats is inefficient in FPTP.",

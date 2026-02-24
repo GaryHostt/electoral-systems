@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Senate's Structural Tilt</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --d-blue: #1a56c4;
+    --d-blue-light: #4a86f4;
+    --r-red: #c41a1a;
+    --r-red-light: #f44a4a;
+    --neutral: #888;
+    --bg: #0a0c10;
+    --bg2: #111420;
+    --bg3: #181d2a;
+    --text: #e8eaf0;
+    --text-dim: #7a8099;
+    --gold: #c8a84b;
+    --grid: rgba(255,255,255,0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.6;
+  }
+
+  .masthead {
+    padding: 56px 48px 0;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    max-width: 680px;
+    font-weight: 300;
+  }
+
+  /* Era banners */
+  .era-strip {
+    display: flex;
+    gap: 12px;
+    margin: 36px 0 0;
+    flex-wrap: wrap;
+  }
+
+  .era-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .era-pill.d { border-color: var(--d-blue); color: var(--d-blue-light); background: rgba(26,86,196,0.08); }
+  .era-pill.r { border-color: var(--r-red); color: var(--r-red-light); background: rgba(196,26,26,0.08); }
+  .era-pill.mix { border-color: var(--gold); color: var(--gold); background: rgba(200,168,75,0.08); }
+
+  .era-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .era-pill.d .era-dot { background: var(--d-blue-light); }
+  .era-pill.r .era-dot { background: var(--r-red-light); }
+  .era-pill.mix .era-dot { background: var(--gold); }
+
+  /* Era detail narrative */
+  .era-detail {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 48px 0;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.75;
+  }
+
+  .era-detail h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 24px 0 8px;
+    font-weight: 500;
+  }
+
+  .era-detail h3:first-child { margin-top: 0; }
+  .era-detail p { margin-bottom: 12px; }
+  .era-detail strong { color: var(--text); font-weight: 500; }
+  .era-detail ul { margin: 8px 0 12px 20px; }
+
+  /* Main chart area */
+  .chart-section {
+    padding: 48px 48px 0;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .chart-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  /* The main gap chart */
+  .gap-chart-wrap {
+    position: relative;
+    background: var(--bg2);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 32px 24px 24px;
+    margin-bottom: 24px;
+  }
+
+  .gap-chart-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .gap-chart-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+  }
+
+  canvas {
+    width: 100%;
+    display: block;
+    cursor: crosshair;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: #0d1017;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px;
+    padding: 14px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.8;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    min-width: 220px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  .tooltip.visible { opacity: 1; }
+
+  .tt-year {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gold);
+    margin-bottom: 8px;
+    font-family: 'Playfair Display', serif;
+  }
+
+  .tt-row { display: flex; justify-content: space-between; gap: 20px; }
+  .tt-label { color: var(--text-dim); }
+  .tt-val-d { color: var(--d-blue-light); font-weight: 500; }
+  .tt-val-r { color: var(--r-red-light); font-weight: 500; }
+  .tt-val-gap { color: var(--gold); font-weight: 500; }
+  .tt-divider { border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 0; }
+  .tt-verdict { color: var(--text); font-size: 10px; margin-top: 4px; }
+
+  /* Scoreboard row */
+  .scoreboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .score-card {
+    background: var(--bg2);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .score-card.era1::before { background: linear-gradient(90deg, #888, #666); }
+  .score-card.era2::before { background: linear-gradient(90deg, var(--d-blue), var(--d-blue-light)); }
+  .score-card.era3::before { background: linear-gradient(90deg, var(--r-red), #ff8888); }
+
+  .score-era {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .score-main {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .score-card.era1 .score-main { color: var(--text-dim); }
+  .score-card.era2 .score-main { color: var(--d-blue-light); }
+  .score-card.era3 .score-main { color: var(--r-red-light); }
+
+  .score-desc {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .score-desc strong { color: var(--text); font-weight: 500; }
+
+  /* Seat chart */
+  .seat-chart-wrap {
+    background: var(--bg2);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 32px 24px 24px;
+    margin-bottom: 24px;
+  }
+
+  /* Annotation panel */
+  .annotation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .annotation-card {
+    background: var(--bg2);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 18px 20px;
+  }
+
+  .anno-icon {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+  }
+
+  .anno-head {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .anno-text {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .anno-text strong { color: var(--text); }
+
+  /* Bottom bar */
+  .source-bar {
+    padding: 28px 48px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .source-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    opacity: 0.6;
+    text-transform: uppercase;
+    line-height: 1.8;
+  }
+
+  .data-source-link {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.85rem;
+    color: var(--gold);
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  .data-source-link a {
+    color: var(--d-blue-light);
+    text-decoration: none;
+  }
+
+  .data-source-link a:hover { text-decoration: underline; }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .legend-line {
+    width: 24px;
+    height: 2px;
+    border-radius: 1px;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="eyebrow">US Senate // Popular Vote vs. Seat Share // 1994–2024</div>
+  <h1>The Senate's<br><em>Structural Tilt</em></h1>
+  <p class="subtitle">
+    Three-cycle rolling popular vote vs. chamber composition. Democrats have won the aggregate Senate popular vote in <strong>12 of the last 16 election cycles</strong> — yet currently hold 6 fewer seats than Republicans. The divergence between votes and seats has grown sharply since 2014.
+  </p>
+
+  <div class="era-strip">
+    <div class="era-pill mix"><span class="era-dot"></span>1994–2004: Rough parity, R structural edge</div>
+    <div class="era-pill d"><span class="era-dot"></span>2006–2012: D wave, seats follow votes</div>
+    <div class="era-pill r"><span class="era-dot"></span>2014–2024: D wins votes, R wins seats</div>
+  </div>
+</div>
+
+<div class="era-detail">
+  <h3>Era 1: 1994–2004 — Rough parity, modest R edge</h3>
+  <p>The popular vote was nearly tied each cycle (~48% vs ~48%), and Republicans held a structural Senate advantage of roughly 4–7 bonus seats. The efficiency gap was real but modest, partly because both parties still had cross-pressured senators in culturally misaligned states (Southern Democrats, Northeastern Republicans).</p>
+
+  <h3>Era 2: 2006–2012 — Votes and seats aligned</h3>
+  <p>The Obama wave produced the one period where the system behaved approximately proportionally. Democrats won popular votes by 5–8 points and controlled the chamber. The conversion was fair because D margins were broad enough to overcome geographic inefficiency.</p>
+
+  <h3>Era 3: 2014–2024 — The decoupling</h3>
+  <p>This is where it broke. Democrats have won the 3-cycle aggregate popular vote in all 6 of these cycles — by an average of +5 percentage points — yet held the Senate majority only once (2022, narrowly at 51–49). The starkest example: in 2018, Democrats won the popular vote by +7.7 points and Republicans still held 53 seats.</p>
+
+  <h3>Why it worsened after 2014 specifically</h3>
+  <ul>
+    <li><strong>Geographic sorting completed.</strong> The last Southern Democratic senators (Arkansas, Louisiana, North Carolina, Montana) were swept out in 2014–2020, eliminating D paths to rural states. NE/West Coast Republicans had already vanished. The map became rigid.</li>
+    <li><strong>Small-state bias calcified.</strong> Wyoming, the Dakotas, Idaho, West Virginia — ~7.5 million total people — hold 12 Senate seats that reliably go Republican. California alone (39M people) holds 2 seats.</li>
+    <li><strong>Urban concentration intensified.</strong> D voters piled up bigger and bigger margins in California, New York, Massachusetts — generating millions of "wasted" votes that move no swing-state needle.</li>
+  </ul>
+  <p>The interactive chart below shows both the vote lines (where Democrats reliably lead) and seat lines (where Republicans hold structural ground) — and the widening gap between them since 2014.</p>
+</div>
+
+<!-- Main chart area -->
+<div class="chart-section">
+
+  <div class="scoreboard">
+    <div class="score-card era1">
+      <div class="score-era">1994–2004 · 6 cycles</div>
+      <div class="score-main">+0.2pp</div>
+      <div class="score-desc">avg D popular vote lead — yet D averaged <strong>only 47 seats</strong> vs R's 53. Conversion was inefficient but votes were nearly tied.</div>
+    </div>
+    <div class="score-card era2">
+      <div class="score-era">2006–2012 · 4 cycles</div>
+      <div class="score-main">+6.1pp</div>
+      <div class="score-desc">avg D popular vote lead — and D <strong>controlled the chamber</strong> all 4 cycles, averaging 54 seats. System worked approximately correctly.</div>
+    </div>
+    <div class="score-card era3">
+      <div class="score-era">2014–2024 · 6 cycles</div>
+      <div class="score-main">+5.0pp</div>
+      <div class="score-desc">avg D popular vote lead — yet D <strong>held Senate majority only once</strong> (2022), averaging just 48 seats. Votes decoupled from seats.</div>
+    </div>
+  </div>
+
+  <div class="gap-chart-wrap">
+    <div class="gap-chart-title">Rolling 3-cycle popular vote share &amp; resulting senate composition · hover for details</div>
+    <canvas id="mainChart" height="340"></canvas>
+  </div>
+
+  <div class="seat-chart-wrap">
+    <div class="gap-chart-title">Democratic seat bonus/deficit vs. proportional expectation (seats)</div>
+    <canvas id="barsChart" height="220"></canvas>
+  </div>
+
+  <div class="annotation-grid">
+    <div class="annotation-card">
+      <div class="anno-icon">🗺️</div>
+      <div class="anno-head">Geographic Sorting</div>
+      <div class="anno-text">
+        Since ~2010, Democratic voters have become <strong>increasingly concentrated</strong> in dense urban and coastal states — CA, NY, MA, IL. This creates enormous "wasted" margins in safe races while leaving swing states narrowly contested. <strong>Republican votes are spread more efficiently</strong> across many medium-sized states.
+      </div>
+    </div>
+    <div class="annotation-card">
+      <div class="anno-icon">⚖️</div>
+      <div class="anno-head">The Small-State Multiplier</div>
+      <div class="anno-text">
+        The Senate gives <strong>equal representation regardless of population</strong>. Wyoming (580K people) = California (39M people). Republicans dominate ~25 small states worth 50 seats. The 10 most populous states — all D-leaning — hold only 20 seats covering <strong>190M Americans</strong>.
+      </div>
+    </div>
+    <div class="annotation-card">
+      <div class="anno-icon">🔀</div>
+      <div class="anno-head">The End of Cross-Partisan Senators</div>
+      <div class="anno-text">
+        Pre-2000, the South had many <strong>Democratic senators in R-leaning states</strong> (and vice versa in New England). As partisan sorting completed, those cross-pressured seats collapsed — leaving Democrats with fewer paths to rural-state seats and Republicans locked out of dense-state races.
+      </div>
+    </div>
+    <div class="annotation-card">
+      <div class="anno-icon">📐</div>
+      <div class="anno-head">The 2014 Inflection Point</div>
+      <div class="anno-text">
+        2014 is the clearest hinge: Democrats won <strong>50.1% of the 3-cycle popular vote</strong> but held only <strong>46 seats</strong>. Republicans earned +8 seats above proportional expectation. Since then, every election has produced a Republican structural bonus — <strong>even when Democrats won popular votes by 7+ points</strong>.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="source-bar">
+  <div style="flex: 1;">
+    <div class="source-text">
+      Source: Dave Leip's Atlas of US Elections<br>
+      Three-cycle rolling vote = aggregate across all races in the current Senate's 3 election classes<br>
+      Seat data: actual chamber composition after each election cycle
+    </div>
+    <div class="data-source-link">
+      <strong>Data spreadsheet:</strong> <a href="https://docs.google.com/spreadsheets/d/1WHafTgVhydEC646WwMgeLQ9n9GVacjACmyWa8pqZlYA/edit?usp=sharing" target="_blank" rel="noopener">Senate Popular Vote and Proportion of Population Represented by Party 1990–2024</a> (Google Sheet). Sourced from Dave Leip's Atlas of US Elections. The sheet includes tabs with vote totals by year, adjustments for uncontested seats, and methodology notes.
+    </div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--d-blue-light)"></div> Democratic</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--r-red-light)"></div> Republican</div>
+    <div class="legend-item"><div class="legend-line" style="background:var(--gold)"></div> Vote–Seat Gap</div>
+  </div>
+</div>
+
+<div id="tooltip" class="tooltip">
+  <div class="tt-year" id="tt-year"></div>
+  <div class="tt-row"><span class="tt-label">D popular vote</span><span class="tt-val-d" id="tt-dvote"></span></div>
+  <div class="tt-row"><span class="tt-label">R popular vote</span><span class="tt-val-r" id="tt-rvote"></span></div>
+  <div class="tt-divider"></div>
+  <div class="tt-row"><span class="tt-label">D seats held</span><span class="tt-val-d" id="tt-dseats"></span></div>
+  <div class="tt-row"><span class="tt-label">R seats held</span><span class="tt-val-r" id="tt-rseats"></span></div>
+  <div class="tt-divider"></div>
+  <div class="tt-row"><span class="tt-label">Vote margin (D–R)</span><span class="tt-val-gap" id="tt-votemargin"></span></div>
+  <div class="tt-row"><span class="tt-label">Seat margin (D–R)</span><span class="tt-val-gap" id="tt-seatmargin"></span></div>
+  <div class="tt-divider"></div>
+  <div class="tt-verdict" id="tt-verdict"></div>
+</div>
+
+<script>
+// === DATA ===
+const cycles = [
+  { year: 1994, d_vote: 48.5, r_vote: 47.9, d_seats: 48, r_seats: 52, label: 'R Contract w/ America\nwave' },
+  { year: 1996, d_vote: 48.2, r_vote: 48.0, d_seats: 45, r_seats: 55, label: 'Clinton re-election\nbut R dominate Senate' },
+  { year: 1998, d_vote: 47.7, r_vote: 49.4, d_seats: 45, r_seats: 55, label: 'Midterm, R popular\nvote advantage' },
+  { year: 2000, d_vote: 48.8, r_vote: 48.1, d_seats: 50, r_seats: 50, label: 'Near-perfect split\nJeffords flips later' },
+  { year: 2002, d_vote: 48.4, r_vote: 48.3, d_seats: 49, r_seats: 51, label: 'Post-9/11 R wave\nnarrow popular vote' },
+  { year: 2004, d_vote: 48.9, r_vote: 47.7, d_seats: 45, r_seats: 55, label: 'D win votes but R\nhold Senate 55-45' },
+  { year: 2006, d_vote: 51.3, r_vote: 45.8, d_seats: 51, r_seats: 49, label: 'D wave — Iraq War\nvotes → seats aligned' },
+  { year: 2008, d_vote: 52.5, r_vote: 44.6, d_seats: 59, r_seats: 41, label: 'Obama wave\npeak D dominance' },
+  { year: 2010, d_vote: 50.8, r_vote: 46.1, d_seats: 53, r_seats: 47, label: 'Tea Party year but\n3-cycle D still leads' },
+  { year: 2012, d_vote: 51.6, r_vote: 45.3, d_seats: 55, r_seats: 45, label: 'D vote lead = seat lead\nlast time this held' },
+  { year: 2014, d_vote: 50.1, r_vote: 46.8, d_seats: 46, r_seats: 54, label: '⚠️ INFLECTION POINT\nD+3.3pp votes → 46 seats' },
+  { year: 2016, d_vote: 50.7, r_vote: 44.1, d_seats: 48, r_seats: 52, label: 'D+6.6pp popular vote\nbut R hold 52 seats' },
+  { year: 2018, d_vote: 50.3, r_vote: 42.6, d_seats: 47, r_seats: 53, label: 'D+7.7pp popular vote\nR still hold 53 seats' },
+  { year: 2020, d_vote: 50.3, r_vote: 43.3, d_seats: 50, r_seats: 50, label: 'GA runoffs give D\n50-50 tie via VP' },
+  { year: 2022, d_vote: 50.4, r_vote: 45.5, d_seats: 51, r_seats: 49, label: 'No red wave — D gain\nonly 51 despite +5pp' },
+  { year: 2024, d_vote: 49.3, r_vote: 48.6, d_seats: 47, r_seats: 53, label: 'D win popular vote\nbut R flip 4 seats' },
+];
+
+// Colors
+const DC = '#1a56c4', DCL = '#4a86f4', DCG = 'rgba(26,86,196,0.15)';
+const RC = '#c41a1a', RCL = '#f44a4a', RCG = 'rgba(196,26,26,0.15)';
+const GOLD = '#c8a84b', GOLDF = 'rgba(200,168,75,0.15)';
+const BG2 = '#111420', GRID = 'rgba(255,255,255,0.04)';
+const TEXT = '#e8eaf0', TEXTDIM = '#7a8099';
+
+function dpr() { return window.devicePixelRatio || 1; }
+
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth - 48;
+  const h = parseInt(canvas.getAttribute('height'));
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = w * dpr();
+  canvas.height = h * dpr();
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr(), dpr());
+  return { canvas, ctx, w, h };
+}
+
+// ====== MAIN CHART: Vote % lines + seat composition background ======
+function drawMainChart() {
+  const { canvas, ctx, w, h } = setupCanvas('mainChart');
+  const PAD = { top: 20, right: 24, bottom: 50, left: 42 };
+  const cw = w - PAD.left - PAD.right;
+  const ch = h - PAD.top - PAD.bottom;
+  const n = cycles.length;
+  const xStep = cw / (n - 1);
+
+  function xAt(i) { return PAD.left + i * xStep; }
+  function yAt(val, min, max) { return PAD.top + ch - (val - min) / (max - min) * ch; }
+
+  const MIN_V = 40, MAX_V = 62;
+  const MIN_S = 38, MAX_S = 62;
+
+  // Background era shading
+  const eras = [
+    { start: 0, end: 5, color: 'rgba(255,255,255,0.015)', label: '1994–2004' },
+    { start: 5, end: 9, color: 'rgba(26,86,196,0.07)', label: '2006–2012' },
+    { start: 9, end: 15, color: 'rgba(196,26,26,0.07)', label: '2014–2024' },
+  ];
+  eras.forEach(era => {
+    ctx.fillStyle = era.color;
+    const ex = xAt(era.start);
+    const ew = xAt(era.end) - ex;
+    ctx.fillRect(ex, PAD.top, ew, ch);
+  });
+
+  // Grid lines
+  [40, 45, 50, 55, 60].forEach(v => {
+    const y = yAt(v, MIN_V, MAX_V);
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, y);
+    ctx.lineTo(PAD.left + cw, y);
+    ctx.strokeStyle = v === 50 ? 'rgba(255,255,255,0.12)' : GRID;
+    ctx.lineWidth = v === 50 ? 1.5 : 1;
+    if (v === 50) ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = TEXTDIM;
+    ctx.font = '9px IBM Plex Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(v + '%', PAD.left - 6, y + 3);
+  });
+
+  // 50% label
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.font = '9px IBM Plex Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText('50% — parity', PAD.left + 4, yAt(50, MIN_V, MAX_V) - 4);
+
+  // Draw seat bands as background (D seats %)
+  ctx.beginPath();
+  cycles.forEach((c, i) => {
+    const x = xAt(i);
+    const y = yAt(c.d_seats, MIN_S, MAX_S);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(xAt(n - 1), PAD.top + ch);
+  ctx.lineTo(xAt(0), PAD.top + ch);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(26,86,196,0.06)';
+  ctx.fill();
+
+  ctx.beginPath();
+  cycles.forEach((c, i) => {
+    const x = xAt(i);
+    const y = yAt(c.r_seats, MIN_S, MAX_S);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(xAt(n - 1), PAD.top);
+  ctx.lineTo(xAt(0), PAD.top);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(196,26,26,0.06)';
+  ctx.fill();
+
+  // Seat lines (dashed, thinner)
+  function drawLine(data, color, dash) {
+    ctx.beginPath();
+    data.forEach((c, i) => {
+      const x = xAt(i);
+      const y = yAt(c, MIN_V, MAX_V);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash(dash || []);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  drawLine(cycles.map(c => c.d_seats), 'rgba(74,134,244,0.35)', [4, 3]);
+  drawLine(cycles.map(c => c.r_seats), 'rgba(244,74,74,0.35)', [4, 3]);
+
+  // Vote lines (solid, thicker)
+  drawLine(cycles.map(c => c.d_vote), DCL, []);
+  drawLine(cycles.map(c => c.r_vote), RCL, []);
+
+  // Gap fill between D vote and D seats
+  ctx.beginPath();
+  cycles.forEach((c, i) => {
+    const x = xAt(i);
+    const y = yAt(c.d_vote, MIN_V, MAX_V);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  for (let i = n - 1; i >= 0; i--) {
+    ctx.lineTo(xAt(i), yAt(cycles[i].d_seats, MIN_V, MAX_V));
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(200,168,75,0.07)';
+  ctx.fill();
+
+  // Dots on vote lines
+  cycles.forEach((c, i) => {
+    [[c.d_vote, DCL], [c.r_vote, RCL]].forEach(([val, col]) => {
+      const x = xAt(i);
+      const y = yAt(val, MIN_V, MAX_V);
+      ctx.beginPath();
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = col;
+      ctx.fill();
+    });
+  });
+
+  // Inflection point highlight
+  const inflIdx = 10;
+  const ix = xAt(inflIdx);
+  ctx.beginPath();
+  ctx.moveTo(ix, PAD.top);
+  ctx.lineTo(ix, PAD.top + ch);
+  ctx.strokeStyle = 'rgba(200,168,75,0.4)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = GOLD;
+  ctx.font = 'bold 9px IBM Plex Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('2014 inflection', ix, PAD.top + 13);
+
+  // X axis labels
+  cycles.forEach((c, i) => {
+    const x = xAt(i);
+    ctx.fillStyle = i === inflIdx ? GOLD : TEXTDIM;
+    ctx.font = i === inflIdx ? 'bold 10px IBM Plex Mono' : '10px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(c.year, x, PAD.top + ch + 18);
+  });
+
+  // Legend at top right
+  const lx = PAD.left + cw - 160;
+  const ly = PAD.top + 10;
+  [
+    [DCL, 'D popular vote (solid)'],
+    [RCL, 'R popular vote (solid)'],
+    ['rgba(74,134,244,0.5)', 'D seats held (dashed)'],
+    ['rgba(244,74,74,0.5)', 'R seats held (dashed)'],
+  ].forEach(([col, label], idx) => {
+    const y = ly + idx * 18;
+    ctx.beginPath();
+    ctx.moveTo(lx, y + 5);
+    ctx.lineTo(lx + 18, y + 5);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = idx < 2 ? 2 : 1.5;
+    if (idx >= 2) ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = TEXTDIM;
+    ctx.font = '9px IBM Plex Mono';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, lx + 24, y + 9);
+  });
+
+  canvas._geo = { PAD, cw, ch, xStep, n, MIN_V, MAX_V };
+}
+
+// ====== BARS CHART: D seat bonus/deficit ======
+function drawBarsChart() {
+  const { canvas, ctx, w, h } = setupCanvas('barsChart');
+  const PAD = { top: 20, right: 24, bottom: 44, left: 50 };
+  const cw = w - PAD.left - PAD.right;
+  const ch = h - PAD.top - PAD.bottom;
+  const n = cycles.length;
+
+  const bonuses = cycles.map(c => {
+    const two_party = c.d_vote + c.r_vote;
+    const d_prop = (c.d_vote / two_party) * 100;
+    return Math.round(c.d_seats - d_prop);
+  });
+
+  const MAX_ABS = 12;
+  const barW = (cw / n) * 0.6;
+  const xStep = cw / n;
+  const zeroY = PAD.top + ch / 2;
+
+  [-10, -5, 0, 5, 10].forEach(v => {
+    const y = zeroY - (v / MAX_ABS) * (ch / 2);
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, y);
+    ctx.lineTo(PAD.left + cw, y);
+    ctx.strokeStyle = v === 0 ? 'rgba(255,255,255,0.15)' : GRID;
+    ctx.lineWidth = v === 0 ? 1.5 : 1;
+    ctx.stroke();
+    ctx.fillStyle = TEXTDIM;
+    ctx.font = '9px IBM Plex Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText((v > 0 ? '+' : '') + v, PAD.left - 6, y + 3);
+  });
+
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '9px IBM Plex Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText('D over-represented ↑', PAD.left + 4, zeroY - (ch / 2) + 12);
+  ctx.fillText('R over-represented ↓', PAD.left + 4, zeroY + (ch / 2) - 4);
+
+  bonuses.forEach((bonus, i) => {
+    const x = PAD.left + i * xStep + (xStep - barW) / 2;
+    const barH = Math.abs(bonus / MAX_ABS) * (ch / 2);
+    const y = bonus >= 0 ? zeroY - barH : zeroY;
+    const isInflection = i === 10;
+
+    let color;
+    if (bonus > 2) color = DCL;
+    else if (bonus < -2) color = RCL;
+    else color = 'rgba(200,168,75,0.7)';
+
+    ctx.fillStyle = isInflection ? GOLD : color;
+    ctx.globalAlpha = isInflection ? 1 : 0.75;
+    ctx.fillRect(x, y, barW, barH);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = isInflection ? GOLD : (bonus >= 0 ? DCL : RCL);
+    ctx.font = (isInflection ? 'bold ' : '') + '9px IBM Plex Mono';
+    ctx.textAlign = 'center';
+    if (bonus >= 0) {
+      ctx.fillText((bonus > 0 ? '+' : '') + bonus, x + barW / 2, y - 3);
+    } else {
+      ctx.fillText(bonus, x + barW / 2, y + barH + 10);
+    }
+
+    ctx.fillStyle = isInflection ? GOLD : TEXTDIM;
+    ctx.font = (isInflection ? 'bold ' : '') + '9px IBM Plex Mono';
+    ctx.fillText(cycles[i].year, x + barW / 2, PAD.top + ch + 16);
+  });
+
+  canvas._geo = { PAD, cw, ch, xStep, bonuses, n, zeroY };
+}
+
+// ====== TOOLTIP ======
+const tooltip = document.getElementById('tooltip');
+
+function showTooltip(e, idx) {
+  const c = cycles[idx];
+  const two_party = c.d_vote + c.r_vote;
+  const voteMargin = (c.d_vote - c.r_vote).toFixed(1);
+  const seatMargin = c.d_seats - c.r_seats;
+  let verdict;
+  if (c.d_vote > c.r_vote && c.d_seats < 50) {
+    verdict = '⚠️ Democrats won the popular vote but hold a minority in the chamber.';
+  } else if (c.d_vote > c.r_vote && c.d_seats >= 50) {
+    verdict = '✓ Democrats won the popular vote and hold the chamber.';
+  } else {
+    verdict = 'Republicans led the popular vote.';
+  }
+
+  document.getElementById('tt-year').textContent = c.year + (c.label ? ' — ' + c.label.replace('\n', ' ') : '');
+  document.getElementById('tt-dvote').textContent = c.d_vote.toFixed(1) + '%';
+  document.getElementById('tt-rvote').textContent = c.r_vote.toFixed(1) + '%';
+  document.getElementById('tt-dseats').textContent = c.d_seats + ' / 100';
+  document.getElementById('tt-rseats').textContent = c.r_seats + ' / 100';
+  document.getElementById('tt-votemargin').textContent = (parseFloat(voteMargin) > 0 ? '+' : '') + voteMargin + 'pp';
+  document.getElementById('tt-seatmargin').textContent = (seatMargin > 0 ? '+' : '') + seatMargin + ' seats';
+  document.getElementById('tt-verdict').textContent = verdict;
+
+  const tx = Math.min(e.clientX + 16, window.innerWidth - 260);
+  const ty = Math.min(e.clientY + 16, window.innerHeight - 220);
+  tooltip.style.left = tx + 'px';
+  tooltip.style.top = ty + 'px';
+  tooltip.classList.add('visible');
+}
+
+function attachHover(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const geo = canvas._geo;
+    if (!geo) return;
+    const { PAD, xStep, n } = geo;
+    const idx = Math.round((mx - PAD.left) / xStep);
+    if (idx >= 0 && idx < n) {
+      showTooltip(e, idx);
+    }
+  });
+  canvas.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('visible');
+  });
+}
+
+// ====== INIT ======
+function init() {
+  drawMainChart();
+  drawBarsChart();
+  attachHover('mainChart');
+  attachHover('barsChart');
+}
+
+window.addEventListener('load', init);
+window.addEventListener('resize', () => {
+  drawMainChart();
+  drawBarsChart();
+});
+</script>
+</body>
+</html>
